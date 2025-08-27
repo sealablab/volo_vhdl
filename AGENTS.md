@@ -18,7 +18,7 @@ This document provides guidelines for AI agents working with the Volo VHDL proje
 - Explicit bit widths for all vectors
 
 ### Forbidden Features
-- Records in port declarations
+- Records in port declarations (except in datadef packages)
 - Subtype range constraints
 - Enumeration types in RTL code
 - Shared variables
@@ -70,15 +70,14 @@ modules/
 #### Datadef Layer (`modules/**/datadef/*.vhd`)
 - **Purpose**: Define data structures, types, and constants for Verilog portability
 - **Responsibilities**:
-  - Data structure definitions using flat signals instead of records
+  - Data structure definitions (records allowed for organization)
   - Type conversion and packing/unpacking utilities  
   - Constants for bit field definitions and data widths
   - Validation functions for data structures
 - **Constraints**:
-  - No record types (use flat signals with explicit bit positions)
-  - All types must be Verilog-portable
-  - Use `std_logic_vector` for packed data representations
+  - **Record types are ALLOWED** for data organization and type safety
   - Define explicit bit field constants for easy Verilog translation
+  - **Note**: Records in datadef packages require manual Verilog conversion
 
 #### Core Layer (`modules/**/core/*.vhd`)
 - **Purpose**: Pure logic implementation
@@ -272,6 +271,44 @@ work-obj*.cf
 3. **File Path Issues**: Use paths relative to repository root
 4. **Missing Libraries**: Ensure all required IEEE libraries are available
 
+## Verilog Conversion Guidelines for Records
+
+### Record Usage in Datadef Packages
+When using records in `datadef/` packages, follow these guidelines to ensure Verilog compatibility:
+
+#### Record Design Principles
+- **Keep records simple**: Avoid nested records or complex type hierarchies
+- **Use standard types**: Prefer `std_logic_vector`, `unsigned`, `signed`, and `natural`/`integer`
+- **Document bit layouts**: Clearly document the bit field positions for Verilog conversion
+
+#### Example Record Implementation
+```vhdl
+-- Good: Simple record with conversion utilities
+type t_trigger_config is record
+    trigger_threshold    : std_logic_vector(15 downto 0);
+    duration_min         : natural;
+    duration_max         : natural;
+    intensity_min        : std_logic_vector(15 downto 0);
+    intensity_max        : std_logic_vector(15 downto 0);
+end record;
+
+-- Conversion functions for Verilog compatibility
+function trigger_config_to_packed(config : t_trigger_config) return std_logic_vector;
+function packed_to_trigger_config(packed_data : std_logic_vector) return t_trigger_config;
+```
+
+#### Verilog Conversion Strategy
+Records in datadef packages should be converted to:
+1. **SystemVerilog structs** (preferred for modern tools)
+2. **Packed parameter arrays** (for older Verilog tools)
+3. **Flat signal groups** with explicit bit positioning
+
+#### Conversion Documentation Requirements
+- Document the bit field layout and total width
+- Provide Verilog equivalent struct definitions
+- Include conversion examples in package comments
+- Specify which Verilog standard is targeted (Verilog-2005, SystemVerilog, etc.)
+
 ## Template Guidelines (`templates/**`)
 - Keep templates minimal
 - Ensure Verilog portability
@@ -311,8 +348,8 @@ generic (
 
 ### RTL Code Requirements
 Before submitting RTL code, ensure:
-- [ ] No VHDL-only features used (records, enums in RTL, etc.)
-- [ ] All ports use flat signal types
+- [ ] No VHDL-only features used (records, enums in RTL, etc.) - **Exception: Records allowed in datadef packages**
+- [ ] All ports use flat signal types (except datadef packages)
 - [ ] FSMs use vector state encoding with named constants
 - [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
 - [ ] Explicit bit widths specified for all vectors
@@ -342,6 +379,12 @@ For package testbenches, additionally ensure:
 - [ ] Multiple test data patterns used (linear, pattern-based, edge cases)
 - [ ] Boundary conditions thoroughly tested
 - [ ] Invalid input handling verified
+
+### Datadef Package Testing (if using records)
+For datadef packages with records, ensure:
+- [ ] Basic record field access works
+- [ ] Record constants are valid
+- [ ] Simple conversion functions work (if provided)
 
 ### Documentation
 - [ ] README.md exists for testbench directory with compilation instructions

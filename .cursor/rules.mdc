@@ -26,7 +26,7 @@ This document provides guidelines for AI agents working with the Volo VHDL proje
 - Explicit bit widths for all vectors
 
 ### Forbidden Features
-- Records in port declarations
+- Records in port declarations (except in datadef packages)
 - Subtype range constraints
 - Enumeration types in RTL code
 - Shared variables
@@ -68,6 +68,7 @@ modules/
 - **Purpose**: Define data structures, LUTs, and data validation utilities
 - **Rule Tier**: Tier 2 (Relaxed rules for data definition)
 - **Allowed Features**:
+  - **Record types for data organization and type safety**
   - Array type definitions for LUTs and data structures
   - Complex constants and data initialization
   - Data validation functions (CRC, checksums)
@@ -78,7 +79,9 @@ modules/
   - Verilog conversion strategy documented in comments
   - Clear separation from RTL logic (no clocks, state machines)
   - No clock-dependent operations
+  - **Records must be designed with Verilog conversion in mind**
 - **Verilog Conversion Strategy**:
+  - **Records → SystemVerilog structs or packed parameter arrays**
   - Array types → parameter arrays or .mem files
   - Complex functions → separate SystemVerilog modules
   - Function overloading → renamed functions with distinct names
@@ -185,8 +188,8 @@ generic (
 
 ## Verification Checklist
 Before submitting code, ensure:
-- [ ] No VHDL-only features used
-- [ ] All ports use flat signal types
+- [ ] No VHDL-only features used (except records in datadef packages)
+- [ ] All ports use flat signal types (except datadef packages)
 - [ ] FSMs use vector state encoding
 - [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
 - [ ] Explicit bit widths specified
@@ -282,6 +285,7 @@ rules:
     directories: ["datadef"]
     coding_standards: "relaxed_for_data_structures"
     allowed_features:
+      - "record_types_for_data_organization"
       - "array_type_definitions"
       - "complex_constants"
       - "data_validation_functions"
@@ -295,6 +299,7 @@ rules:
       - "cfg_prefix_for_constants"
       - "verilog_conversion_documentation"
       - "no_synthesizable_logic"
+      - "records_designed_for_verilog_conversion"
     naming_conventions:
       constants: ["cfg_*"]
       

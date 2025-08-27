@@ -32,14 +32,16 @@ modules/
 ### Datadef Layer (`datadef/`)
 - **Purpose**: Define data structures and types with Verilog portability
 - **Responsibilities**:
-  - Data structure definitions using flat signals
+  - Data structure definitions (records allowed for organization)
   - Bit field constants and packing utilities
   - Type validation functions
   - Constants for data widths and default values
 - **Constraints**:
-  - Must avoid record types in favor of flat signals
-  - All definitions must be Verilog-portable
-  - Use explicit bit positioning for packed representations
+  - **Record types are ALLOWED** for data organization and type safety
+  - Records must be designed with Verilog conversion in mind
+  - Provide conversion utilities for Verilog compatibility
+  - Use explicit bit positioning for packed representations when needed
+  - **Note**: Records in datadef packages require manual Verilog conversion
 
 ### Core Layer (`core/`)
 - **Purpose**: Pure logic implementation
@@ -131,6 +133,43 @@ modules/
             └── system_top_tb.vhd
 ```
 
+## Record Usage Guidelines for Datadef Packages
+
+### When to Use Records
+Records are allowed in `datadef/` packages for:
+- **Configuration structures**: Complex parameter sets (like `Trigger_Config`)
+- **Data organization**: Related fields that belong together
+- **Type safety**: Ensuring correct field access and validation
+- **Code maintainability**: Easier to add/modify fields without breaking existing code
+
+### Record Design Requirements
+- **Keep records simple**: Avoid nested records or complex hierarchies
+- **Use standard types**: Prefer `std_logic_vector`, `unsigned`, `signed`, `natural`
+- **Provide conversion functions**: Include utilities for Verilog compatibility
+- **Document bit layouts**: Clearly specify field positions for conversion
+
+### Verilog Conversion Strategy
+Records must be convertible to:
+1. **SystemVerilog structs** (preferred)
+2. **Packed parameter arrays** (legacy Verilog)
+3. **Flat signal groups** with explicit bit positioning
+
+### Example Implementation
+```vhdl
+-- datadef/Trigger_Config_pkg.vhd
+type t_trigger_config is record
+    trigger_threshold    : std_logic_vector(15 downto 0);
+    duration_min         : natural;
+    duration_max         : natural;
+    intensity_min        : std_logic_vector(15 downto 0);
+    intensity_max        : std_logic_vector(15 downto 0);
+end record;
+
+-- Conversion functions for Verilog compatibility
+function trigger_config_to_packed(config : t_trigger_config) return std_logic_vector;
+function packed_to_trigger_config(packed_data : std_logic_vector) return t_trigger_config;
+```
+
 ## Important Notes
 
 - Not all modules require a `top/` layer
@@ -141,6 +180,7 @@ modules/
 - Follow VHDL-2008 with Verilog portability guidelines
 - Use proper signal prefixes: `ctrl_*`, `cfg_*`, `stat_*`
 - Testbenches must be GHDL compatible and use deterministic patterns
+- **Records are allowed ONLY in `datadef/` packages** - not in RTL code
 
 ## Compilation and Testing
 
