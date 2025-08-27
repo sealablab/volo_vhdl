@@ -48,13 +48,14 @@ All VHDL modules must follow this standardized structure:
 modules/
 ├── module_name/
 │   ├── common/     # Shared packages and utilities
+│   ├── datadef/    # Data structure definitions and type packages
 │   ├── core/       # Main algorithmic/logic implementation
 │   ├── top/        # Top-level integration (optional)
 │   └── tb/         # Testbenches organized by layer
 │       ├── common/     # Tests for common layer packages
+│       ├── datadef/    # Tests for datadef packages
 │       ├── core/       # Tests for core layer entities
-│       ├── top/        # Tests for top layer integration
-│       └── datadef/    # Tests for datadef packages (if applicable)
+│       └── top/        # Tests for top layer integration
 ```
 
 ### Layer Responsibilities
@@ -65,6 +66,19 @@ modules/
   - Configuration parameter validation functions
   - Utility functions shared across testbenches and modules
   - Common type definitions and constants
+
+#### Datadef Layer (`modules/**/datadef/*.vhd`)
+- **Purpose**: Define data structures, types, and constants for Verilog portability
+- **Responsibilities**:
+  - Data structure definitions using flat signals instead of records
+  - Type conversion and packing/unpacking utilities  
+  - Constants for bit field definitions and data widths
+  - Validation functions for data structures
+- **Constraints**:
+  - No record types (use flat signals with explicit bit positions)
+  - All types must be Verilog-portable
+  - Use `std_logic_vector` for packed data representations
+  - Define explicit bit field constants for easy Verilog translation
 
 #### Core Layer (`modules/**/core/*.vhd`)
 - **Purpose**: Pure logic implementation

@@ -10,13 +10,14 @@ Each module must follow this directory structure:
 modules/
 ├── module_name/
 │   ├── common/     # Shared packages and utilities
+│   ├── datadef/    # Data structure definitions and type packages
 │   ├── core/       # Main algorithmic/logic implementation
 │   ├── top/        # Top-level integration (optional)
 │   └── tb/         # Testbenches organized by layer
 │       ├── common/     # Tests for common layer packages
+│       ├── datadef/    # Tests for datadef packages
 │       ├── core/       # Tests for core layer entities
-│       ├── top/        # Tests for top layer integration
-│       └── datadef/    # Tests for datadef packages (if applicable)
+│       └── top/        # Tests for top layer integration
 ```
 
 ## Layer Responsibilities
@@ -27,6 +28,18 @@ modules/
   - Configuration parameter validation functions
   - Utility functions shared across testbenches and modules
   - Common type definitions and constants
+
+### Datadef Layer (`datadef/`)
+- **Purpose**: Define data structures and types with Verilog portability
+- **Responsibilities**:
+  - Data structure definitions using flat signals
+  - Bit field constants and packing utilities
+  - Type validation functions
+  - Constants for data widths and default values
+- **Constraints**:
+  - Must avoid record types in favor of flat signals
+  - All definitions must be Verilog-portable
+  - Use explicit bit positioning for packed representations
 
 ### Core Layer (`core/`)
 - **Purpose**: Pure logic implementation
@@ -53,9 +66,9 @@ modules/
 - **Organization**: Testbenches are organized by the layer they test
 - **Structure**:
   - **`tb/common/`**: Test packages and utilities from `common/` layer
+  - **`tb/datadef/`**: Test datadef packages (for data definition packages)
   - **`tb/core/`**: Test entities and modules from `core/` layer
   - **`tb/top/`**: Test top-level integration from `top/` layer
-  - **`tb/datadef/`**: Test datadef packages (for data definition packages)
 - **Standards**:
   - GHDL compatible with VHDL-2008
   - Deterministic test patterns
@@ -66,6 +79,7 @@ modules/
 ## File Naming Conventions
 
 - **`common/`** - Contains shared packages and utilities
+- **`datadef/`** - Contains data structure definitions and type packages
 - **`core/`** - Contains the main algorithmic/logic implementation
 - **`top/`** - Contains top-level integration (only for top-level modules)
 - **`tb/`** - Contains testbenches with `<original_name>_tb.vhd` naming
