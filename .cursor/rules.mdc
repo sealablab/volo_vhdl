@@ -1,0 +1,225 @@
+---
+title: "Volo VHDL Project Rules"
+version: "1.0"
+type: "workspace_rules"
+applies_to: "all_files"
+priority: "high"
+---
+
+# Volo VHDL Project - Agent Guidelines
+
+## Overview
+This document provides guidelines for AI agents working with the Volo VHDL project. The project follows strict VHDL-2008 coding standards designed for **Verilog portability**.
+
+## Core Principles
+
+### VHDL-2008 with Verilog Portability
+- **Target**: VHDL-2008 that can be easily converted to Verilog
+- **Avoid**: VHDL-only features that don't translate well to Verilog
+
+### Allowed Features
+- `std_logic` and `std_logic_vector` types
+- `unsigned` and `signed` from `numeric_std` package
+- Generics and generate statements
+- Synchronous processes with `rising_edge(clk)`
+- Synchronous reset mechanisms
+- Explicit bit widths for all vectors
+
+### Forbidden Features
+- Records in port declarations
+- Subtype range constraints
+- Enumeration types in RTL code
+- Shared variables
+- `wait` statements in RTL
+- `after` delays
+- Resolved custom types
+- Physical types
+- File I/O operations
+
+## Port Naming Conventions
+
+### Signal Prefixes
+- **`ctrl_*`**: Control signals (enable, reset, etc.)
+- **`cfg_*`**: Configuration parameters
+- **`stat_*`**: Status and monitoring signals
+
+### Port Structure
+- Use flat ports (no records)
+- Avoid complex type hierarchies
+- Keep interfaces simple and Verilog-compatible
+
+## Module Architecture
+
+### Directory Structure
+All VHDL modules must follow this standardized structure:
+```
+modules/
+├── module_name/
+│   ├── common/     # Shared packages and utilities
+│   ├── core/       # Main algorithmic/logic implementation
+│   └── top/        # Top-level integration (optional)
+```
+
+### Layer Responsibilities
+
+#### Common Layer (`modules/**/common/*.vhd`)
+- **Purpose**: Define shared types, constants, and utilities used across the module
+- **Responsibilities**:
+  - Configuration parameter validation functions
+  - Utility functions shared across testbenches and modules
+  - Common type definitions and constants
+
+#### Core Layer (`modules/**/core/*.vhd`)
+- **Purpose**: Pure logic implementation
+- **Constraints**:
+  - No register decode logic
+  - No platform-specific code
+  - Consume typed-by-name flat signals
+  - Implement FSMs with `std_logic_vector` state encoding
+  - Use constants for state labels (no enums)
+  - **Create a default status register**
+  - Ideally implement as a state machine
+
+#### Top Layer (`modules/**/top/*.vhd`)
+- **Purpose**: Integrate multiple modules and handle system-level concerns
+- **Responsibilities**:
+  - **External interface** - Connect to platform control system (generally a Moku CustomWrapper)
+  - **Register exposure** - Expose appropriate control, configuration, and status registers
+  - **Important**: DO NOT include MCC CustomWrapper entity body
+  - Keep top-level modules clean and focused
+  - **Note**: Not all modules will require a 'top' file
+
+## FSM Implementation
+- Use `std_logic_vector` for state encoding
+- Define state constants (avoid enumeration types)
+- Example:
+  ```vhdl
+  constant IDLE_STATE  : std_logic_vector(1 downto 0) := "00";
+  constant ACTIVE_STATE: std_logic_vector(1 downto 0) := "01";
+  ```
+
+## Counters and Timers
+- Prefer `unsigned` vectors with explicit widths
+- Avoid generic ranges or complex constraints
+- Example: `signal counter : unsigned(7 downto 0);`
+
+## Code Style and Comments
+
+### Block Structure
+- Clearly mark the end of `if`/`elsif`/`case` blocks
+- Use consistent indentation
+- Add meaningful comments for complex logic
+
+### Process Structure
+- Use synchronous processes with `rising_edge(clk)`
+- Implement proper reset handling
+- Keep processes focused and readable
+
+## Testbench Requirements (`modules/**/tb/*.vhd`)
+
+### Allowed Features
+- VHDL-2008 features are permitted
+- `wait` statements are allowed
+- Use deterministic stimuli
+
+### Required Output
+- **Success**: Print `'ALL TESTS PASSED'`
+- **Failure**: Print `'TEST FAILED'`
+- **Completion**: Always print `'SIMULATION DONE'`
+
+## Template Guidelines (`templates/**`)
+- Keep templates minimal
+- Ensure Verilog portability
+- Follow all global coding rules
+- Provide clear examples of proper usage
+
+## Best Practices
+
+### Signal Declaration
+```vhdl
+signal data_bus : std_logic_vector(31 downto 0);
+signal counter  : unsigned(15 downto 0);
+signal state    : std_logic_vector(2 downto 0);
+```
+
+### Process Structure
+```vhdl
+process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        -- Reset logic
+    elsif rising_edge(clk) then
+        -- Synchronous logic
+    end if;
+end process;
+```
+
+### Generic Usage
+```vhdl
+generic (
+    DATA_WIDTH : integer := 32;
+    ADDR_WIDTH : integer := 8
+);
+```
+
+## Verification Checklist
+Before submitting code, ensure:
+- [ ] No VHDL-only features used
+- [ ] All ports use flat signal types
+- [ ] FSMs use vector state encoding
+- [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
+- [ ] Explicit bit widths specified
+- [ ] Synchronous processes with proper reset
+- [ ] Clear block end markers
+- [ ] Testbench prints required messages
+
+## Questions for Clarification
+When working on this project, consider asking:
+1. What is the target frequency and timing requirements?
+2. Are there specific power constraints or clock gating requirements?
+3. What is the target FPGA/ASIC technology?
+4. Are there specific verification requirements beyond the basic testbench rules?
+5. What are the interface requirements with other modules?
+6. Are there specific naming conventions for internal signals?
+7. What are the reset requirements (synchronous vs asynchronous)?
+8. Are there specific area or resource constraints?
+
+---
+
+## Rules Application
+
+```yaml
+rules:
+  always_applied:
+    - type: "coding_standards"
+      scope: "all_vhdl_files"
+      description: "VHDL-2008 with Verilog portability constraints"
+      
+    - type: "naming_conventions" 
+      scope: "all_signals"
+      patterns:
+        - "ctrl_*": "control signals"
+        - "cfg_*": "configuration parameters"
+        - "stat_*": "status signals"
+        
+    - type: "architecture_constraints"
+      scope: "modules"
+      structure:
+        required_dirs: ["common", "core"]
+        optional_dirs: ["top", "tb"]
+        
+    - type: "forbidden_features"
+      scope: "rtl_code"
+      items:
+        - "records_in_ports"
+        - "enumeration_types"
+        - "wait_statements"
+        - "after_delays"
+        
+    - type: "required_features"
+      scope: "testbenches"
+      outputs:
+        success: "ALL TESTS PASSED"
+        failure: "TEST FAILED" 
+        completion: "SIMULATION DONE"
+```
