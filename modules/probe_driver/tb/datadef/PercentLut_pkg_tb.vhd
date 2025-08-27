@@ -76,6 +76,12 @@ architecture behavioral of PercentLut_pkg_tb is
         end loop;
         return lut;
     end function;
+    
+    -- Helper function to create test LUT record
+    function create_test_lut_record(lut_data : percent_lut_data_array_t) return percent_lut_record_t is
+    begin
+        return create_percent_lut_record(lut_data);
+    end function;
 
 begin
 
@@ -85,6 +91,9 @@ begin
         variable test_lut_linear : percent_lut_data_array_t;
         variable test_lut_pattern : percent_lut_data_array_t;
         variable test_lut_invalid : percent_lut_data_array_t;
+        variable test_lut_rec_linear : percent_lut_record_t;
+        variable test_lut_rec_pattern : percent_lut_record_t;
+        variable test_lut_rec_invalid : percent_lut_record_t;
         variable calculated_crc : std_logic_vector(15 downto 0);
         variable wrong_crc : std_logic_vector(15 downto 0);
         variable lookup_result : std_logic_vector(CFG_PERCENT_LUT_DATA_WIDTH-1 downto 0);
@@ -102,6 +111,11 @@ begin
         test_lut_pattern := create_test_lut_pattern;
         test_lut_invalid := create_test_lut_pattern;
         test_lut_invalid(0) := x"1234"; -- Make invalid by setting index 0 to non-zero
+        
+        -- Initialize test LUT records
+        test_lut_rec_linear := create_test_lut_record(test_lut_linear);
+        test_lut_rec_pattern := create_test_lut_record(test_lut_pattern);
+        test_lut_rec_invalid := create_test_lut_record(test_lut_invalid);
         
         -----------------------------------------------------------------------
         -- Test 1: CRC Calculation Basic Functionality
@@ -262,6 +276,104 @@ begin
         lookup_result := get_percentlut_value_safe(test_lut_pattern, 43); -- Odd index
         test_passed := (lookup_result = x"5555");
         report_test("Pattern LUT lookup - odd index returns 0x5555", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 21: Record-based LUT Creation and Validation
+        -----------------------------------------------------------------------
+        test_passed := validate_percent_lut_record(test_lut_rec_linear);
+        report_test("Record-based LUT validation - valid record", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 22: Record-based LUT Validation - Invalid Record
+        -----------------------------------------------------------------------
+        test_passed := not validate_percent_lut_record(test_lut_rec_invalid);
+        report_test("Record-based LUT validation - invalid record", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 23: Record-based LUT Validity Check
+        -----------------------------------------------------------------------
+        test_passed := is_percent_lut_record_valid(test_lut_rec_linear);
+        report_test("Record-based LUT validity check - valid record", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 24: Record-based LUT Validity Check - Invalid Record
+        -----------------------------------------------------------------------
+        test_passed := not is_percent_lut_record_valid(test_lut_rec_invalid);
+        report_test("Record-based LUT validity check - invalid record", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 25: Record-based Safe Lookup - Valid Index (std_logic_vector version)
+        -----------------------------------------------------------------------
+        index_vec := std_logic_vector(to_unsigned(30, 7));
+        lookup_result := get_percentlut_value_safe(test_lut_rec_linear, index_vec);
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(30, CFG_PERCENT_LUT_DATA_WIDTH)));
+        report_test("Record-based safe lookup (vector) - valid index 30", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 26: Record-based Safe Lookup - Valid Index (natural version)
+        -----------------------------------------------------------------------
+        lookup_result := get_percentlut_value_safe(test_lut_rec_linear, 60);
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(60, CFG_PERCENT_LUT_DATA_WIDTH)));
+        report_test("Record-based safe lookup (natural) - valid index 60", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 27: Record-based Safe Lookup - Invalid Record Returns Zero
+        -----------------------------------------------------------------------
+        test_lut_rec_invalid.valid := '0'; -- Make record invalid
+        lookup_result := get_percentlut_value_safe(test_lut_rec_invalid, 50);
+        test_passed := (lookup_result = x"0000");
+        report_test("Record-based safe lookup - invalid record returns zero", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 28: Record Field Access Helper Functions
+        -----------------------------------------------------------------------
+        test_passed := (get_percent_lut_data_array(test_lut_rec_linear) = test_lut_linear);
+        report_test("Record field access - data array", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 29: Record Field Access Helper Functions - CRC
+        -----------------------------------------------------------------------
+        test_passed := (get_percent_lut_crc(test_lut_rec_linear) = calculate_percent_lut_crc(test_lut_linear));
+        report_test("Record field access - CRC", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 30: Record Field Access Helper Functions - Valid Flag
+        -----------------------------------------------------------------------
+        test_passed := (get_percent_lut_valid(test_lut_rec_linear) = '1');
+        report_test("Record field access - valid flag", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 31: Record Field Access Helper Functions - Size
+        -----------------------------------------------------------------------
+        test_passed := (get_percent_lut_size(test_lut_rec_linear) = std_logic_vector(to_unsigned(100, 7)));
+        report_test("Record field access - size", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 32: Record Update Functions - Update Data
+        -----------------------------------------------------------------------
+        test_lut_rec_linear := update_percent_lut_record_data(test_lut_rec_linear, test_lut_pattern);
+        test_passed := (test_lut_rec_linear.data_array = test_lut_pattern);
+        report_test("Record update - data update", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 33: Record Update Functions - Update Size
+        -----------------------------------------------------------------------
+        test_lut_rec_linear := update_percent_lut_record_size(test_lut_rec_linear, 50);
+        test_passed := (get_percent_lut_size(test_lut_rec_linear) = std_logic_vector(to_unsigned(50, 7)));
+        report_test("Record update - size update", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
         -----------------------------------------------------------------------
