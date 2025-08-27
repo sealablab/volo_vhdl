@@ -55,12 +55,33 @@ All VHDL modules must follow this standardized structure:
 ```
 modules/
 ├── module_name/
-│   ├── common/     # Shared packages and utilities
-│   ├── core/       # Main algorithmic/logic implementation
-│   └── top/        # Top-level integration (optional)
+│   ├── datadef/    # Data structure definitions (Tier 2 rules)
+│   ├── common/     # RTL utility packages (Tier 1 rules)
+│   ├── core/       # Main algorithmic/logic implementation (Tier 1 rules)
+│   ├── top/        # Top-level integration (Tier 1 rules, optional)
+│   └── tb/         # Testbenches (Tier 3 rules)
 ```
 
 ### Layer Responsibilities
+
+#### Data Definition Layer (`modules/**/datadef/*.vhd`) - **NEW**
+- **Purpose**: Define data structures, LUTs, and data validation utilities
+- **Rule Tier**: Tier 2 (Relaxed rules for data definition)
+- **Allowed Features**:
+  - Array type definitions for LUTs and data structures
+  - Complex constants and data initialization
+  - Data validation functions (CRC, checksums)
+  - Function overloading for data access utilities
+  - Complex utility functions for data manipulation
+- **Required**:
+  - `cfg_*` prefixes for configuration data constants
+  - Verilog conversion strategy documented in comments
+  - Clear separation from RTL logic (no clocks, state machines)
+  - No clock-dependent operations
+- **Verilog Conversion Strategy**:
+  - Array types → parameter arrays or .mem files
+  - Complex functions → separate SystemVerilog modules
+  - Function overloading → renamed functions with distinct names
 
 #### Common Layer (`modules/**/common/*.vhd`)
 - **Purpose**: Define shared types, constants, and utilities used across the module
@@ -186,40 +207,111 @@ When working on this project, consider asking:
 
 ---
 
+## Tiered Rule System
+
+The project uses a **three-tier rule system** to balance Verilog portability with practical VHDL development needs:
+
+### **Tier 1: Strict RTL Rules** 
+**Applies to**: `common/`, `core/`, `top/` directories
+
+- **Strict Verilog portability** - All code must convert cleanly to Verilog
+- **Forbidden**: Enumeration types, subtype constraints, complex functions
+- **Required**: std_logic_vector state encoding, explicit bit widths
+- **Purpose**: Synthesizable RTL that ports directly to Verilog
+
+### **Tier 2: Relaxed Data Definition Rules**
+**Applies to**: `datadef/` directories
+
+- **Relaxed rules** for pure data structure definitions
+- **Allowed**: Array types, complex constants, data validation functions
+- **Forbidden**: Clock-dependent operations, state machines, RTL logic
+- **Required**: Verilog conversion strategy documentation, `cfg_*` naming
+- **Purpose**: Data structures and utilities that can be manually converted
+
+### **Tier 3: Full VHDL-2008 Rules**
+**Applies to**: `tb/` directories  
+
+- **Full VHDL-2008 features** allowed
+- **No portability constraints** - simulation-only code
+- **Purpose**: Comprehensive testbenches and verification
+
+### Rule Selection Guidelines
+
+**Use Tier 1** for:
+- All synthesizable RTL modules
+- Interfaces between modules  
+- Platform-specific implementations
+
+**Use Tier 2** for:
+- LUT definitions and data structures
+- Configuration constants and parameters
+- Data validation utilities
+- Pure mathematical functions
+
+**Use Tier 3** for:
+- Testbenches and verification code
+- Simulation-only utilities
+- Debug and analysis functions
+
+---
+
 ## Rules Application
 
 ```yaml
 rules:
-  always_applied:
-    - type: "coding_standards"
-      scope: "all_vhdl_files"
-      description: "VHDL-2008 with Verilog portability constraints"
+  # Tier 1: Strict RTL Rules (common/, core/, top/)
+  tier1_rtl:
+    directories: ["common", "core", "top"]
+    coding_standards: "strict_verilog_portability"
+    forbidden_features:
+      - "enumeration_types"
+      - "subtype_constraints" 
+      - "records_in_ports"
+      - "wait_statements_in_rtl"
+      - "after_delays"
+      - "complex_functions"
+    required_features:
+      - "std_logic_vector_state_encoding"
+      - "explicit_bit_widths"
+      - "synchronous_processes"
+    naming_conventions:
+      signals: ["ctrl_*", "cfg_*", "stat_*"]
       
-    - type: "naming_conventions" 
-      scope: "all_signals"
-      patterns:
-        - "ctrl_*": "control signals"
-        - "cfg_*": "configuration parameters"
-        - "stat_*": "status signals"
-        
-    - type: "architecture_constraints"
-      scope: "modules"
-      structure:
-        required_dirs: ["common", "core"]
-        optional_dirs: ["top", "tb"]
-        
-    - type: "forbidden_features"
-      scope: "rtl_code"
-      items:
-        - "records_in_ports"
-        - "enumeration_types"
-        - "wait_statements"
-        - "after_delays"
-        
-    - type: "required_features"
-      scope: "testbenches"
-      outputs:
-        success: "ALL TESTS PASSED"
-        failure: "TEST FAILED" 
-        completion: "SIMULATION DONE"
+  # Tier 2: Relaxed Data Definition Rules (datadef/)  
+  tier2_datadef:
+    directories: ["datadef"]
+    coding_standards: "relaxed_for_data_structures"
+    allowed_features:
+      - "array_type_definitions"
+      - "complex_constants"
+      - "data_validation_functions"
+      - "function_overloading"
+      - "complex_utility_functions"
+    forbidden_features:
+      - "clock_dependent_operations"
+      - "state_machines"
+      - "rtl_logic"
+    required_features:
+      - "cfg_prefix_for_constants"
+      - "verilog_conversion_documentation"
+      - "no_synthesizable_logic"
+    naming_conventions:
+      constants: ["cfg_*"]
+      
+  # Tier 3: Full VHDL-2008 Rules (tb/)
+  tier3_testbench:
+    directories: ["tb"]
+    coding_standards: "full_vhdl_2008"
+    allowed_features: "all_vhdl_2008_features"
+    forbidden_features: []
+    required_outputs:
+      success: "ALL TESTS PASSED"
+      failure: "TEST FAILED"
+      completion: "SIMULATION DONE"
+      
+  # Global Architecture Rules
+  architecture:
+    required_dirs: ["common", "core"] 
+    optional_dirs: ["datadef", "top", "tb"]
+    structure_validation: true
 ```
