@@ -49,7 +49,12 @@ modules/
 ├── module_name/
 │   ├── common/     # Shared packages and utilities
 │   ├── core/       # Main algorithmic/logic implementation
-│   └── top/        # Top-level integration (optional)
+│   ├── top/        # Top-level integration (optional)
+│   └── tb/         # Testbenches organized by layer
+│       ├── common/     # Tests for common layer packages
+│       ├── core/       # Tests for core layer entities
+│       ├── top/        # Tests for top layer integration
+│       └── datadef/    # Tests for datadef packages (if applicable)
 ```
 
 ### Layer Responsibilities
@@ -109,15 +114,149 @@ modules/
 
 ## Testbench Requirements (`modules/**/tb/*.vhd`)
 
-### Allowed Features
-- VHDL-2008 features are permitted
-- `wait` statements are allowed
-- Use deterministic stimuli
+### Directory Organization
+Testbenches must be organized by the layer they test:
+- **`tb/common/`**: Test packages and utilities from `common/` layer
+- **`tb/core/`**: Test entities and modules from `core/` layer  
+- **`tb/top/`**: Test top-level integration from `top/` layer
+- **`tb/datadef/`**: Test datadef packages (special case for data definition packages)
 
-### Required Output
+### Naming Convention
+- **Testbench files**: `<original_name>_tb.vhd`
+- **Entity names**: `<original_name>_tb`
+- **Architecture names**: `behavioral` or `test`
+- **Process names**: Descriptive (e.g., `test_crc_calculation`, `test_safe_lookup`)
+
+### Allowed Features
+- VHDL-2008 features are permitted in testbenches
+- `wait` statements are allowed (but not in RTL code being tested)
+- Use deterministic stimuli patterns
+- Standard libraries: IEEE, STD.TEXTIO, IEEE.STD_LOGIC_TEXTIO
+- Helper procedures and functions for test organization
+
+### Required Output Messages
 - **Success**: Print `'ALL TESTS PASSED'`
-- **Failure**: Print `'TEST FAILED'`
+- **Failure**: Print `'TEST FAILED'` 
 - **Completion**: Always print `'SIMULATION DONE'`
+- **Progress**: Print individual test results for visibility
+
+### Test Structure Standards
+```vhdl
+-- Use helper procedures for consistent reporting
+procedure report_test(test_name : string; passed : boolean; test_num : inout natural);
+
+-- Organize tests in logical groups
+-- Group 1: Basic functionality tests
+-- Group 2: Edge case tests  
+-- Group 3: Error condition tests
+-- Group 4: Integration tests (if applicable)
+```
+
+### Package Testing Requirements
+For packages containing only functions (no entities):
+- Create a simple testbench entity that uses the package
+- Test all public functions systematically
+- Include comprehensive edge case coverage
+- Use multiple test data patterns (linear, pattern-based, edge cases)
+- Validate function overloading (if present)
+
+### GHDL Compatibility Requirements
+- Must compile with `ghdl --std=08`
+- Must elaborate without errors
+- Must run to completion with deterministic results
+- Avoid vendor-specific constructs
+- Use standard file organization for compilation order
+
+### Example Test Process Structure
+```vhdl
+test_process : process
+    variable test_passed : boolean;
+    variable test_number : natural := 0;
+begin
+    -- Test initialization
+    write(l, string'("=== TestBench Started ==="));
+    writeline(output, l);
+    
+    -- Individual tests with consistent reporting
+    test_passed := (actual_result = expected_result);
+    report_test("Test description", test_passed, test_number);
+    all_tests_passed <= all_tests_passed and test_passed;
+    
+    -- Final results
+    if all_tests_passed then
+        write(l, string'("ALL TESTS PASSED"));
+    else
+        write(l, string'("TEST FAILED"));
+    end if;
+    writeline(output, l);
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    
+    wait; -- End simulation
+end process;
+```
+
+## GHDL Compilation and Execution
+
+### Installation Requirements
+- GHDL with VHDL-2008 support
+- Recommended: GHDL 5.0+ with LLVM backend
+
+### Standard Compilation Workflow
+Execute from repository root directory:
+
+```bash
+# 1. Compile packages first (dependency order)
+ghdl -a --std=08 modules/module_name/common/*.vhd
+ghdl -a --std=08 modules/module_name/datadef/*.vhd  # if present
+
+# 2. Compile core entities
+ghdl -a --std=08 modules/module_name/core/*.vhd
+
+# 3. Compile top entities (if present)  
+ghdl -a --std=08 modules/module_name/top/*.vhd
+
+# 4. Compile testbenches
+ghdl -a --std=08 modules/module_name/tb/**/*.vhd
+
+# 5. Elaborate testbench
+ghdl -e --std=08 <testbench_entity_name>
+
+# 6. Run simulation
+ghdl -r --std=08 <testbench_entity_name>
+```
+
+### Package Testbench Example
+```bash
+# For PercentLut_pkg testbench
+ghdl -a --std=08 modules/probe_driver/datadef/PercentLut_pkg.vhd && \
+ghdl -a --std=08 modules/probe_driver/tb/datadef/PercentLut_pkg_tb.vhd && \
+ghdl -e --std=08 PercentLut_pkg_tb && \
+ghdl -r --std=08 PercentLut_pkg_tb
+```
+
+### Compilation Artifacts
+GHDL creates compilation artifacts that should be ignored in version control:
+- `work-obj*.cf` - GHDL work library files
+- `*_tb` - Elaborated testbench executables  
+- `*.o` - Object files
+- `*.exe` - Windows executables
+
+Add to `.gitignore`:
+```
+# GHDL compilation artifacts
+work-obj*.cf
+*_tb
+*.o
+*.exe
+```
+
+### Debugging Failed Compilation
+1. **Dependency Issues**: Ensure packages are compiled before entities that use them
+2. **VHDL Standard**: Always use `--std=08` flag
+3. **File Path Issues**: Use paths relative to repository root
+4. **Missing Libraries**: Ensure all required IEEE libraries are available
 
 ## Template Guidelines (`templates/**`)
 - Keep templates minimal
@@ -155,15 +294,45 @@ generic (
 ```
 
 ## Verification Checklist
-Before submitting code, ensure:
-- [ ] No VHDL-only features used
+
+### RTL Code Requirements
+Before submitting RTL code, ensure:
+- [ ] No VHDL-only features used (records, enums in RTL, etc.)
 - [ ] All ports use flat signal types
-- [ ] FSMs use vector state encoding
+- [ ] FSMs use vector state encoding with named constants
 - [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
-- [ ] Explicit bit widths specified
+- [ ] Explicit bit widths specified for all vectors
 - [ ] Synchronous processes with proper reset
-- [ ] Clear block end markers
-- [ ] Testbench prints required messages
+- [ ] Clear block end markers and consistent indentation
+- [ ] No `wait` statements in RTL code
+
+### Testbench Requirements  
+Before submitting testbenches, ensure:
+- [ ] Testbench located in correct `tb/` subdirectory matching tested layer
+- [ ] Follows naming convention: `<original_name>_tb.vhd`
+- [ ] Entity name follows convention: `<original_name>_tb`
+- [ ] Prints `'ALL TESTS PASSED'` on success
+- [ ] Prints `'TEST FAILED'` on failure
+- [ ] Always prints `'SIMULATION DONE'` at completion
+- [ ] Individual test results are reported for visibility
+- [ ] Uses deterministic test patterns
+- [ ] Compiles successfully with `ghdl --std=08`
+- [ ] Runs to completion without errors
+- [ ] Comprehensive test coverage including edge cases
+- [ ] Helper procedures used for consistent test reporting
+
+### Package Testing (if applicable)
+For package testbenches, additionally ensure:
+- [ ] All public functions are tested
+- [ ] Function overloading tested (if present)
+- [ ] Multiple test data patterns used (linear, pattern-based, edge cases)
+- [ ] Boundary conditions thoroughly tested
+- [ ] Invalid input handling verified
+
+### Documentation
+- [ ] README.md exists for testbench directory with compilation instructions
+- [ ] Test coverage and test cases are documented
+- [ ] GHDL compilation commands provided
 
 ## Questions for Clarification
 When working on this project, consider asking:

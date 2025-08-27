@@ -1,1 +1,7 @@
 *.swp
+
+# GHDL compilation artifacts
+work-obj*.cf
+*_tb
+*.o
+*.exe

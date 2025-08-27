@@ -11,7 +11,12 @@ modules/
 ├── module_name/
 │   ├── common/     # Shared packages and utilities
 │   ├── core/       # Main algorithmic/logic implementation
-│   └── top/        # Top-level integration (optional)
+│   ├── top/        # Top-level integration (optional)
+│   └── tb/         # Testbenches organized by layer
+│       ├── common/     # Tests for common layer packages
+│       ├── core/       # Tests for core layer entities
+│       ├── top/        # Tests for top layer integration
+│       └── datadef/    # Tests for datadef packages (if applicable)
 ```
 
 ## Layer Responsibilities
@@ -43,11 +48,27 @@ modules/
   - Keep top-level modules clean and focused
   - **Note**: Not all modules will require a 'top' file
 
+### Testbench Layer (`tb/`)
+- **Purpose**: Comprehensive verification of all module layers
+- **Organization**: Testbenches are organized by the layer they test
+- **Structure**:
+  - **`tb/common/`**: Test packages and utilities from `common/` layer
+  - **`tb/core/`**: Test entities and modules from `core/` layer
+  - **`tb/top/`**: Test top-level integration from `top/` layer
+  - **`tb/datadef/`**: Test datadef packages (for data definition packages)
+- **Standards**:
+  - GHDL compatible with VHDL-2008
+  - Deterministic test patterns
+  - Comprehensive coverage including edge cases
+  - Standard output messages for automation
+- **Documentation**: Each `tb/` directory must include README.md with compilation instructions
+
 ## File Naming Conventions
 
 - **`common/`** - Contains shared packages and utilities
 - **`core/`** - Contains the main algorithmic/logic implementation
 - **`top/`** - Contains top-level integration (only for top-level modules)
+- **`tb/`** - Contains testbenches with `<original_name>_tb.vhd` naming
 
 ## Example Module Structure
 
@@ -60,24 +81,56 @@ modules/
 │   ├── core/
 │   │   ├── adc_core.vhd
 │   │   └── adc_fsm.vhd
-│   └── top/
-│       └── adc_top.vhd
-├── dac_controller/
+│   ├── top/
+│   │   └── adc_top.vhd
+│   └── tb/
+│       ├── README.md
+│       ├── common/
+│       │   ├── adc_pkg_tb.vhd
+│       │   └── adc_validation_tb.vhd
+│       ├── core/
+│       │   ├── adc_core_tb.vhd
+│       │   └── adc_fsm_tb.vhd
+│       └── top/
+│           └── adc_top_tb.vhd
+├── probe_driver/
 │   ├── common/
-│   │   └── dac_pkg.vhd
-│   └── core/
-│       └── dac_core.vhd
+│   │   └── probe_common_pkg.vhd
+│   ├── datadef/
+│   │   └── PercentLut_pkg.vhd
+│   └── tb/
+│       ├── README.md
+│       ├── common/
+│       │   └── probe_common_pkg_tb.vhd
+│       └── datadef/
+│           └── PercentLut_pkg_tb.vhd
 └── system_integrator/
     ├── common/
     │   └── system_pkg.vhd
-    └── top/
-        └── system_top.vhd
+    ├── top/
+    │   └── system_top.vhd
+    └── tb/
+        ├── README.md
+        ├── common/
+        │   └── system_pkg_tb.vhd
+        └── top/
+            └── system_top_tb.vhd
 ```
 
 ## Important Notes
 
 - Not all modules require a `top/` layer
+- All modules should have a `tb/` layer for verification
 - The `common/` layer should contain reusable utilities
 - The `core/` layer should be pure logic without platform dependencies
+- The `tb/` layer must include comprehensive testbenches and README.md
 - Follow VHDL-2008 with Verilog portability guidelines
 - Use proper signal prefixes: `ctrl_*`, `cfg_*`, `stat_*`
+- Testbenches must be GHDL compatible and use deterministic patterns
+
+## Compilation and Testing
+
+For compilation instructions and testing procedures, see:
+- Individual `tb/README.md` files for module-specific instructions
+- `AGENTS.md` for comprehensive GHDL compilation guidelines
+- Project root `.gitignore` includes GHDL artifact exclusions
