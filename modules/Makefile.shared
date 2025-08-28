@@ -1,0 +1,28 @@
+# Shared Library Configuration
+# This approach compiles common modules into a shared library
+
+# Define which modules should be compiled as shared libraries
+SHARED_MODULES = clk_divider
+
+# Shared library directory
+SHARED_LIB_DIR = shared_lib
+
+# Function to compile a module to shared library
+define compile-to-shared
+	@echo "Compiling $(1) to shared library..."
+	@mkdir -p $(SHARED_LIB_DIR)
+	@$(GHDL_ANALYZE) $(MCC_TEMPLATE_DIR)/mcc-Top.vhd
+	@if [ -n "$(wildcard $(1)/common/*.vhd)" ]; then \
+		$(GHDL_ANALYZE) $(wildcard $(1)/common/*.vhd); \
+	fi
+	@if [ -n "$(wildcard $(1)/datadef/*.vhd)" ]; then \
+		$(GHDL_ANALYZE) $(wildcard $(1)/datadef/*.vhd); \
+	fi
+	@if [ -n "$(wildcard $(1)/core/*.vhd)" ]; then \
+		$(GHDL_ANALYZE) $(wildcard $(1)/core/*.vhd); \
+	fi
+	@echo "Copying shared objects to $(SHARED_LIB_DIR)/..."
+	@cp *.o $(SHARED_LIB_DIR)/ 2>/dev/null || true
+	@cp work-obj*.cf $(SHARED_LIB_DIR)/ 2>/dev/null || true
+	@echo "Shared library compilation complete for $(1)"
+endef

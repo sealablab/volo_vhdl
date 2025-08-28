@@ -1,0 +1,14 @@
+# Module Dependency Configuration
+# This file defines the build order and dependencies between modules
+
+# Define module dependencies
+# Format: MODULE_DEPS_<module_name> = <space-separated list of dependencies>
+MODULE_DEPS_clk_divider = 
+MODULE_DEPS_probe_driver = clk_divider
+
+# Define the build order (modules will be built in this order)
+MODULE_BUILD_ORDER = clk_divider probe_driver
+
+# Define which modules provide shared libraries
+# These modules will be built first and their objects will be available to dependent modules
+SHARED_MODULES = clk_divider
