@@ -29,7 +29,8 @@ volo_vhdl/
 1. **Read the Rules**: Start with `.cursor/rules` and `AGENTS.md`
 2. **Follow the Structure**: Use the standardized module layout in `modules/`
 3. **Use Templates**: Leverage pre-built templates in `templates/`
-4. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
+4. **Build and Test**: Use the Makefile in each module directory for compilation and testing
+5. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
 
 ## Key Features
 
@@ -48,6 +49,41 @@ The project uses a **three-tier rule system** to balance Verilog portability req
 - **Tier 3 (Testbenches)**: `tb/` - Full VHDL-2008 features allowed
 
 This approach ensures synthesizable RTL maintains full Verilog compatibility while allowing appropriate flexibility for data definitions and verification code. See `.cursor/rules.mdc` for complete details.
+
+## Build System
+
+Each module includes a comprehensive Makefile for GHDL compilation and testing:
+
+```bash
+# Navigate to a module directory
+cd modules/probe_driver
+
+# Clean previous builds
+make clean
+
+# Compile all modules and testbenches
+make
+
+# Run all testbenches
+make test
+
+# Run individual testbenches
+make test-probe_driver_interface
+make test-PercentLut_pkg
+make test-Moku_Voltage_pkg
+
+# Quick test (main testbench only)
+make quick-test
+
+# Show available targets
+make help
+```
+
+The Makefile automatically handles:
+- Dependency-ordered compilation (packages → core → top → testbenches)
+- GHDL VHDL-2008 standard compliance
+- Comprehensive test execution with pass/fail reporting
+- Clean build artifact management
 
 ## Recent Updates
 
