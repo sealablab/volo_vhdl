@@ -91,6 +91,14 @@ The Makefile automatically handles:
 
 ### [Unreleased] - 2025-01-27
 #### Added
+- **GHDL Testbench Development Guide**: Comprehensive guide for VHDL testbench development with GHDL
+  - Common compilation issues and solutions (procedure parameters, signal vs variable confusion)
+  - Infinite loop prevention using `std.env.stop()` instead of `wait;`
+  - Best practices for testbench design and organization
+  - Debugging techniques and GHDL-specific considerations
+  - Practical examples and quick reference commands
+  - Clear guidance on when to use complex timeout logic vs simple termination
+
 - **Direct Instantiation Requirements**: Mandatory direct instantiation for all top-level files
   - **Top Layer Files**: All `modules/**/top/*.vhd` files must use `entity WORK.module_name` pattern
   - **Top Layer Testbenches**: All `modules/**/tb/top/*.vhd` files must use direct instantiation
