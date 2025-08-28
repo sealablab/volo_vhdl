@@ -54,6 +54,38 @@ modules/
   - **Create a default status register**
   - Ideally implement as a state machine
 
+## Configuration Parameter Validation
+
+### Safety-Critical Parameters (Required Validation)
+- **Definition**: Parameters that affect module safety or core functionality
+- **Validation Requirements**:
+  - MUST be validated when module comes out of reset
+  - MUST trigger error responses (e.g., FAULT_OUT) for invalid values
+  - MUST maintain validation during runtime operation
+- **Examples**: Wave selection, operation mode, safety thresholds, data widths
+- **Error Response**: Module must enter safe state and assert error outputs
+- **Signal Naming**: Use `cfg_safety_*` prefix for clarity
+
+### Configuration Parameters (Developer Discretion)
+- **Definition**: Parameters that enhance performance, provide customization, or tune operation
+- **Validation Requirements**:
+  - Validation timing is at developer's discretion
+  - Can be runtime configurable without safety concerns
+  - Should have reasonable bounds checking
+- **Examples**: Amplitude scaling, timing adjustments, performance tuning, output ranges
+- **Error Response**: Can clamp to valid range, use default values, or ignore
+- **Signal Naming**: Use `cfg_*` prefix
+
+### Implementation Guidelines
+- **Reset Validation**: All safety-critical parameters MUST be validated on reset
+- **Continuous Monitoring**: Safety-critical parameters should be continuously monitored
+- **Error Handling**: Invalid safety-critical parameters must trigger FAULT_OUT or similar
+- **Status Reporting**: Current configuration state should be reflected in status registers
+- **Signal Distinction**: 
+  - **Control signals** (`ctrl_*`): Enable/disable, start/stop operations
+  - **Safety-critical parameters** (`cfg_safety_*`): Must be valid for safe operation
+  - **Configuration parameters** (`cfg_*`): Can be tuned/adjusted
+
 ### Top Layer (`top/`)
 - **Purpose**: Integrate multiple modules and handle system-level concerns
 - **Responsibilities**:
