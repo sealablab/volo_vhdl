@@ -19,8 +19,9 @@ use IEEE.NUMERIC_STD.ALL;
 use STD.TEXTIO.ALL;
 use IEEE.STD_LOGIC_TEXTIO.ALL;
 
--- Import the package under test
+-- Import the packages under test
 use work.PercentLut_pkg.all;
+use work.Moku_Voltage_pkg.all;
 
 entity PercentLut_pkg_tb is
     -- Testbench entity has no ports
@@ -54,8 +55,8 @@ architecture behavioral of PercentLut_pkg_tb is
         variable lut : percent_lut_data_array_t;
     begin
         -- Create a linear LUT: index 0 = 0x0000, index 1 = 0x0001, etc.
-        for i in 0 to CFG_PERCENT_LUT_SIZE-1 loop
-            lut(i) := std_logic_vector(to_unsigned(i, CFG_PERCENT_LUT_DATA_WIDTH));
+        for i in 0 to SYSTEM_PERCENT_LUT_SIZE-1 loop
+            lut(i) := std_logic_vector(to_unsigned(i, SYSTEM_PERCENT_LUT_DATA_WIDTH));
         end loop;
         return lut;
     end function;
@@ -67,7 +68,7 @@ architecture behavioral of PercentLut_pkg_tb is
         -- Create a pattern: even indices = 0xAAAA, odd indices = 0x5555
         -- except index 0 which must be 0x0000
         lut(0) := x"0000";
-        for i in 1 to CFG_PERCENT_LUT_SIZE-1 loop
+        for i in 1 to SYSTEM_PERCENT_LUT_SIZE-1 loop
             if (i mod 2) = 0 then
                 lut(i) := x"AAAA";
             else
@@ -96,10 +97,21 @@ begin
         variable test_lut_rec_invalid : percent_lut_record_t;
         variable calculated_crc : std_logic_vector(15 downto 0);
         variable wrong_crc : std_logic_vector(15 downto 0);
-        variable lookup_result : std_logic_vector(CFG_PERCENT_LUT_DATA_WIDTH-1 downto 0);
+        variable lookup_result : std_logic_vector(SYSTEM_PERCENT_LUT_DATA_WIDTH-1 downto 0);
         variable index_vec : std_logic_vector(6 downto 0);
         variable test_passed : boolean;
         variable local_test_num : natural := 0;
+        
+        -- Variables for voltage integration tests
+        variable voltage_lut : percent_lut_data_array_t;
+        variable voltage_lut_rec : percent_lut_record_t;
+        variable moku_lut : percent_lut_data_array_t;
+        variable moku_lut_rec : percent_lut_record_t;
+        variable bipolar_lut : percent_lut_data_array_t;
+        variable bipolar_lut_rec : percent_lut_record_t;
+        variable test_voltage : real;
+        variable lut_index : natural;
+        variable back_to_voltage : real;
         
     begin
         -- Print test header
@@ -163,7 +175,7 @@ begin
         -----------------------------------------------------------------------
         index_vec := std_logic_vector(to_unsigned(50, 7));
         lookup_result := get_percentlut_value_safe(test_lut_linear, index_vec);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(50, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(50, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Safe lookup (vector) - valid index 50", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -172,7 +184,7 @@ begin
         -----------------------------------------------------------------------
         index_vec := std_logic_vector(to_unsigned(100, 7));
         lookup_result := get_percentlut_value_safe(test_lut_linear, index_vec);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Safe lookup (vector) - boundary index 100", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -181,7 +193,7 @@ begin
         -----------------------------------------------------------------------
         index_vec := std_logic_vector(to_unsigned(127, 7)); -- > 100, should clamp to 100
         lookup_result := get_percentlut_value_safe(test_lut_linear, index_vec);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Safe lookup (vector) - out of bounds clamping", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -189,7 +201,7 @@ begin
         -- Test 9: Safe Lookup - Valid Index (natural version)
         -----------------------------------------------------------------------
         lookup_result := get_percentlut_value_safe(test_lut_linear, 75);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(75, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(75, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Safe lookup (natural) - valid index 75", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -205,7 +217,7 @@ begin
         -- Test 11: Safe Lookup - Out of Bounds Clamping (natural version)
         -----------------------------------------------------------------------
         lookup_result := get_percentlut_value_safe(test_lut_linear, 150);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(100, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Safe lookup (natural) - out of bounds clamping", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -311,7 +323,7 @@ begin
         -----------------------------------------------------------------------
         index_vec := std_logic_vector(to_unsigned(30, 7));
         lookup_result := get_percentlut_value_safe(test_lut_rec_linear, index_vec);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(30, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(30, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Record-based safe lookup (vector) - valid index 30", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -319,7 +331,7 @@ begin
         -- Test 26: Record-based Safe Lookup - Valid Index (natural version)
         -----------------------------------------------------------------------
         lookup_result := get_percentlut_value_safe(test_lut_rec_linear, 60);
-        test_passed := (lookup_result = std_logic_vector(to_unsigned(60, CFG_PERCENT_LUT_DATA_WIDTH)));
+        test_passed := (lookup_result = std_logic_vector(to_unsigned(60, SYSTEM_PERCENT_LUT_DATA_WIDTH)));
         report_test("Record-based safe lookup (natural) - valid index 60", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
@@ -374,6 +386,169 @@ begin
         test_lut_rec_linear := update_percent_lut_record_size(test_lut_rec_linear, 50);
         test_passed := (get_percent_lut_size(test_lut_rec_linear) = std_logic_vector(to_unsigned(50, 7)));
         report_test("Record update - size update", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- MOKU VOLTAGE INTEGRATION TESTS
+        -----------------------------------------------------------------------
+        
+        -----------------------------------------------------------------------
+        -- Test 34: Voltage to LUT Index Conversion - Valid Range
+        -----------------------------------------------------------------------
+        test_passed := (voltage_to_lut_index(2.5, 0.0, 5.0) = 50);
+        report_test("Voltage to LUT index - 2.5V in 0-5V range = index 50", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 35: Voltage to LUT Index Conversion - Boundary Values
+        -----------------------------------------------------------------------
+        test_passed := (voltage_to_lut_index(0.0, 0.0, 5.0) = 0) and 
+                       (voltage_to_lut_index(5.0, 0.0, 5.0) = 100);
+        report_test("Voltage to LUT index - boundary values (0V=0, 5V=100)", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 36: Voltage to LUT Index Conversion - Out of Range Clamping
+        -----------------------------------------------------------------------
+        test_passed := (voltage_to_lut_index(-1.0, 0.0, 5.0) = 0) and 
+                       (voltage_to_lut_index(6.0, 0.0, 5.0) = 100);
+        report_test("Voltage to LUT index - out of range clamping", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 37: LUT Index to Voltage Conversion - Valid Range
+        -----------------------------------------------------------------------
+        test_passed := (abs(lut_index_to_voltage(50, 0.0, 5.0) - 2.5) < 0.01);
+        report_test("LUT index to voltage - index 50 in 0-5V range = 2.5V", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 38: LUT Index to Voltage Conversion - Boundary Values
+        -----------------------------------------------------------------------
+        test_passed := (lut_index_to_voltage(0, 0.0, 5.0) = 0.0) and 
+                       (lut_index_to_voltage(100, 0.0, 5.0) = 5.0);
+        report_test("LUT index to voltage - boundary values (0=0V, 100=5V)", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 39: Moku Voltage to Percent Index - Unipolar Range
+        -----------------------------------------------------------------------
+        test_passed := (moku_voltage_to_percent_index(2.5) = 50);
+        report_test("Moku voltage to percent index - 2.5V = index 50", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 40: Percent Index to Moku Voltage - Unipolar Range
+        -----------------------------------------------------------------------
+        test_passed := (abs(percent_index_to_moku_voltage(50) - 2.5) < 0.01);
+        report_test("Percent index to Moku voltage - index 50 = 2.5V", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 41: Moku Bipolar Voltage to Percent Index - Bipolar Range
+        -----------------------------------------------------------------------
+        test_passed := (moku_bipolar_voltage_to_percent_index(0.0) = 50) and
+                       (moku_bipolar_voltage_to_percent_index(-2.5) = 25) and
+                       (moku_bipolar_voltage_to_percent_index(2.5) = 75);
+        report_test("Moku bipolar voltage to percent index - 0V=50, -2.5V=25, +2.5V=75", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 42: Percent Index to Moku Bipolar Voltage - Bipolar Range
+        -----------------------------------------------------------------------
+        test_passed := (abs(percent_index_to_moku_bipolar_voltage(50) - 0.0) < 0.01) and
+                       (abs(percent_index_to_moku_bipolar_voltage(25) - (-2.5)) < 0.01) and
+                       (abs(percent_index_to_moku_bipolar_voltage(75) - 2.5) < 0.01);
+        report_test("Percent index to Moku bipolar voltage - 50=0V, 25=-2.5V, 75=+2.5V", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 43: Create Voltage Percent LUT - Basic Functionality
+        -----------------------------------------------------------------------
+        voltage_lut := create_voltage_percent_lut(0.0, 5.0);
+        test_passed := (voltage_lut(0) = x"0000") and (voltage_lut(100) /= x"0000");
+        report_test("Create voltage percent LUT - basic functionality", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 44: Create Voltage Percent LUT Record - Basic Functionality
+        -----------------------------------------------------------------------
+        voltage_lut_rec := create_voltage_percent_lut_record(0.0, 5.0);
+        test_passed := (voltage_lut_rec.valid = '1') and validate_percent_lut_record(voltage_lut_rec);
+        report_test("Create voltage percent LUT record - basic functionality", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 45: Create Moku Voltage LUT - Unipolar Range
+        -----------------------------------------------------------------------
+        moku_lut := create_moku_voltage_lut(5.0);
+        test_passed := (moku_lut(0) = x"0000") and (moku_lut(100) /= x"0000");
+        report_test("Create Moku voltage LUT - unipolar 0-5V range", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 46: Create Moku Voltage LUT Record - Unipolar Range
+        -----------------------------------------------------------------------
+        moku_lut_rec := create_moku_voltage_lut_record(3.3);
+        test_passed := (moku_lut_rec.valid = '1') and validate_percent_lut_record(moku_lut_rec);
+        report_test("Create Moku voltage LUT record - unipolar 0-3.3V range", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 47: Create Moku Bipolar Voltage LUT - Bipolar Range
+        -----------------------------------------------------------------------
+        bipolar_lut := create_moku_bipolar_voltage_lut;
+        test_passed := (bipolar_lut(0) /= x"0000") and (bipolar_lut(100) /= x"0000");
+        report_test("Create Moku bipolar voltage LUT - bipolar -5V to +5V range", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 48: Create Moku Bipolar Voltage LUT Record - Bipolar Range
+        -----------------------------------------------------------------------
+        bipolar_lut_rec := create_moku_bipolar_voltage_lut_record;
+        test_passed := (bipolar_lut_rec.valid = '1') and validate_percent_lut_record(bipolar_lut_rec);
+        report_test("Create Moku bipolar voltage LUT record - bipolar -5V to +5V range", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 49: Predefined Moku LUT Constants - MOKU_5V_LUT
+        -----------------------------------------------------------------------
+        test_passed := (MOKU_5V_LUT.valid = '1') and validate_percent_lut_record(MOKU_5V_LUT);
+        report_test("Predefined MOKU_5V_LUT constant - valid and properly formed", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 50: Predefined Moku LUT Constants - MOKU_3V3_LUT
+        -----------------------------------------------------------------------
+        test_passed := (MOKU_3V3_LUT.valid = '1') and validate_percent_lut_record(MOKU_3V3_LUT);
+        report_test("Predefined MOKU_3V3_LUT constant - valid and properly formed", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 51: Predefined Moku LUT Constants - MOKU_BIPOLAR_LUT
+        -----------------------------------------------------------------------
+        test_passed := (MOKU_BIPOLAR_LUT.valid = '1') and validate_percent_lut_record(MOKU_BIPOLAR_LUT);
+        report_test("Predefined MOKU_BIPOLAR_LUT constant - valid and properly formed", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 52: Voltage Integration Round-trip Test - Unipolar
+        -----------------------------------------------------------------------
+        test_voltage := 3.7;
+        lut_index := moku_voltage_to_percent_index(test_voltage);
+        back_to_voltage := percent_index_to_moku_voltage(lut_index);
+        test_passed := (abs(back_to_voltage - test_voltage) < 0.1); -- Allow some rounding error
+        report_test("Voltage integration round-trip - unipolar 3.7V", test_passed, local_test_num);
+        all_tests_passed <= all_tests_passed and test_passed;
+        
+        -----------------------------------------------------------------------
+        -- Test 53: Voltage Integration Round-trip Test - Bipolar
+        -----------------------------------------------------------------------
+        test_voltage := -1.8;
+        lut_index := moku_bipolar_voltage_to_percent_index(test_voltage);
+        back_to_voltage := percent_index_to_moku_bipolar_voltage(lut_index);
+        test_passed := (abs(back_to_voltage - test_voltage) < 0.1); -- Allow some rounding error
+        report_test("Voltage integration round-trip - bipolar -1.8V", test_passed, local_test_num);
         all_tests_passed <= all_tests_passed and test_passed;
         
         -----------------------------------------------------------------------
