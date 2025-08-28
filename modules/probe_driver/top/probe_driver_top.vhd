@@ -1,11 +1,11 @@
 -----------------------------------------------------
 --
--- Implementation of a probe driver interface
--- Provides control, configuration, and status register exposure
--- for the ProbeDriver system. Designed for platform control
--- system integration with minimal functionality.
+-- Top-level integration module for probe_driver system
+-- Integrates probe_driver_interface with clk_divider_core
+-- Provides external interface for platform control system integration
 -- 
--- Functional interface for probe driver control and monitoring
+-- This module demonstrates proper top-level integration using direct
+-- instantiation as required by the Volo VHDL coding standards.
 ------------------------------------------------------
 
 library IEEE;
@@ -18,10 +18,14 @@ use work.PercentLut_pkg.all;
 use work.Trigger_Config_pkg.all;
 use work.Moku_Voltage_pkg.all;
 
-entity probe_driver_interface is
+entity probe_driver_top is
     port (
+        -- System clock and reset
         Clk     : in  std_logic;
         Reset   : in  std_logic;
+        
+        -- Clock divider configuration
+        cfg_clk_div_sel : in  std_logic_vector(3 downto 0);
         
         -- Control signals
         ctrl_enable          : in  std_logic;
@@ -46,21 +50,45 @@ entity probe_driver_interface is
         stat_cooldown        : out std_logic;
         stat_error           : out std_logic;
         stat_ready           : out std_logic;
-        data_intensity_out   : out std_logic_vector(15 downto 0)
+        data_intensity_out   : out std_logic_vector(15 downto 0);
+        
+        -- Clock divider status
+        stat_clk_div_status  : out std_logic_vector(7 downto 0);
+        stat_clk_en          : out std_logic
     );
 end entity;
 
-architecture behavioural of probe_driver_interface is
+architecture behavioral of probe_driver_top is
+    
+    -- Internal signals
+    signal clk_en_internal : std_logic;
+    signal clk_div_status : std_logic_vector(7 downto 0);
+    
 begin
-    -- Probe driver core instantiation
-    PROBE_DRIVER: entity work.probe_driver_core
-        generic map (
-            CLK_FREQ_MHZ => 100,
-            ENABLE_DEBUG => false
-        )
+    
+    -- =============================================================================
+    -- CLOCK DIVIDER INSTANTIATION
+    -- =============================================================================
+    
+    -- Direct instantiation of clk_divider_core (required for top layer)
+    CLK_DIVIDER: entity work.clk_divider_core
         port map (
-            ctrl_clk => Clk,
-            ctrl_rst_n => not Reset,
+            clk => Clk,
+            rst_n => not Reset,
+            div_sel => cfg_clk_div_sel,
+            clk_en => clk_en_internal,
+            stat_reg => clk_div_status
+        );
+    
+    -- =============================================================================
+    -- PROBE DRIVER INTERFACE INSTANTIATION
+    -- =============================================================================
+    
+    -- Direct instantiation of probe_driver_interface (required for top layer)
+    PROBE_DRIVER: entity work.probe_driver_interface
+        port map (
+            Clk => Clk,
+            Reset => Reset,
             ctrl_enable => ctrl_enable,
             ctrl_arm => ctrl_arm,
             ctrl_fire => ctrl_fire,
@@ -69,6 +97,7 @@ begin
             cfg_duration => cfg_duration,
             cfg_cooldown => cfg_cooldown,
             cfg_trigger_threshold => cfg_trigger_threshold,
+            data_trigger_in => data_trigger_in,
             stat_probe_state => stat_probe_state,
             stat_status_reg => stat_status_reg,
             stat_armed => stat_armed,
@@ -76,8 +105,15 @@ begin
             stat_cooldown => stat_cooldown,
             stat_error => stat_error,
             stat_ready => stat_ready,
-            data_trigger_in => data_trigger_in,
             data_intensity_out => data_intensity_out
         );
+    
+    -- =============================================================================
+    -- OUTPUT ASSIGNMENTS
+    -- =============================================================================
+    
+    -- Clock divider status outputs
+    stat_clk_div_status <= clk_div_status;
+    stat_clk_en <= clk_en_internal;
 
 end architecture;

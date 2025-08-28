@@ -2,6 +2,28 @@
 
 This directory contains the top-level integration modules for the ProbeDriver system.
 
+## Conceptual Architecture
+
+The ProbeDriver system follows a layered architecture that separates platform interface concerns from module integration:
+
+```
+┌─────────────────────────────────────┐
+│ CustomWrapper (Moku Platform)      │ ← Platform Interface
+├─────────────────────────────────────┤
+│ platform_interface_pkg.vhd         │ ← Constants & mapping
+├─────────────────────────────────────┤
+│ probe_driver_top.vhd               │ ← Module Integration (our "top")
+├─────────────────────────────────────┤
+│ probe_driver_core.vhd              │ ← Core Logic
+└─────────────────────────────────────┘
+```
+
+**Key Benefits:**
+- **"top"** = our module integration layer (combines core components)
+- **"platform_interface"** = the bridge to the vendor platform (Moku CustomWrapper)
+- **Clear separation** of concerns between platform interface and module logic
+- **Easy testing** - can test module integration without platform dependencies
+
 ## Module Structure
 
 ### `probe_driver_interface.vhd`

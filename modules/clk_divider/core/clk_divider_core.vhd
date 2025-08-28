@@ -63,10 +63,10 @@ begin
                 -- Normal division logic
                 if counter >= div_value then
                     counter <= (others => '0');
-                    clk_en_int <= '1';
+                    clk_en_int <= '1'; -- Toggle clk_en to high when count > div_value
                 else
                     counter <= counter + 1;
-                    clk_en_int <= '0';
+                    clk_en_int <= '0'; -- Toggle clk_en low when count < div_value
                 end if;
             end if;
         end if;

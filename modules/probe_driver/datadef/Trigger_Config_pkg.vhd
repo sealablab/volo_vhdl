@@ -30,6 +30,7 @@ package Trigger_Config_pkg is
     -- =============================================================================
     
     -- Constants for data widths
+
     constant TRIGGER_THRESHOLD_WIDTH : natural := 16;  -- 16-bit signed for voltage threshold
     constant TRIGGER_DURATION_WIDTH : natural := 16;   -- 16-bit unsigned for duration
     constant TRIGGER_INTENSITY_WIDTH : natural := 16;  -- 16-bit signed for voltage intensity
@@ -66,7 +67,7 @@ package Trigger_Config_pkg is
     
     -- DS1120 configuration using voltage values
     constant DS1120_CONFIG_VOLTAGE : t_trigger_config := (
-        trigger_in_threshold    => 0.00488,      -- 0x0020 = 32 / 6553.4 = 0.00488V
+        trigger_in_threshold    => 2.44488,      
         trigger_in_duration_min => 2,
         trigger_in_duration_max => 31,
         intensity_in_min        => 0.0,          -- 0x0000 = 0.0V
@@ -75,11 +76,11 @@ package Trigger_Config_pkg is
     
     -- DS1130 configuration using voltage values
     constant DS1130_CONFIG_VOLTAGE : t_trigger_config := (
-        trigger_in_threshold    => 0.00732,      -- 0x0030 = 48 / 6553.4 = 0.00732V
-        trigger_in_duration_min => 2,
+        trigger_in_threshold    => 3.3000,      
+        trigger_in_duration_min => 6,
         trigger_in_duration_max => 31,
         intensity_in_min        => 0.0,          -- 0x0000 = 0.0V
-        intensity_in_max        => 4.96          -- 0x7F00 = 32512 / 6553.4 = 4.96V
+        intensity_in_max        => 3.20          
     );
     
     -- =============================================================================
