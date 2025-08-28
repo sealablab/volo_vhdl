@@ -85,9 +85,63 @@ The Makefile automatically handles:
 - Comprehensive test execution with pass/fail reporting
 - Clean build artifact management
 
-## Recent Updates
+## Changelog
 
-### PercentLut_pkg with Moku Voltage Integration
+### [Unreleased] - 2025-01-27
+#### Added
+- **Trigger Configuration Voltage Integration**: Enhanced `Trigger_Config_pkg` with voltage-based configuration interface
+  - Voltage-based configuration using intuitive voltage values (e.g., 1.0V, 2.5V)
+  - Digital implementation interface for RTL compatibility
+  - Conversion functions between voltage and digital representations
+  - Comprehensive validation and utility functions
+  - Full integration with `Moku_Voltage_pkg` for Moku platform compatibility
+  - 18 comprehensive test cases covering all functionality
+  - Maintains backward compatibility with existing digital constants
+
+#### Changed
+- **Trigger_Config_pkg**: Complete redesign to support both voltage and digital interfaces
+  - Primary interface now uses voltage values for configuration
+  - Legacy digital constants maintained for backward compatibility
+  - Enhanced validation with tolerance-based voltage comparison (1mV tolerance)
+
+#### Technical Details
+- **Voltage Range**: Full Moku platform support (-5V to +5V)
+- **Precision**: 1mV tolerance for voltage comparisons
+- **Performance**: No floating-point operations in RTL critical path
+- **Verilog Compatibility**: Maintained through conversion functions
+
+### [v0.2.0] - 2025-01-27
+#### Added
+- **Moku_Voltage_pkg**: Comprehensive voltage conversion utilities for Moku platform
+  - 16-bit signed ADC/DAC interface support (-32768 to +32767)
+  - Voltage range: -5.0V to +5.0V with ~305 µV resolution
+  - Conversion functions: voltage ↔ digital with automatic range validation
+  - Testbench convenience functions for voltage comparison and validation
+  - Common voltage reference points (1V, 2.4V, 2.5V, 3V, 3.3V, 5V)
+  - Comprehensive testbench with 50+ test cases
+
+#### Added
+- **PercentLut_pkg**: Percentage-based lookup table utilities
+  - Efficient percentage-to-value conversion for probe driver applications
+  - Comprehensive testbench with edge case coverage
+  - Integration with Moku voltage specifications
+
+#### Added
+- **Build System**: Comprehensive Makefile-based build system for each module
+  - Dependency-ordered compilation (packages → core → top → testbenches)
+  - GHDL VHDL-2008 standard compliance
+  - Comprehensive test execution with pass/fail reporting
+  - Clean build artifact management
+
+### [v0.1.0] - 2025-01-27
+#### Added
+- **Project Foundation**: Initial VHDL project structure with Verilog portability focus
+- **Standardized Module Layout**: Common, datadef, core, top, and testbench directories
+- **VHDL-2008 Standards**: Strict coding standards for maximum Verilog compatibility
+- **Template System**: Pre-built templates for common VHDL patterns
+- **Documentation**: Comprehensive guidelines and best practices
+
+## Recent Updates
 
 The `PercentLut_pkg` has been enhanced with full integration to `Moku_Voltage_pkg`, providing seamless voltage-to-LUT conversion for the Moku platform's 16-bit signed ADC/DAC interfaces.
 
