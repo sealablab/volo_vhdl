@@ -31,6 +31,7 @@ volo_vhdl/
 3. **Use Templates**: Leverage pre-built templates in `templates/`
 4. **Build and Test**: Use the Makefile in each module directory for compilation and testing
 5. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
+6. **Direct Instantiation**: Use `entity WORK.module_name` pattern for all top-level files
 
 ## Key Features
 
@@ -39,6 +40,7 @@ volo_vhdl/
 - **Standardized Architecture**: Consistent module structure across the project
 - **AI Agent Ready**: Comprehensive guidelines for AI-assisted development
 - **Template Driven**: Reusable templates following project standards
+- **Direct Instantiation**: Mandatory `entity WORK.module_name` pattern for top-level files
 
 ## Tiered Rule System
 
@@ -89,6 +91,14 @@ The Makefile automatically handles:
 
 ### [Unreleased] - 2025-01-27
 #### Added
+- **Direct Instantiation Requirements**: Mandatory direct instantiation for all top-level files
+  - **Top Layer Files**: All `modules/**/top/*.vhd` files must use `entity WORK.module_name` pattern
+  - **Top Layer Testbenches**: All `modules/**/tb/top/*.vhd` files must use direct instantiation
+  - **Core Layer Testbenches**: Recommended to use direct instantiation for consistency
+  - **Benefits**: Better dependency management, earlier error detection, cleaner code
+  - **Pattern**: `U1: entity WORK.module_name port map (...)` instead of component declarations
+  - **Updated Guidelines**: Both AGENTS.md and .cursor/rules.mdc updated with comprehensive requirements
+
 - **Trigger Configuration Voltage Integration**: Enhanced `Trigger_Config_pkg` with voltage-based configuration interface
   - Voltage-based configuration using intuitive voltage values (e.g., 1.0V, 2.5V)
   - Digital implementation interface for RTL compatibility

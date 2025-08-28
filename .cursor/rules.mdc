@@ -62,6 +62,39 @@ modules/
 │   └── tb/         # Testbenches (Tier 3 rules)
 ```
 
+## Direct Instantiation Requirements
+
+### **Mandatory for Top Layer**
+All files in the `top/` directory (both RTL and testbenches) **MUST** use direct instantiation for internal module connections.
+
+### **Direct Instantiation Pattern**
+```vhdl
+-- ✅ Correct: Direct instantiation (required for top layer)
+U1: entity WORK.module_name
+    port map (
+        clk => clk,
+        rst => rst,
+        data_in => data_in,
+        data_out => data_out
+    );
+
+-- ❌ Forbidden in top layer: Component declaration + instantiation
+-- component module_name is ... end component;
+-- U1: module_name port map (...);
+```
+
+### **When to Use Direct Instantiation**
+- **REQUIRED**: All top-level integration files (`modules/**/top/*.vhd`)
+- **REQUIRED**: All top-level testbenches (`modules/**/tb/top/*.vhd`)
+- **RECOMMENDED**: Core layer testbenches (`modules/**/tb/core/*.vhd`)
+- **OPTIONAL**: Core layer RTL files (can use either approach)
+
+### **Benefits for Top Layer**
+- **Dependency Clarity**: Clear compilation order requirements
+- **Error Detection**: Port mismatches caught at analysis time
+- **Code Consistency**: Uniform instantiation pattern across top-level files
+- **Maintainability**: Easier to track module dependencies
+
 ### Layer Responsibilities
 
 #### Data Definition Layer (`modules/**/datadef/*.vhd`) - **NEW**
@@ -109,9 +142,12 @@ modules/
 - **Responsibilities**:
   - **External interface** - Connect to platform control system (generally a Moku CustomWrapper)
   - **Register exposure** - Expose appropriate control, configuration, and status registers
+  - **Module integration** - Connect core modules using direct instantiation
   - **Important**: DO NOT include MCC CustomWrapper entity body
   - Keep top-level modules clean and focused
   - **Note**: Not all modules will require a 'top' file
+
+**Direct Instantiation Requirement**: All internal module connections in top layer files MUST use direct instantiation (`entity WORK.module_name`) rather than component declarations.
 
 ## FSM Implementation
 - Use `std_logic_vector` for state encoding
@@ -150,6 +186,25 @@ modules/
 - **Success**: Print `'ALL TESTS PASSED'`
 - **Failure**: Print `'TEST FAILED'`
 - **Completion**: Always print `'SIMULATION DONE'`
+
+### **Direct Instantiation in Testbenches**
+- **Top Layer Testbenches**: MUST use direct instantiation for all module instantiations
+- **Core Layer Testbenches**: RECOMMENDED to use direct instantiation for consistency
+- **Datadef/Common Testbenches**: Can use either approach (no requirement)
+
+**Example Top Layer Testbench:**
+```vhdl
+architecture test of probe_driver_top_tb is
+begin
+    -- ✅ Required: Direct instantiation in top layer testbenches
+    DUT: entity WORK.probe_driver_top
+        port map (
+            clk => clk,
+            rst => rst,
+            -- ... other ports
+        );
+end architecture;
+```
 
 ## Template Guidelines (`templates/**`)
 - Keep templates minimal
@@ -196,6 +251,7 @@ Before submitting code, ensure:
 - [ ] Synchronous processes with proper reset
 - [ ] Clear block end markers
 - [ ] Testbench prints required messages
+- [ ] **Top layer files use direct instantiation for all module connections**
 
 ## Questions for Clarification
 When working on this project, consider asking:
@@ -279,6 +335,15 @@ rules:
       - "synchronous_processes"
     naming_conventions:
       signals: ["ctrl_*", "cfg_*", "stat_*"]
+      
+  # Tier 1 Top Layer: Direct Instantiation Rules
+  tier1_top_layer:
+    directories: ["top"]
+    additional_requirements:
+      - "direct_instantiation_mandatory"
+      - "entity_work_module_name_pattern"
+      - "no_component_declarations"
+    instantiation_pattern: "entity WORK.module_name"
       
   # Tier 2: Relaxed Data Definition Rules (datadef/)  
   tier2_datadef:
