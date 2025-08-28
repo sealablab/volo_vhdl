@@ -14,13 +14,13 @@ package probe_driver_pkg is
     -- =============================================================================
     -- CONSTANTS
     -- =============================================================================
-    -- Probe Configuration Constants (cfg_* prefix for configuration parameters)
-    constant CFG_INTENSITY_MAX : integer := 100;
-    constant CFG_PULSE_MIN_DURATION : unsigned(15 downto 0) := to_unsigned(100, 16);  -- 100 clock cycles minimum
-    constant CFG_COOLDOWN_MIN : unsigned(15 downto 0) := to_unsigned(1000, 16);       -- 1000 clock cycles minimum
+    -- Probe Configuration Constants (SYSTEM_* prefix for system parameters that should not be modified)
+    constant SYSTEM_INTENSITY_MAX : integer := 100;
+    constant SYSTEM_PULSE_MIN_DURATION : unsigned(15 downto 0) := to_unsigned(100, 16);  -- 100 clock cycles minimum
+    constant SYSTEM_COOLDOWN_MIN : unsigned(15 downto 0) := to_unsigned(1000, 16);       -- 1000 clock cycles minimum
     
     -- Trigger Threshold
-    constant CFG_TRIGGER_THRESHOLD : signed(15 downto 0) := to_signed(16384, 16);  -- Mid-scale for 16-bit signed
+    constant SYSTEM_TRIGGER_THRESHOLD : signed(15 downto 0) := to_signed(16384, 16);  -- Mid-scale for 16-bit signed
     
     -- =============================================================================
     -- STATE ENCODING (std_logic_vector for Verilog portability)
@@ -38,9 +38,9 @@ package probe_driver_pkg is
     constant STAT_REGISTER_WIDTH : integer := 16;
     
     -- Configuration data widths
-    constant CFG_INTENSITY_INDEX_WIDTH : integer := 7;   -- 7 bits for 0-100 range
-    constant CFG_DURATION_WIDTH : integer := 16;         -- 16 bits for consistency
-    constant CFG_COOLDOWN_WIDTH : integer := 16;         -- 16 bits for consistency
+    constant SYSTEM_INTENSITY_INDEX_WIDTH : integer := 7;   -- 7 bits for 0-100 range
+    constant SYSTEM_DURATION_WIDTH : integer := 16;         -- 16 bits for consistency
+    constant SYSTEM_COOLDOWN_WIDTH : integer := 16;         -- 16 bits for consistency
     
     -- =============================================================================
     -- FUNCTIONS
@@ -59,12 +59,12 @@ package probe_driver_pkg is
     function get_probe_status_bit(status : std_logic_vector(STAT_REGISTER_WIDTH-1 downto 0); bit_position : natural) return std_logic;
     
     -- Safe default value functions
-    function get_safe_intensity_index(intensity_in : std_logic_vector(CFG_INTENSITY_INDEX_WIDTH-1 downto 0)) return std_logic_vector;
-    function get_safe_duration(duration_in : std_logic_vector(CFG_DURATION_WIDTH-1 downto 0)) return std_logic_vector;
-    function get_safe_cooldown(cooldown_in : std_logic_vector(CFG_COOLDOWN_WIDTH-1 downto 0)) return std_logic_vector;
+    function get_safe_intensity_index(intensity_in : std_logic_vector(SYSTEM_INTENSITY_INDEX_WIDTH-1 downto 0)) return std_logic_vector;
+    function get_safe_duration(duration_in : std_logic_vector(SYSTEM_DURATION_WIDTH-1 downto 0)) return std_logic_vector;
+    function get_safe_cooldown(cooldown_in : std_logic_vector(SYSTEM_COOLDOWN_WIDTH-1 downto 0)) return std_logic_vector;
     
     -- Intensity lookup functions
-    function get_intensity_output(index : std_logic_vector(CFG_INTENSITY_INDEX_WIDTH-1 downto 0)) return signed;
+    function get_intensity_output(index : std_logic_vector(SYSTEM_INTENSITY_INDEX_WIDTH-1 downto 0)) return signed;
     
 end package probe_driver_pkg;
 
@@ -119,7 +119,7 @@ package body probe_driver_pkg is
     end function;
     
     -- Safe default value functions
-    function get_safe_intensity_index(intensity_in : std_logic_vector(CFG_INTENSITY_INDEX_WIDTH-1 downto 0)) return std_logic_vector is
+    function get_safe_intensity_index(intensity_in : std_logic_vector(SYSTEM_INTENSITY_INDEX_WIDTH-1 downto 0)) return std_logic_vector is
     begin
         if intensity_in = "0000000" then
             return "0000001";  -- Safe minimum intensity (IntensityLut[1] = smallest observable output)
@@ -128,19 +128,19 @@ package body probe_driver_pkg is
         end if;
     end function;
     
-    function get_safe_duration(duration_in : std_logic_vector(CFG_DURATION_WIDTH-1 downto 0)) return std_logic_vector is
+    function get_safe_duration(duration_in : std_logic_vector(SYSTEM_DURATION_WIDTH-1 downto 0)) return std_logic_vector is
     begin
         if duration_in = x"0000" then
-            return std_logic_vector(CFG_PULSE_MIN_DURATION);  -- Safe minimum duration
+            return std_logic_vector(SYSTEM_PULSE_MIN_DURATION);  -- Safe minimum duration
         else
             return duration_in;
         end if;
     end function;
     
-    function get_safe_cooldown(cooldown_in : std_logic_vector(CFG_COOLDOWN_WIDTH-1 downto 0)) return std_logic_vector is
+    function get_safe_cooldown(cooldown_in : std_logic_vector(SYSTEM_COOLDOWN_WIDTH-1 downto 0)) return std_logic_vector is
     begin
         if cooldown_in = x"0000" then
-            return std_logic_vector(CFG_COOLDOWN_MIN);  -- Safe minimum cooldown
+            return std_logic_vector(SYSTEM_COOLDOWN_MIN);  -- Safe minimum cooldown
         else
             return cooldown_in;
         end if;
@@ -148,7 +148,7 @@ package body probe_driver_pkg is
     
     -- Intensity lookup function using the lookup table
     -- TODO: Implement when intensity_lut_pkg.vhd is created in datadef/
-    function get_intensity_output(index : std_logic_vector(CFG_INTENSITY_INDEX_WIDTH-1 downto 0)) return signed is
+    function get_intensity_output(index : std_logic_vector(SYSTEM_INTENSITY_INDEX_WIDTH-1 downto 0)) return signed is
     begin
         -- Placeholder return - replace when intensity_lut_pkg is available
         return to_signed(0, 16);  -- Return zero for now
