@@ -1,0 +1,46 @@
+# SimpleWaveGen Module Files for MCC Compilation
+# This file lists all VHDL files needed for the SimpleWaveGen module
+
+## Common Layer (Packages)
+common/platform_interface_pkg.vhd
+common/waveform_common_pkg.vhd
+
+## Core Layer (Main Logic)
+core/SimpleWaveGen_core.vhd
+
+## Top Layer (Integration)
+top/SimpleWaveGen_top.vhd
+top/mcc-Top.vhd
+
+## Testbenches (for verification)
+tb/common/platform_interface_pkg_tb.vhd
+tb/common/waveform_common_pkg_tb.vhd
+tb/core/SimpleWaveGen_core_tb.vhd
+tb/top/SimpleWaveGen_top_tb.vhd
+
+## External Dependencies (from other modules)
+../clk_divider/core/clk_divider_core.vhd
+
+## Compilation Order for MCC:
+# 1. Compile packages first
+#    - common/platform_interface_pkg.vhd
+#    - common/waveform_common_pkg.vhd
+# 2. Compile external dependencies
+#    - ../clk_divider/core/clk_divider_core.vhd
+# 3. Compile core entities
+#    - core/SimpleWaveGen_core.vhd
+# 4. Compile top entities
+#    - top/SimpleWaveGen_top.vhd
+#    - top/mcc-Top.vhd
+# 5. Compile testbenches (optional for MCC)
+#    - tb/common/*.vhd
+#    - tb/core/*.vhd
+#    - tb/top/*.vhd
+
+## Notes:
+# - All files use VHDL-2008 standard
+# - Direct instantiation is used in top layer
+# - Package dependencies are properly managed
+# - Testbenches are included for verification but may not be needed for MCC
+# - mcc-Top.vhd implements the CustomWrapper entity for MCC platform integration
+# - CustomWrapper maps MCC Control registers to SimpleWaveGen_top interface

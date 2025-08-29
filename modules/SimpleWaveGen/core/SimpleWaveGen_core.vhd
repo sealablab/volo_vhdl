@@ -6,6 +6,8 @@
 library IEEE;
 use IEEE.Std_Logic_1164.all;
 use IEEE.Numeric_Std.all;
+use WORK.platform_interface_pkg.all;
+use WORK.waveform_common_pkg.all;
 
 entity SimpleWaveGen_core is
     generic (
@@ -30,11 +32,6 @@ entity SimpleWaveGen_core is
 end entity SimpleWaveGen_core;
 
 architecture rtl of SimpleWaveGen_core is
-    
-    -- Wave selection constants
-    constant WAVE_SQUARE    : std_logic_vector(2 downto 0) := "000";
-    constant WAVE_TRIANGLE  : std_logic_vector(2 downto 0) := "001";
-    constant WAVE_SINE      : std_logic_vector(2 downto 0) := "010";
     
     -- State machine states for triangle wave
     constant TRI_STATE_UP   : std_logic_vector(1 downto 0) := "00";
@@ -62,35 +59,10 @@ architecture rtl of SimpleWaveGen_core is
     -- Status register
     signal status_reg           : std_logic_vector(7 downto 0);
     
-    -- Sine lookup table (128 points covering 0° to 360°)
-    type sine_lut_type is array (0 to 127) of std_logic_vector(15 downto 0);
-    constant sine_lut : sine_lut_type := (
-        x"0000", x"0324", x"0647", x"096A", x"0C8B", x"0FAB", x"12C8", x"15E2",
-        x"18F8", x"1C0B", x"1F19", x"2223", x"2528", x"2826", x"2B1F", x"2E11",
-        x"30FB", x"33DE", x"36BA", x"398C", x"3C56", x"3F17", x"41CE", x"447A",
-        x"471C", x"49B4", x"4C3F", x"4EBF", x"5133", x"539B", x"55F5", x"5842",
-        x"5A82", x"5CB4", x"5ED7", x"60EC", x"62F2", x"64E8", x"66CF", x"68A6",
-        x"6A6D", x"6C24", x"6DCA", x"6F5F", x"70E2", x"7254", x"73B5", x"7504",
-        x"7641", x"776C", x"7884", x"798A", x"7A7D", x"7B5D", x"7C29", x"7CE2",
-        x"7D89", x"7E1C", x"7E9C", x"7F09", x"7F62", x"7FA7", x"7FD8", x"7FF6",
-        x"7FFF", x"7FF6", x"7FD8", x"7FA7", x"7F62", x"7F09", x"7E9C", x"7E1C",
-        x"7D89", x"7CE2", x"7C29", x"7B5D", x"7A7D", x"798A", x"7884", x"776C",
-        x"7641", x"7504", x"73B5", x"7254", x"70E2", x"6F5F", x"6DCA", x"6C24",
-        x"6A6D", x"68A6", x"66CF", x"64E8", x"62F2", x"60EC", x"5ED7", x"5CB4",
-        x"5A82", x"5842", x"55F5", x"539B", x"5133", x"4EBF", x"4C3F", x"49B4",
-        x"471C", x"447A", x"41CE", x"3F17", x"3C56", x"398C", x"36BA", x"33DE",
-        x"30FB", x"2E11", x"2B1F", x"2826", x"2528", x"2223", x"1F19", x"1C0B",
-        x"18F8", x"15E2", x"12C8", x"0FAB", x"0C8B", x"096A", x"0647", x"0324"
-    );
-    
 begin
     
-    -- Safety-critical parameter validation
-    -- cfg_safety_wave_select MUST be validated on reset and continuously monitored
-    wave_select_valid <= '1' when (cfg_safety_wave_select = WAVE_SQUARE) or
-                                  (cfg_safety_wave_select = WAVE_TRIANGLE) or
-                                  (cfg_safety_wave_select = WAVE_SINE)
-                        else '0';
+    -- Safety-critical parameter validation using platform interface package
+    wave_select_valid <= is_wave_select_valid(cfg_safety_wave_select);
     
     -- Main synchronous process
     process(clk, rst)
@@ -114,7 +86,7 @@ begin
             -- Update enable register
             enabled_reg <= en;
             
-            -- Validate safety-critical parameters
+            -- Validate safety-critical parameters using package function
             if wave_select_valid = '1' then
                 wave_select_reg <= cfg_safety_wave_select;
                 fault_reg <= '0';
@@ -127,7 +99,7 @@ begin
             if (enabled_reg = '1') and (clk_en = '1') then
                 
                 case wave_select_reg is
-                    when WAVE_SQUARE =>
+                    when WAVE_SELECT_SQUARE =>
                         -- Square wave: toggle between high and low
                         square_toggle <= not square_toggle;
                         if square_toggle = '1' then
@@ -136,7 +108,7 @@ begin
                             square_output <= std_logic_vector(to_signed(VOUT_MIN, 16));
                         end if;
                         
-                    when WAVE_TRIANGLE =>
+                    when WAVE_SELECT_TRIANGLE =>
                         -- Triangle wave: ramp up then down
                         case triangle_state is
                             when TRI_STATE_UP =>
@@ -161,14 +133,10 @@ begin
                         end case;
                         triangle_output <= std_logic_vector(triangle_counter);
                         
-                    when WAVE_SINE =>
-                        -- Sine wave: use lookup table
-                        if sine_phase >= 127 then
-                            sine_phase <= (others => '0');
-                        else
-                            sine_phase <= sine_phase + 1;
-                        end if;
-                        sine_output <= sine_lut(to_integer(sine_phase));
+                    when WAVE_SELECT_SINE =>
+                        -- Sine wave: use shared lookup table from waveform package
+                        sine_phase <= next_sine_phase(sine_phase);
+                        sine_output <= get_sine_value(sine_phase);
                         
                     when others =>
                         -- Invalid selection - maintain last output
@@ -187,9 +155,9 @@ begin
     end process;
     
     -- Output assignments
-    wave_out <= square_output when wave_select_reg = WAVE_SQUARE else
-                triangle_output when wave_select_reg = WAVE_TRIANGLE else
-                sine_output when wave_select_reg = WAVE_SINE else
+    wave_out <= square_output when wave_select_reg = WAVE_SELECT_SQUARE else
+                triangle_output when wave_select_reg = WAVE_SELECT_TRIANGLE else
+                sine_output when wave_select_reg = WAVE_SELECT_SINE else
                 (others => '0');  -- Default to zero for invalid selections
     
     fault_out <= fault_reg;
