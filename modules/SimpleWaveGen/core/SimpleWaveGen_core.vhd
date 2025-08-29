@@ -6,7 +6,6 @@
 library IEEE;
 use IEEE.Std_Logic_1164.all;
 use IEEE.Numeric_Std.all;
-use WORK.Moku_Voltage_pkg.all;
 
 entity SimpleWaveGen_core is
     generic (

@@ -7,7 +7,6 @@
 library IEEE;
 use IEEE.Std_Logic_1164.all;
 use IEEE.Numeric_Std.all;
-use WORK.Moku_Voltage_pkg.all;
 use WORK.platform_interface_pkg.all;
 
 entity SimpleWaveGen_top is
