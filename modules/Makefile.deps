@@ -5,9 +5,10 @@
 # Format: MODULE_DEPS_<module_name> = <space-separated list of dependencies>
 MODULE_DEPS_clk_divider = 
 MODULE_DEPS_probe_driver = clk_divider
+MODULE_DEPS_SimpleWaveGen = clk_divider
 
 # Define the build order (modules will be built in this order)
-MODULE_BUILD_ORDER = clk_divider probe_driver
+MODULE_BUILD_ORDER = clk_divider probe_driver SimpleWaveGen
 
 # Define which modules provide shared libraries
 # These modules will be built first and their objects will be available to dependent modules
