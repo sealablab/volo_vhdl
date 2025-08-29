@@ -2,6 +2,12 @@
 
 This document chronicles our journey developing the SimpleWaveGen module, from initial GHDL simulation testing to successful deployment on the Moku device. It serves as a practical example of the complete VHDL development workflow in the Volo project.
 
+## 📦 **Download Working Bitstream**
+
+**[🚀 SimpleWaveGen-001-b.tar (2.0MB)](static/SimpleWaveGen-001-b.tar)**
+
+**This is a REAL, WORKING bitstream that has been successfully deployed and tested on a Moku device.** It's not just simulation - it's actual hardware generating waveforms right now!
+
 ## 📋 Development Overview
 
 **Module**: SimpleWaveGen  

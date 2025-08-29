@@ -2,6 +2,23 @@
 
 Johnny's evolving AI VHDL generation workflow designed for **VHDL-2008 with Verilog portability**.
 
+## 🚀 **Working Example: SimpleWaveGen Bitstream**
+
+**✅ SUCCESSFULLY DEPLOYED AND TESTED ON MOKU DEVICE!**
+
+We have a **working, tested bitstream** that demonstrates the complete VHDL development workflow:
+
+**[📦 Download SimpleWaveGen-001-b.tar (2.0MB)](static/SimpleWaveGen-001-b.tar)**
+
+This bitstream generates configurable sine, square, and triangle waveforms with real-time control through the Moku Custom Core interface. See our complete development journey in **[GHDL-to-MCC-example.md](GHDL-to-MCC-example.md)** - from GHDL testing to successful deployment in ~4 hours.
+
+**Key Features:**
+- ✅ **Working MCC Integration** - Deployed and tested on Moku device
+- ✅ **VHDL-2008 Compliance** - Following project coding standards  
+- ✅ **Verilog Portability** - Designed for easy conversion
+- ✅ **Complete Testing** - All layers covered with testbenches
+- ✅ **Real Hardware** - Not just simulation - actual working device
+
 ## Project Structure
 
 ```
