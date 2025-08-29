@@ -76,7 +76,7 @@ begin
         
         -- Test 1: Create voltage-based configuration
         voltage_config := (
-            probe_in_threshold    => 1.0,  -- 1V threshold
+            probe_trigger_voltage => 1.0,  -- 1V trigger voltage
             probe_in_duration_min => 5,    -- 5 clock cycles
             probe_in_duration_max => 20,   -- 20 clock cycles
             intensity_in_min        => 0.5,  -- 0.5V min intensity
@@ -88,7 +88,7 @@ begin
         
         -- Test 2: Create digital configuration
         digital_config := (
-            probe_in_threshold    => x"199A",  -- 1V threshold (0x199A)
+            probe_trigger_voltage => x"199A",  -- 1V trigger voltage (0x199A)
             probe_in_duration_min => 10,       -- 10 clock cycles
             probe_in_duration_max => 50,       -- 50 clock cycles
             intensity_in_min        => x"0CCD",  -- 0.5V min intensity (0x0CCD)
@@ -100,7 +100,7 @@ begin
         
         -- Test 3: Validate generic voltage configuration
         voltage_config := (
-            probe_in_threshold    => 2.5,  -- 2.5V threshold
+            probe_trigger_voltage => 2.5,  -- 2.5V trigger voltage
             probe_in_duration_min => 3,    -- 3 clock cycles
             probe_in_duration_max => 25,   -- 25 clock cycles
             intensity_in_min        => 1.0,  -- 1.0V min intensity
@@ -112,7 +112,7 @@ begin
         
         -- Test 4: Validate generic digital configuration
         digital_config := (
-            probe_in_threshold    => x"4000",  -- 2.5V threshold
+            probe_trigger_voltage => x"4000",  -- 2.5V trigger voltage
             probe_in_duration_min => 5,        -- 5 clock cycles
             probe_in_duration_max => 30,       -- 30 clock cycles
             intensity_in_min        => x"199A",  -- 1.0V min intensity
@@ -151,7 +151,7 @@ begin
         
         -- Test 8: Generic configuration conversion accuracy (using tolerance-based comparison)
         voltage_config := (
-            probe_in_threshold    => 1.5,  -- 1.5V threshold
+            probe_trigger_voltage => 1.5,  -- 1.5V trigger voltage
             probe_in_duration_min => 4,    -- 4 clock cycles
             probe_in_duration_max => 28,   -- 28 clock cycles
             intensity_in_min        => 0.8,  -- 0.8V min intensity
@@ -174,7 +174,7 @@ begin
         
         -- Test 9: Invalid voltage configuration (out of range)
         voltage_config := (
-            probe_in_threshold    => 10.0,  -- Invalid: > 5V
+            probe_trigger_voltage => 10.0,  -- Invalid: > 5V
             probe_in_duration_min => 5,
             probe_in_duration_max => 20,
             intensity_in_min        => 0.5,
@@ -186,7 +186,7 @@ begin
         
         -- Test 10: Invalid duration configuration
         voltage_config := (
-            probe_in_threshold    => 1.0,
+            probe_trigger_voltage => 1.0,
             probe_in_duration_min => 20,   -- Invalid: min > max
             probe_in_duration_max => 5,
             intensity_in_min        => 0.5,
@@ -198,7 +198,7 @@ begin
         
         -- Test 11: Invalid intensity configuration
         voltage_config := (
-            probe_in_threshold    => 1.0,
+            probe_trigger_voltage => 1.0,
             probe_in_duration_min => 5,
             probe_in_duration_max => 20,
             intensity_in_min        => 2.5,  -- Invalid: min > max
@@ -210,7 +210,7 @@ begin
         
         -- Test 12: Zero duration validation
         voltage_config := (
-            probe_in_threshold    => 1.0,
+            probe_trigger_voltage => 1.0,
             probe_in_duration_min => 0,    -- Invalid: zero duration
             probe_in_duration_max => 20,
             intensity_in_min        => 0.5,
@@ -249,7 +249,7 @@ begin
         
         -- Test 15: Configuration equality comparison
         voltage_config := (
-            probe_in_threshold    => 1.0,
+            probe_trigger_voltage => 1.0,
             probe_in_duration_min => 5,
             probe_in_duration_max => 20,
             intensity_in_min        => 0.5,
@@ -274,7 +274,7 @@ begin
         
         -- Test 17: Voltage conversion using Moku constants
         voltage_config := (
-            probe_in_threshold    => MOKU_VOLTAGE_1V,      -- 1.0V
+            probe_trigger_voltage => MOKU_VOLTAGE_1V,      -- 1.0V
             probe_in_duration_min => 5,
             probe_in_duration_max => 20,
             intensity_in_min        => MOKU_VOLTAGE_2V5,     -- 2.5V
@@ -286,7 +286,7 @@ begin
         
         -- Test 18: Verify voltage-to-digital conversion matches Moku constants
         converted_digital := probe_config_to_digital(voltage_config);
-        test_passed := (converted_digital.probe_in_threshold = std_logic_vector(MOKU_DIGITAL_1V)) and
+        test_passed := (converted_digital.probe_trigger_voltage = std_logic_vector(MOKU_DIGITAL_1V)) and
                        (converted_digital.intensity_in_min = std_logic_vector(MOKU_DIGITAL_2V5)) and
                        (converted_digital.intensity_in_max = std_logic_vector(MOKU_DIGITAL_3V3));
         report_test("Voltage conversion matches Moku digital constants", test_passed, test_number);

@@ -41,7 +41,7 @@ package Probe_Config_pkg is
     
     -- Primary probe configuration using voltage values (configuration layer)
     type t_probe_config is record
-        probe_in_threshold    : real;  -- Voltage threshold in volts
+        probe_trigger_voltage : real;  -- Voltage to output to trigger the probe
         probe_in_duration_min : natural;  -- Duration in clock cycles
         probe_in_duration_max : natural;  -- Duration in clock cycles
         intensity_in_min        : real;  -- Minimum intensity voltage in volts
@@ -54,7 +54,7 @@ package Probe_Config_pkg is
     
     -- Digital representation for RTL implementation (internal use)
     type t_probe_config_digital is record
-        probe_in_threshold    : std_logic_vector(PROBE_THRESHOLD_WIDTH-1 downto 0);
+        probe_trigger_voltage : std_logic_vector(PROBE_THRESHOLD_WIDTH-1 downto 0);
         probe_in_duration_min : natural;  -- Duration in clock cycles
         probe_in_duration_max : natural;  -- Duration in clock cycles
         intensity_in_min        : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
@@ -104,8 +104,8 @@ package body Probe_Config_pkg is
     function probe_config_to_digital(config : t_probe_config) return t_probe_config_digital is
         variable digital_config : t_probe_config_digital;
     begin
-        -- Convert voltage threshold to digital using Moku voltage package
-        digital_config.probe_in_threshold := voltage_to_digital_vector(config.probe_in_threshold);
+        -- Convert trigger voltage to digital using Moku voltage package
+        digital_config.probe_trigger_voltage := voltage_to_digital_vector(config.probe_trigger_voltage);
         
         -- Duration values remain the same (natural type)
         digital_config.probe_in_duration_min := config.probe_in_duration_min;
@@ -121,8 +121,8 @@ package body Probe_Config_pkg is
     function digital_to_probe_config(digital_config : t_probe_config_digital) return t_probe_config is
         variable config : t_probe_config;
     begin
-        -- Convert digital threshold to voltage using Moku voltage package
-        config.probe_in_threshold := digital_to_voltage(digital_config.probe_in_threshold);
+        -- Convert digital trigger voltage to voltage using Moku voltage package
+        config.probe_trigger_voltage := digital_to_voltage(digital_config.probe_trigger_voltage);
         
         -- Duration values remain the same (natural type)
         config.probe_in_duration_min := digital_config.probe_in_duration_min;
@@ -142,7 +142,7 @@ package body Probe_Config_pkg is
     function is_valid_probe_config(config : t_probe_config) return boolean is
     begin
         -- Check voltage ranges using Moku voltage package
-        if not is_valid_moku_voltage(config.probe_in_threshold) then
+        if not is_valid_moku_voltage(config.probe_trigger_voltage) then
             return false;
         end if;
         
@@ -174,7 +174,7 @@ package body Probe_Config_pkg is
     function is_valid_probe_config_digital(digital_config : t_probe_config_digital) return boolean is
     begin
         -- Check digital value ranges using Moku voltage package
-        if not is_valid_moku_digital(digital_config.probe_in_threshold) then
+        if not is_valid_moku_digital(digital_config.probe_trigger_voltage) then
             return false;
         end if;
         
@@ -210,7 +210,7 @@ package body Probe_Config_pkg is
     function probe_config_to_string(config : t_probe_config) return string is
     begin
         return "ProbeConfig(" &
-               real'image(config.probe_in_threshold) & "V, " &
+               real'image(config.probe_trigger_voltage) & "V, " &
                integer'image(config.probe_in_duration_min) & ", " &
                integer'image(config.probe_in_duration_max) & ", " &
                real'image(config.intensity_in_min) & "V, " &
@@ -220,7 +220,7 @@ package body Probe_Config_pkg is
     function probe_config_digital_to_string(digital_config : t_probe_config_digital) return string is
     begin
         return "ProbeConfig(" &
-               digital_to_string(digital_config.probe_in_threshold) & ", " &
+               digital_to_string(digital_config.probe_trigger_voltage) & ", " &
                integer'image(digital_config.probe_in_duration_min) & ", " &
                integer'image(digital_config.probe_in_duration_max) & ", " &
                digital_to_string(digital_config.intensity_in_min) & ", " &
@@ -231,7 +231,7 @@ package body Probe_Config_pkg is
         constant TOLERANCE : real := 0.001;  -- 1 mV tolerance for voltage comparison (accounts for conversion precision)
     begin
         -- Compare voltage values with tolerance
-        if abs(config1.probe_in_threshold - config2.probe_in_threshold) > TOLERANCE then
+        if abs(config1.probe_trigger_voltage - config2.probe_trigger_voltage) > TOLERANCE then
             return false;
         end if;
         
@@ -257,7 +257,7 @@ package body Probe_Config_pkg is
     function probe_configs_digital_equal(digital_config1, digital_config2 : t_probe_config_digital) return boolean is
     begin
         -- Direct digital value comparison
-        if digital_config1.probe_in_threshold /= digital_config2.probe_in_threshold then
+        if digital_config1.probe_trigger_voltage /= digital_config2.probe_trigger_voltage then
             return false;
         end if;
         
