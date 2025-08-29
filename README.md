@@ -41,6 +41,8 @@ volo_vhdl/
 - **AI Agent Ready**: Comprehensive guidelines for AI-assisted development
 - **Template Driven**: Reusable templates following project standards
 - **Direct Instantiation**: Mandatory `entity WORK.module_name` pattern for top-level files
+- **Platform Interface Packages**: Standardized register interface design patterns
+- **Automated Build System**: Centralized dependency management and compilation
 
 ## Tiered Rule System
 
@@ -52,8 +54,60 @@ The project uses a **three-tier rule system** to balance Verilog portability req
 
 This approach ensures synthesizable RTL maintains full Verilog compatibility while allowing appropriate flexibility for data definitions and verification code. See `.cursor/rules.mdc` for complete details.
 
+## Platform Interface Package Approach
+
+The project introduces a **standardized platform interface package approach** for register interface design:
+
+### Key Components
+- **Register Field Constants**: Bit position definitions for all register fields
+- **Validation Functions**: Safety-critical parameter validation with fault triggering
+- **Field Extraction**: Functions to extract specific fields from register data
+- **Status Assembly**: Automatic construction of status registers from internal signals
+- **Fault Aggregation**: Centralized fault handling across multiple sources
+
+### Benefits
+- **Consistency**: Standardized approach across all modules
+- **Maintainability**: Centralized register interface logic
+- **Verilog Compatibility**: All functions use standard types
+- **Reusability**: Can be applied to other modules requiring register interfaces
+- **Safety**: Built-in validation prevents invalid configurations
+
+### Example Usage
+```vhdl
+-- Import the platform interface package
+use work.platform_interface_pkg.all;
+
+-- Validate wave selection (safety-critical)
+if is_wave_select_valid(wave_select) = '0' then
+    fault_out <= '1';  -- Trigger fault for invalid selection
+end if;
+
+-- Extract control fields from register data
+global_enable <= extract_ctrl_global_enable(ctrl0_data);
+div_sel <= extract_clk_div_sel(ctrl0_data);
+
+-- Assemble status register
+status_reg <= assemble_status0_reg(enabled, wave_select);
+```
+
 ## Build System
 
+The project features an **automated build system** that automatically detects and builds all modules:
+
+### Centralized Build Management
+```bash
+# From modules/ directory - build all modules with dependencies
+cd modules
+make clean && make compile && make test
+
+# List all available modules
+make list-modules
+
+# Build specific module
+make compile-single-module MODULE_NAME=SimpleWaveGen
+```
+
+### Module-Level Build
 Each module includes a comprehensive Makefile for GHDL compilation and testing:
 
 ```bash
@@ -91,6 +145,24 @@ The Makefile automatically handles:
 
 ### [Unreleased] - 2025-01-27
 #### Added
+- **SimpleWaveGen Module**: Complete waveform generation module with automated build system integration
+  - **Standardized Architecture**: Follows project directory structure (common, core, top, tb)
+  - **Platform Interface Package**: `platform_interface_pkg.vhd` for register interface management
+  - **Minimal Testbench Strategy**: Core testbench for functionality, top testbench for integration
+  - **Automated Build Integration**: Automatically detected and built by central build system
+  - **VHDL-2008 Compliance**: Full compatibility with GHDL and Verilog portability
+  - **Direct Instantiation**: Uses `entity WORK.module_name` pattern as required
+  - **Comprehensive Makefile**: Dependency management and test execution
+
+- **Platform Interface Package Approach**: New standardized method for register interface design
+  - **Register Field Management**: Bit position constants and field extraction functions
+  - **Safety-Critical Validation**: Built-in parameter validation with fault triggering
+  - **Status Register Assembly**: Automatic status register construction from internal signals
+  - **Amplitude Scaling**: Integrated amplitude scaling with signed arithmetic
+  - **Fault Aggregation**: Centralized fault handling across multiple sources
+  - **Verilog Compatibility**: All functions use standard types for easy conversion
+  - **Reusable Pattern**: Can be applied to other modules requiring register interfaces
+
 - **GHDL Testbench Development Guide**: Comprehensive guide for VHDL testbench development with GHDL
   - Common compilation issues and solutions (procedure parameters, signal vs variable confusion)
   - Infinite loop prevention using `std.env.stop()` instead of `wait;`
