@@ -18,7 +18,7 @@ use IEEE.Numeric_Std.all;
 -- Import probe_driver packages
 use work.probe_driver_pkg.all;
 use work.PercentLut_pkg.all;
-use work.Trigger_Config_pkg.all;
+use work.Probe_Config_pkg.all;
 use work.Moku_Voltage_pkg.all;
 
 architecture behavioural of CustomWrapper is

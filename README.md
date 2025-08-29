@@ -196,7 +196,7 @@ The Makefile automatically handles:
   - **Pattern**: `U1: entity WORK.module_name port map (...)` instead of component declarations
   - **Updated Guidelines**: Both AGENTS.md and .cursor/rules.mdc updated with comprehensive requirements
 
-- **Trigger Configuration Voltage Integration**: Enhanced `Trigger_Config_pkg` with voltage-based configuration interface
+- **Probe Configuration Voltage Integration**: Enhanced `Probe_Config_pkg` with voltage-based configuration interface
   - Voltage-based configuration using intuitive voltage values (e.g., 1.0V, 2.5V)
   - Digital implementation interface for RTL compatibility
   - Conversion functions between voltage and digital representations
@@ -206,7 +206,7 @@ The Makefile automatically handles:
   - Maintains backward compatibility with existing digital constants
 
 #### Changed
-- **Trigger_Config_pkg**: Complete redesign to support both voltage and digital interfaces
+- **Probe_Config_pkg**: Complete redesign to support both voltage and digital interfaces
   - Primary interface now uses voltage values for configuration
   - Legacy digital constants maintained for backward compatibility
   - Enhanced validation with tolerance-based voltage comparison (1mV tolerance)

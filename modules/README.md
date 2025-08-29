@@ -188,7 +188,7 @@ Records must be convertible to:
 
 ### Example Implementation
 ```vhdl
--- datadef/Trigger_Config_pkg.vhd
+-- datadef/Probe_Config_pkg.vhd
 type t_trigger_config is record
     trigger_threshold    : std_logic_vector(15 downto 0);
     duration_min         : natural;
