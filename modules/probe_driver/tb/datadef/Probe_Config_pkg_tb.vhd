@@ -98,22 +98,28 @@ begin
         report_test("Create and validate digital configuration", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         
-        -- Test 3: Validate predefined voltage constants
-        test_passed := is_valid_probe_config(DS1120_CONFIG_VOLTAGE);
-        report_test("Validate DS1120 voltage configuration", test_passed, test_number);
+        -- Test 3: Validate generic voltage configuration
+        voltage_config := (
+            probe_in_threshold    => 2.5,  -- 2.5V threshold
+            probe_in_duration_min => 3,    -- 3 clock cycles
+            probe_in_duration_max => 25,   -- 25 clock cycles
+            intensity_in_min        => 1.0,  -- 1.0V min intensity
+            intensity_in_max        => 4.0   -- 4.0V max intensity
+        );
+        test_passed := is_valid_probe_config(voltage_config);
+        report_test("Validate generic voltage configuration", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         
-        test_passed := is_valid_probe_config(DS1130_CONFIG_VOLTAGE);
-        report_test("Validate DS1130 voltage configuration", test_passed, test_number);
-        all_tests_passed <= all_tests_passed and test_passed;
-        
-        -- Test 4: Validate predefined digital constants
-        test_passed := is_valid_probe_config_digital(DS1120_CONFIG);
-        report_test("Validate DS1120 digital configuration", test_passed, test_number);
-        all_tests_passed <= all_tests_passed and test_passed;
-        
-        test_passed := is_valid_probe_config_digital(DS1130_CONFIG);
-        report_test("Validate DS1130 digital configuration", test_passed, test_number);
+        -- Test 4: Validate generic digital configuration
+        digital_config := (
+            probe_in_threshold    => x"4000",  -- 2.5V threshold
+            probe_in_duration_min => 5,        -- 5 clock cycles
+            probe_in_duration_max => 30,       -- 30 clock cycles
+            intensity_in_min        => x"199A",  -- 1.0V min intensity
+            intensity_in_max        => x"6666"   -- 4.0V max intensity
+        );
+        test_passed := is_valid_probe_config_digital(digital_config);
+        report_test("Validate generic digital configuration", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         
         -- =============================================================================
@@ -143,12 +149,19 @@ begin
         report_test("Round-trip conversion accuracy", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         
-        -- Test 8: Predefined constant conversion accuracy (using tolerance-based comparison)
-        converted_digital := probe_config_to_digital(DS1120_CONFIG_VOLTAGE);
+        -- Test 8: Generic configuration conversion accuracy (using tolerance-based comparison)
+        voltage_config := (
+            probe_in_threshold    => 1.5,  -- 1.5V threshold
+            probe_in_duration_min => 4,    -- 4 clock cycles
+            probe_in_duration_max => 28,   -- 28 clock cycles
+            intensity_in_min        => 0.8,  -- 0.8V min intensity
+            intensity_in_max        => 3.2   -- 3.2V max intensity
+        );
+        converted_digital := probe_config_to_digital(voltage_config);
         -- Convert back to voltage and compare with tolerance instead of exact digital equality
         converted_voltage := digital_to_probe_config(converted_digital);
-        test_passed := probe_configs_equal(DS1120_CONFIG_VOLTAGE, converted_voltage);
-        report_test("DS1120 voltage to digital conversion accuracy", test_passed, test_number);
+        test_passed := probe_configs_equal(voltage_config, converted_voltage);
+        report_test("Generic voltage to digital conversion accuracy", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         
         -- =============================================================================
