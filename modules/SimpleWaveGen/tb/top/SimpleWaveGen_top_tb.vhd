@@ -35,6 +35,9 @@ architecture test of SimpleWaveGen_top_tb is
     -- Test control signals
     signal all_tests_passed : boolean := true;
     
+    -- VCD file generation
+    signal vcd_file_open : boolean := false;
+    
     -- Clock period and timing constants
     constant CLK_PERIOD     : time := 10 ns;
     constant RESET_TIME     : time := CLK_PERIOD * 2;
@@ -67,6 +70,17 @@ begin
     
     -- Clock generation
     clk <= not clk after CLK_PERIOD/2;
+    
+    -- VCD file generation process
+    vcd_process : process
+    begin
+        -- Open VCD file for GTKWave
+        vcd_file_open <= true;
+        wait for 1 ns; -- Small delay to ensure file opens
+        
+        -- Keep process alive during simulation
+        wait;
+    end process vcd_process;
     
     -- DUT instantiation (Direct Instantiation Required)
     DUT: entity WORK.SimpleWaveGen_top

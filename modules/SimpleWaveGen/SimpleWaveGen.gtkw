@@ -1,0 +1,49 @@
+# GTKWave configuration file for SimpleWaveGen waveforms
+# This file provides a pre-configured view of the key signals
+
+[GTKWave]
+# GTKWave version
+version = 3.3.100
+
+# Window size and position
+window_size = 1200 800
+window_pos = 50 50
+
+# Time range to display
+time_range = 0 1000
+
+# Signal groups and organization
+[signal]
+# Clock and control signals
+group = "Clock & Control"
+clk
+clk_en
+rst
+en
+
+# Waveform configuration
+group = "Configuration"
+cfg_safety_wave_select[2:0]
+
+# Waveform outputs
+group = "Waveform Outputs"
+wave_out[15:0]
+
+# Status and fault signals
+group = "Status & Faults"
+fault_out
+stat[7:0]
+
+# Register interface (for top-level testbench)
+group = "Register Interface"
+wavegen_ctrl_wr
+wavegen_ctrl_data[31:0]
+wave_select_data[2:0]
+amplitude_data[15:0]
+wavegen_status_rd[31:0]
+fault_status_rd[31:0]
+
+# Highlight important signals
+highlight = wave_out
+highlight = fault_out
+highlight = cfg_safety_wave_select

@@ -32,6 +32,9 @@ architecture test of SimpleWaveGen_core_tb is
     constant RESET_TIME     : time := CLK_PERIOD * 2;
     constant WAVE_WAIT_TIME : time := CLK_PERIOD * 10;
     
+    -- VCD file generation
+    signal vcd_file_open : boolean := false;
+    
     -- Test helper procedure
     procedure report_test(test_name : string; passed : boolean; test_num : inout natural) is
         variable l : line;
@@ -52,6 +55,17 @@ begin
     
     -- Clock enable generation (simple pattern)
     clk_en <= '1' after CLK_PERIOD * 3, '0' after CLK_PERIOD * 4;
+    
+    -- VCD file generation process
+    vcd_process : process
+    begin
+        -- Open VCD file for GTKWave
+        vcd_file_open <= true;
+        wait for 1 ns; -- Small delay to ensure file opens
+        
+        -- Keep process alive during simulation
+        wait;
+    end process vcd_process;
     
     -- DUT instantiation (Direct Instantiation Recommended)
     DUT: entity WORK.SimpleWaveGen_core
