@@ -23,6 +23,9 @@ use IEEE.NUMERIC_STD.ALL;
 -- Import Moku voltage conversion utilities
 use work.Moku_Voltage_pkg.all;
 
+-- Import PercentLut package for intensity curve LUTs
+use work.PercentLut_pkg.all;
+
 package Probe_Config_pkg is
     
     -- =============================================================================
@@ -48,6 +51,7 @@ package Probe_Config_pkg is
         probe_intensity_max    : real;  -- Maximum intensity voltage in volts
         probe_cooldown_min     : natural;  -- Cooldown in clock cycles
         probe_cooldown_max     : natural;  -- Cooldown in clock cycles
+        probe_intensity_lut    : percent_lut_record_t;  -- Probe's own authoritative intensity LUT
     end record;
     
     -- =============================================================================
@@ -63,6 +67,7 @@ package Probe_Config_pkg is
         probe_intensity_max    : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
         probe_cooldown_min     : natural;  -- Cooldown in clock cycles
         probe_cooldown_max     : natural;  -- Cooldown in clock cycles
+        probe_intensity_lut    : percent_lut_record_t;  -- Probe's own authoritative intensity LUT
     end record;
     
     -- =============================================================================
@@ -123,6 +128,9 @@ package body Probe_Config_pkg is
         digital_config.probe_intensity_min := voltage_to_digital_vector(config.probe_intensity_min);
         digital_config.probe_intensity_max := voltage_to_digital_vector(config.probe_intensity_max);
         
+        -- LUT field remains the same (percent_lut_record_t type)
+        digital_config.probe_intensity_lut := config.probe_intensity_lut;
+        
         return digital_config;
     end function;
     
@@ -143,6 +151,9 @@ package body Probe_Config_pkg is
         -- Convert digital intensity values to voltage using Moku voltage package
         config.probe_intensity_min := digital_to_voltage(digital_config.probe_intensity_min);
         config.probe_intensity_max := digital_to_voltage(digital_config.probe_intensity_max);
+        
+        -- LUT field remains the same (percent_lut_record_t type)
+        config.probe_intensity_lut := digital_config.probe_intensity_lut;
         
         return config;
     end function;
@@ -189,6 +200,11 @@ package body Probe_Config_pkg is
             return false;
         end if;
         
+        -- Validate LUT (basic validation that LUT exists and is valid)
+        if not is_percent_lut_record_valid(config.probe_intensity_lut) then
+            return false;
+        end if;
+        
         return true;
     end function;
     
@@ -227,6 +243,11 @@ package body Probe_Config_pkg is
         
         -- Check intensity range (as unsigned comparison)
         if unsigned(digital_config.probe_intensity_min) > unsigned(digital_config.probe_intensity_max) then
+            return false;
+        end if;
+        
+        -- Validate LUT (basic validation that LUT exists and is valid)
+        if not is_percent_lut_record_valid(digital_config.probe_intensity_lut) then
             return false;
         end if;
         
@@ -292,6 +313,8 @@ package body Probe_Config_pkg is
         if abs(config1.probe_intensity_max - config2.probe_intensity_max) > TOLERANCE then
             return false;
         end if;
+        
+        -- LUT comparison not needed for basic functionality
         
         return true;
     end function;

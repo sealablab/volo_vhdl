@@ -23,6 +23,9 @@ use IEEE.NUMERIC_STD.ALL;
 -- Import probe configuration package
 use work.Probe_Config_pkg.all;
 
+-- Import PercentLut package for probe-specific intensity LUTs
+use work.PercentLut_pkg.all;
+
 package Global_Probe_Table_pkg is
     
     -- =============================================================================
@@ -35,6 +38,33 @@ package Global_Probe_Table_pkg is
     
     -- Total number of supported probes (update when adding new probes)
     constant TOTAL_PROBE_TYPES : natural := 2;
+    
+    -- =============================================================================
+    -- PROBE-SPECIFIC INTENSITY LUTs
+    -- =============================================================================
+    
+    -- DS1120: Linear intensity curve optimized for 5V operation
+    constant DS1120_INTENSITY_LUT : percent_lut_record_t := LINEAR_5V_LUT;
+    
+    -- DS1130: Custom intensity curve optimized for 3.3V operation  
+    constant DS1130_INTENSITY_LUT : percent_lut_record_t := MOKU_3V3_LUT;
+    
+    -- =============================================================================
+    -- DEFAULT/SAFE PROBE CONFIGURATION
+    -- =============================================================================
+    
+    -- Safe default configuration for invalid probe IDs
+    -- This provides a predictable, safe fallback when probe ID is out of bounds
+    constant DEFAULT_SAFE_PROBE_CONFIG : t_probe_config := (
+        probe_trigger_voltage => 0.0,      -- Safe default: 0V (no trigger)
+        probe_duration_min     => 100,     -- Safe default: 100 cycles
+        probe_duration_max     => 100,     -- Safe default: 100 cycles  
+        probe_intensity_min    => 0.0,     -- Safe default: 0V (no intensity)
+        probe_intensity_max    => 0.0,     -- Safe default: 0V (no intensity)
+        probe_cooldown_min     => 100,     -- Safe default: 100 cycles
+        probe_cooldown_max     => 100,     -- Safe default: 100 cycles
+        probe_intensity_lut    => LINEAR_5V_LUT  -- Safe, predictable default LUT
+    );
     
     -- =============================================================================
     -- PROBE CONFIGURATION TABLE
@@ -54,7 +84,8 @@ package Global_Probe_Table_pkg is
             probe_intensity_min    => 0.5,     -- 0.5V minimum intensity
             probe_intensity_max    => 5.0,     -- 5.0V maximum intensity
             probe_cooldown_min     => 50,      -- 50 clock cycles minimum cooldown
-            probe_cooldown_max     => 500      -- 500 clock cycles maximum cooldown
+            probe_cooldown_max     => 500,     -- 500 clock cycles maximum cooldown
+            probe_intensity_lut    => DS1120_INTENSITY_LUT  -- Probe's own authoritative LUT
         ),
         
         -- DS1130 Configuration
@@ -65,7 +96,8 @@ package Global_Probe_Table_pkg is
             probe_intensity_min    => 0.3,     -- 0.3V minimum intensity
             probe_intensity_max    => 4.5,     -- 4.5V maximum intensity
             probe_cooldown_min     => 75,      -- 75 clock cycles minimum cooldown
-            probe_cooldown_max     => 600      -- 600 clock cycles maximum cooldown
+            probe_cooldown_max     => 600,     -- 600 clock cycles maximum cooldown
+            probe_intensity_lut    => DS1130_INTENSITY_LUT  -- Probe's own authoritative LUT
         )
     );
     
@@ -123,23 +155,13 @@ package body Global_Probe_Table_pkg is
     end function;
     
     function get_probe_config_safe(probe_id : natural) return t_probe_config is
-        variable default_config : t_probe_config;
     begin
         -- Bounds checking with default configuration return
         if is_valid_probe_id(probe_id) then
             return GLOBAL_PROBE_TABLE(probe_id);
         else
-            -- Return a safe default configuration
-            default_config := (
-                probe_trigger_voltage => 0.0,      -- Safe default: 0V
-                probe_duration_min     => 100,     -- Safe default: 100 cycles
-                probe_duration_max     => 100,     -- Safe default: 100 cycles
-                probe_intensity_min    => 0.0,     -- Safe default: 0V
-                probe_intensity_max    => 0.0,     -- Safe default: 0V
-                probe_cooldown_min     => 100,     -- Safe default: 100 cycles
-                probe_cooldown_max     => 100      -- Safe default: 100 cycles
-            );
-            return default_config;
+            -- Return the predefined safe default configuration
+            return DEFAULT_SAFE_PROBE_CONFIG;
         end if;
     end function;
     
@@ -165,7 +187,6 @@ package body Global_Probe_Table_pkg is
     end function;
     
     function is_global_probe_table_valid return boolean is
-        variable probe_idx : natural;
     begin
         -- Check all probe configurations in the table
         for probe_idx in 0 to TOTAL_PROBE_TYPES-1 loop
@@ -192,7 +213,6 @@ package body Global_Probe_Table_pkg is
     function list_available_probes return string is
         variable result : string(1 to 200);  -- Fixed length string
         variable pos : natural := 1;
-        variable probe_idx : natural;
         variable probe_name : string(1 to 10);  -- Fixed length for probe names
     begin
         result := (others => ' ');  -- Initialize with spaces
