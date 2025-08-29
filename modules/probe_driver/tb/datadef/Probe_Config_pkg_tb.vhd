@@ -77,10 +77,12 @@ begin
         -- Test 1: Create voltage-based configuration
         voltage_config := (
             probe_trigger_voltage => 1.0,  -- 1V trigger voltage
-            probe_in_duration_min => 5,    -- 5 clock cycles
-            probe_in_duration_max => 20,   -- 20 clock cycles
-            intensity_in_min        => 0.5,  -- 0.5V min intensity
-            intensity_in_max        => 2.5   -- 2.5V max intensity
+            probe_duration_min     => 5,    -- 5 clock cycles
+            probe_duration_max     => 20,   -- 20 clock cycles
+            probe_intensity_min    => 0.5,  -- 0.5V min intensity
+            probe_intensity_max    => 2.5,  -- 2.5V max intensity
+            probe_cooldown_min     => 4,    -- 4 clock cycles
+            probe_cooldown_max     => 1024  -- 1024 clock cycles
         );
         test_passed := is_valid_probe_config(voltage_config);
         report_test("Create and validate voltage configuration", test_passed, test_number);
@@ -89,10 +91,12 @@ begin
         -- Test 2: Create digital configuration
         digital_config := (
             probe_trigger_voltage => x"199A",  -- 1V trigger voltage (0x199A)
-            probe_in_duration_min => 10,       -- 10 clock cycles
-            probe_in_duration_max => 50,       -- 50 clock cycles
-            intensity_in_min        => x"0CCD",  -- 0.5V min intensity (0x0CCD)
-            intensity_in_max        => x"4000"   -- 2.5V max intensity (0x4000)
+            probe_duration_min     => 10,      -- 10 clock cycles
+            probe_duration_max     => 50,      -- 50 clock cycles
+            probe_intensity_min    => x"0CCD", -- 0.5V min intensity (0x0CCD)
+            probe_intensity_max    => x"4000", -- 2.5V max intensity (0x4000)
+            probe_cooldown_min     => 4,       -- 4 clock cycles
+            probe_cooldown_max     => 1024     -- 1024 clock cycles
         );
         test_passed := is_valid_probe_config_digital(digital_config);
         report_test("Create and validate digital configuration", test_passed, test_number);
@@ -101,10 +105,12 @@ begin
         -- Test 3: Validate generic voltage configuration
         voltage_config := (
             probe_trigger_voltage => 2.5,  -- 2.5V trigger voltage
-            probe_in_duration_min => 3,    -- 3 clock cycles
-            probe_in_duration_max => 25,   -- 25 clock cycles
-            intensity_in_min        => 1.0,  -- 1.0V min intensity
-            intensity_in_max        => 4.0   -- 4.0V max intensity
+            probe_duration_min     => 3,    -- 3 clock cycles
+            probe_duration_max     => 25,   -- 25 clock cycles
+            probe_intensity_min    => 1.0,  -- 1.0V min intensity
+            probe_intensity_max    => 4.0,  -- 4.0V max intensity
+            probe_cooldown_min     => 4,    -- 4 clock cycles
+            probe_cooldown_max     => 1024  -- 1024 clock cycles
         );
         test_passed := is_valid_probe_config(voltage_config);
         report_test("Validate generic voltage configuration", test_passed, test_number);
@@ -113,10 +119,12 @@ begin
         -- Test 4: Validate generic digital configuration
         digital_config := (
             probe_trigger_voltage => x"4000",  -- 2.5V trigger voltage
-            probe_in_duration_min => 5,        -- 5 clock cycles
-            probe_in_duration_max => 30,       -- 30 clock cycles
-            intensity_in_min        => x"199A",  -- 1.0V min intensity
-            intensity_in_max        => x"6666"   -- 4.0V max intensity
+            probe_duration_min     => 5,       -- 5 clock cycles
+            probe_duration_max     => 30,      -- 30 clock cycles
+            probe_intensity_min    => x"199A", -- 1.0V min intensity
+            probe_intensity_max    => x"6666", -- 4.0V max intensity
+            probe_cooldown_min     => 4,       -- 4 clock cycles
+            probe_cooldown_max     => 1024     -- 1024 clock cycles
         );
         test_passed := is_valid_probe_config_digital(digital_config);
         report_test("Validate generic digital configuration", test_passed, test_number);
@@ -152,10 +160,12 @@ begin
         -- Test 8: Generic configuration conversion accuracy (using tolerance-based comparison)
         voltage_config := (
             probe_trigger_voltage => 1.5,  -- 1.5V trigger voltage
-            probe_in_duration_min => 4,    -- 4 clock cycles
-            probe_in_duration_max => 28,   -- 28 clock cycles
-            intensity_in_min        => 0.8,  -- 0.8V min intensity
-            intensity_in_max        => 3.2   -- 3.2V max intensity
+            probe_duration_min     => 4,    -- 4 clock cycles
+            probe_duration_max     => 28,   -- 28 clock cycles
+            probe_intensity_min    => 0.8,  -- 0.8V min intensity
+            probe_intensity_max    => 3.2,  -- 3.2V max intensity
+            probe_cooldown_min     => 4,    -- 4 clock cycles
+            probe_cooldown_max     => 1024  -- 1024 clock cycles
         );
         converted_digital := probe_config_to_digital(voltage_config);
         -- Convert back to voltage and compare with tolerance instead of exact digital equality
@@ -175,10 +185,12 @@ begin
         -- Test 9: Invalid voltage configuration (out of range)
         voltage_config := (
             probe_trigger_voltage => 10.0,  -- Invalid: > 5V
-            probe_in_duration_min => 5,
-            probe_in_duration_max => 20,
-            intensity_in_min        => 0.5,
-            intensity_in_max        => 2.5
+            probe_duration_min     => 5,
+            probe_duration_max     => 20,
+            probe_intensity_min    => 0.5,
+            probe_intensity_max    => 2.5,
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := not is_valid_probe_config(voltage_config);
         report_test("Reject invalid voltage (out of range)", test_passed, test_number);
@@ -187,10 +199,12 @@ begin
         -- Test 10: Invalid duration configuration
         voltage_config := (
             probe_trigger_voltage => 1.0,
-            probe_in_duration_min => 20,   -- Invalid: min > max
-            probe_in_duration_max => 5,
-            intensity_in_min        => 0.5,
-            intensity_in_max        => 2.5
+            probe_duration_min     => 20,   -- Invalid: min > max
+            probe_duration_max     => 5,
+            probe_intensity_min    => 0.5,
+            probe_intensity_max    => 2.5,
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := not is_valid_probe_config(voltage_config);
         report_test("Reject invalid duration (min > max)", test_passed, test_number);
@@ -199,10 +213,12 @@ begin
         -- Test 11: Invalid intensity configuration
         voltage_config := (
             probe_trigger_voltage => 1.0,
-            probe_in_duration_min => 5,
-            probe_in_duration_max => 20,
-            intensity_in_min        => 2.5,  -- Invalid: min > max
-            intensity_in_max        => 0.5
+            probe_duration_min     => 5,
+            probe_duration_max     => 20,
+            probe_intensity_min    => 2.5,  -- Invalid: min > max
+            probe_intensity_max    => 0.5,
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := not is_valid_probe_config(voltage_config);
         report_test("Reject invalid intensity (min > max)", test_passed, test_number);
@@ -211,10 +227,12 @@ begin
         -- Test 12: Zero duration validation
         voltage_config := (
             probe_trigger_voltage => 1.0,
-            probe_in_duration_min => 0,    -- Invalid: zero duration
-            probe_in_duration_max => 20,
-            intensity_in_min        => 0.5,
-            intensity_in_max        => 2.5
+            probe_duration_min     => 0,    -- Invalid: zero duration
+            probe_duration_max     => 20,
+            probe_intensity_min    => 0.5,
+            probe_intensity_max    => 2.5,
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := not is_valid_probe_config(voltage_config);
         report_test("Reject zero duration", test_passed, test_number);
@@ -250,10 +268,12 @@ begin
         -- Test 15: Configuration equality comparison
         voltage_config := (
             probe_trigger_voltage => 1.0,
-            probe_in_duration_min => 5,
-            probe_in_duration_max => 20,
-            intensity_in_min        => 0.5,
-            intensity_in_max        => 2.5
+            probe_duration_min     => 5,
+            probe_duration_max     => 20,
+            probe_intensity_min    => 0.5,
+            probe_intensity_max    => 2.5,
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := probe_configs_equal(voltage_config, voltage_config);
         report_test("Configuration self-equality", test_passed, test_number);
@@ -275,10 +295,12 @@ begin
         -- Test 17: Voltage conversion using Moku constants
         voltage_config := (
             probe_trigger_voltage => MOKU_VOLTAGE_1V,      -- 1.0V
-            probe_in_duration_min => 5,
-            probe_in_duration_max => 20,
-            intensity_in_min        => MOKU_VOLTAGE_2V5,     -- 2.5V
-            intensity_in_max        => MOKU_VOLTAGE_3V3      -- 3.3V
+            probe_duration_min     => 5,
+            probe_duration_max     => 20,
+            probe_intensity_min    => MOKU_VOLTAGE_2V5,     -- 2.5V
+            probe_intensity_max    => MOKU_VOLTAGE_3V3,     -- 3.3V
+            probe_cooldown_min     => 4,
+            probe_cooldown_max     => 1024
         );
         test_passed := is_valid_probe_config(voltage_config);
         report_test("Use Moku voltage constants in configuration", test_passed, test_number);
@@ -287,8 +309,8 @@ begin
         -- Test 18: Verify voltage-to-digital conversion matches Moku constants
         converted_digital := probe_config_to_digital(voltage_config);
         test_passed := (converted_digital.probe_trigger_voltage = std_logic_vector(MOKU_DIGITAL_1V)) and
-                       (converted_digital.intensity_in_min = std_logic_vector(MOKU_DIGITAL_2V5)) and
-                       (converted_digital.intensity_in_max = std_logic_vector(MOKU_DIGITAL_3V3));
+                       (converted_digital.probe_intensity_min = std_logic_vector(MOKU_DIGITAL_2V5)) and
+                       (converted_digital.probe_intensity_max = std_logic_vector(MOKU_DIGITAL_3V3));
         report_test("Voltage conversion matches Moku digital constants", test_passed, test_number);
         all_tests_passed <= all_tests_passed and test_passed;
         

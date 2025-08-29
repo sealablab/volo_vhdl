@@ -31,7 +31,7 @@ package Probe_Config_pkg is
     
     -- Constants for data widths
 
-    constant PROBE_THRESHOLD_WIDTH : natural := 16;  -- 16-bit signed for voltage threshold
+    constant PROBE_TRIGGER_VOLTAGE_WIDTH : natural := 16;  -- 16-bit signed for trigger voltage
     constant PROBE_DURATION_WIDTH : natural := 16;   -- 16-bit unsigned for duration
     constant PROBE_INTENSITY_WIDTH : natural := 16;  -- 16-bit signed for voltage intensity
     
@@ -42,10 +42,12 @@ package Probe_Config_pkg is
     -- Primary probe configuration using voltage values (configuration layer)
     type t_probe_config is record
         probe_trigger_voltage : real;  -- Voltage to output to trigger the probe
-        probe_in_duration_min : natural;  -- Duration in clock cycles
-        probe_in_duration_max : natural;  -- Duration in clock cycles
-        intensity_in_min        : real;  -- Minimum intensity voltage in volts
-        intensity_in_max        : real;  -- Maximum intensity voltage in volts
+        probe_duration_min     : natural;  -- Duration in clock cycles
+        probe_duration_max     : natural;  -- Duration in clock cycles
+        probe_intensity_min    : real;  -- Minimum intensity voltage in volts
+        probe_intensity_max    : real;  -- Maximum intensity voltage in volts
+        probe_cooldown_min     : natural;  -- Cooldown in clock cycles
+        probe_cooldown_max     : natural;  -- Cooldown in clock cycles
     end record;
     
     -- =============================================================================
@@ -54,11 +56,13 @@ package Probe_Config_pkg is
     
     -- Digital representation for RTL implementation (internal use)
     type t_probe_config_digital is record
-        probe_trigger_voltage : std_logic_vector(PROBE_THRESHOLD_WIDTH-1 downto 0);
-        probe_in_duration_min : natural;  -- Duration in clock cycles
-        probe_in_duration_max : natural;  -- Duration in clock cycles
-        intensity_in_min        : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
-        intensity_in_max        : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
+        probe_trigger_voltage : std_logic_vector(PROBE_TRIGGER_VOLTAGE_WIDTH-1 downto 0);
+        probe_duration_min     : natural;  -- Duration in clock cycles
+        probe_duration_max     : natural;  -- Duration in clock cycles
+        probe_intensity_min    : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
+        probe_intensity_max    : std_logic_vector(PROBE_INTENSITY_WIDTH-1 downto 0);
+        probe_cooldown_min     : natural;  -- Cooldown in clock cycles
+        probe_cooldown_max     : natural;  -- Cooldown in clock cycles
     end record;
     
     -- =============================================================================
@@ -108,12 +112,16 @@ package body Probe_Config_pkg is
         digital_config.probe_trigger_voltage := voltage_to_digital_vector(config.probe_trigger_voltage);
         
         -- Duration values remain the same (natural type)
-        digital_config.probe_in_duration_min := config.probe_in_duration_min;
-        digital_config.probe_in_duration_max := config.probe_in_duration_max;
+        digital_config.probe_duration_min := config.probe_duration_min;
+        digital_config.probe_duration_max := config.probe_duration_max;
+        
+        -- Cooldown values remain the same (natural type)
+        digital_config.probe_cooldown_min := config.probe_cooldown_min;
+        digital_config.probe_cooldown_max := config.probe_cooldown_max;
         
         -- Convert intensity voltages to digital using Moku voltage package
-        digital_config.intensity_in_min := voltage_to_digital_vector(config.intensity_in_min);
-        digital_config.intensity_in_max := voltage_to_digital_vector(config.intensity_in_max);
+        digital_config.probe_intensity_min := voltage_to_digital_vector(config.probe_intensity_min);
+        digital_config.probe_intensity_max := voltage_to_digital_vector(config.probe_intensity_max);
         
         return digital_config;
     end function;
@@ -125,12 +133,16 @@ package body Probe_Config_pkg is
         config.probe_trigger_voltage := digital_to_voltage(digital_config.probe_trigger_voltage);
         
         -- Duration values remain the same (natural type)
-        config.probe_in_duration_min := digital_config.probe_in_duration_min;
-        config.probe_in_duration_max := digital_config.probe_in_duration_max;
+        config.probe_duration_min := digital_config.probe_duration_min;
+        config.probe_duration_max := digital_config.probe_duration_max;
+        
+        -- Cooldown values remain the same (natural type)
+        config.probe_cooldown_min := digital_config.probe_cooldown_min;
+        config.probe_cooldown_max := digital_config.probe_cooldown_max;
         
         -- Convert digital intensity values to voltage using Moku voltage package
-        config.intensity_in_min := digital_to_voltage(digital_config.intensity_in_min);
-        config.intensity_in_max := digital_to_voltage(digital_config.intensity_in_max);
+        config.probe_intensity_min := digital_to_voltage(digital_config.probe_intensity_min);
+        config.probe_intensity_max := digital_to_voltage(digital_config.probe_intensity_max);
         
         return config;
     end function;
@@ -146,25 +158,34 @@ package body Probe_Config_pkg is
             return false;
         end if;
         
-        if not is_valid_moku_voltage(config.intensity_in_min) then
+        if not is_valid_moku_voltage(config.probe_intensity_min) then
             return false;
         end if;
         
-        if not is_valid_moku_voltage(config.intensity_in_max) then
+        if not is_valid_moku_voltage(config.probe_intensity_max) then
             return false;
         end if;
         
         -- Check duration constraints
-        if config.probe_in_duration_min > config.probe_in_duration_max then
+        if config.probe_duration_min > config.probe_duration_max then
             return false;
         end if;
         
-        if config.probe_in_duration_min = 0 or config.probe_in_duration_max = 0 then
+        if config.probe_duration_min = 0 or config.probe_duration_max = 0 then
+            return false;
+        end if;
+        
+        -- Check cooldown constraints
+        if config.probe_cooldown_min > config.probe_cooldown_max then
+            return false;
+        end if;
+        
+        if config.probe_cooldown_min = 0 or config.probe_cooldown_max = 0 then
             return false;
         end if;
         
         -- Check intensity range
-        if config.intensity_in_min > config.intensity_in_max then
+        if config.probe_intensity_min > config.probe_intensity_max then
             return false;
         end if;
         
@@ -178,25 +199,34 @@ package body Probe_Config_pkg is
             return false;
         end if;
         
-        if not is_valid_moku_digital(digital_config.intensity_in_min) then
+        if not is_valid_moku_digital(digital_config.probe_intensity_min) then
             return false;
         end if;
         
-        if not is_valid_moku_digital(digital_config.intensity_in_max) then
+        if not is_valid_moku_digital(digital_config.probe_intensity_max) then
             return false;
         end if;
         
         -- Check duration constraints
-        if digital_config.probe_in_duration_min > digital_config.probe_in_duration_max then
+        if digital_config.probe_duration_min > digital_config.probe_duration_max then
             return false;
         end if;
         
-        if digital_config.probe_in_duration_min = 0 or digital_config.probe_in_duration_max = 0 then
+        if digital_config.probe_duration_min = 0 or digital_config.probe_duration_max = 0 then
+            return false;
+        end if;
+        
+        -- Check cooldown constraints
+        if digital_config.probe_cooldown_min > digital_config.probe_cooldown_max then
+            return false;
+        end if;
+        
+        if digital_config.probe_cooldown_min = 0 or digital_config.probe_cooldown_max = 0 then
             return false;
         end if;
         
         -- Check intensity range (as unsigned comparison)
-        if unsigned(digital_config.intensity_in_min) > unsigned(digital_config.intensity_in_max) then
+        if unsigned(digital_config.probe_intensity_min) > unsigned(digital_config.probe_intensity_max) then
             return false;
         end if;
         
@@ -211,20 +241,24 @@ package body Probe_Config_pkg is
     begin
         return "ProbeConfig(" &
                real'image(config.probe_trigger_voltage) & "V, " &
-               integer'image(config.probe_in_duration_min) & ", " &
-               integer'image(config.probe_in_duration_max) & ", " &
-               real'image(config.intensity_in_min) & "V, " &
-               real'image(config.intensity_in_max) & "V)";
+               integer'image(config.probe_duration_min) & ", " &
+               integer'image(config.probe_duration_max) & ", " &
+               real'image(config.probe_intensity_min) & "V, " &
+               real'image(config.probe_intensity_max) & "V, " &
+               integer'image(config.probe_cooldown_min) & ", " &
+               integer'image(config.probe_cooldown_max) & ")";
     end function;
     
     function probe_config_digital_to_string(digital_config : t_probe_config_digital) return string is
     begin
         return "ProbeConfig(" &
                digital_to_string(digital_config.probe_trigger_voltage) & ", " &
-               integer'image(digital_config.probe_in_duration_min) & ", " &
-               integer'image(digital_config.probe_in_duration_max) & ", " &
-               digital_to_string(digital_config.intensity_in_min) & ", " &
-               digital_to_string(digital_config.intensity_in_max) & ")";
+               integer'image(digital_config.probe_duration_min) & ", " &
+               integer'image(digital_config.probe_duration_max) & ", " &
+               digital_to_string(digital_config.probe_intensity_min) & ", " &
+               digital_to_string(digital_config.probe_intensity_max) & ", " &
+               integer'image(digital_config.probe_cooldown_min) & ", " &
+               integer'image(digital_config.probe_cooldown_max) & ")";
     end function;
     
     function probe_configs_equal(config1, config2 : t_probe_config) return boolean is
@@ -235,19 +269,27 @@ package body Probe_Config_pkg is
             return false;
         end if;
         
-        if config1.probe_in_duration_min /= config2.probe_in_duration_min then
+        if config1.probe_duration_min /= config2.probe_duration_min then
             return false;
         end if;
         
-        if config1.probe_in_duration_max /= config2.probe_in_duration_max then
+        if config1.probe_duration_max /= config2.probe_duration_max then
             return false;
         end if;
         
-        if abs(config1.intensity_in_min - config2.intensity_in_min) > TOLERANCE then
+        if config1.probe_cooldown_min /= config2.probe_cooldown_min then
             return false;
         end if;
         
-        if abs(config1.intensity_in_max - config2.intensity_in_max) > TOLERANCE then
+        if config1.probe_cooldown_max /= config2.probe_cooldown_max then
+            return false;
+        end if;
+        
+        if abs(config1.probe_intensity_min - config2.probe_intensity_min) > TOLERANCE then
+            return false;
+        end if;
+        
+        if abs(config1.probe_intensity_max - config2.probe_intensity_max) > TOLERANCE then
             return false;
         end if;
         
@@ -261,19 +303,27 @@ package body Probe_Config_pkg is
             return false;
         end if;
         
-        if digital_config1.probe_in_duration_min /= digital_config2.probe_in_duration_min then
+        if digital_config1.probe_duration_min /= digital_config2.probe_duration_min then
             return false;
         end if;
         
-        if digital_config1.probe_in_duration_max /= digital_config2.probe_in_duration_max then
+        if digital_config1.probe_duration_max /= digital_config2.probe_duration_max then
             return false;
         end if;
         
-        if digital_config1.intensity_in_min /= digital_config2.intensity_in_min then
+        if digital_config1.probe_cooldown_min /= digital_config2.probe_cooldown_min then
             return false;
         end if;
         
-        if digital_config2.intensity_in_max /= digital_config2.intensity_in_max then
+        if digital_config1.probe_cooldown_max /= digital_config2.probe_cooldown_max then
+            return false;
+        end if;
+        
+        if digital_config1.probe_intensity_min /= digital_config2.probe_intensity_min then
+            return false;
+        end if;
+        
+        if digital_config1.probe_intensity_max /= digital_config2.probe_intensity_max then
             return false;
         end if;
         
