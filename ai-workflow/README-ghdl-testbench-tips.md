@@ -524,6 +524,222 @@ status_reg(27 downto 24) <= current_state;
 - **Process separation** makes code more maintainable and debuggable
 - **Clear state encodings** make debugging much easier
 
+## New Tips from ProbeHero8 Implementation
+
+### 7. Case Statement Constants Issue
+
+**Problem**: `error: choice must be locally static expression`
+```vhdl
+-- ❌ This causes compilation errors
+case ctrl_reg_addr is
+    when CTRL_ENABLE_ADDR =>  -- Constant not locally static
+        ctrl_enable_internal <= ctrl_reg_data_in(0);
+    when others =>
+        null;
+end case;
+```
+
+**Solution**: Use literal values instead of constants in case statements
+```vhdl
+-- ✅ This compiles correctly
+case ctrl_reg_addr is
+    when x"00" =>  -- CTRL_ENABLE_ADDR
+        ctrl_enable_internal <= ctrl_reg_data_in(0);
+    when x"01" =>  -- CTRL_ARM_ADDR
+        ctrl_arm_internal <= ctrl_reg_data_in(0);
+    when others =>
+        null;
+end case;
+```
+
+**Why**: GHDL requires locally static expressions in case choices. Constants defined in the architecture are not considered locally static.
+
+### 8. Procedure Declaration Location
+
+**Problem**: `error: unexpected token 'procedure' in a concurrent statement list`
+```vhdl
+-- ❌ Procedures declared in architecture body
+architecture test of entity_tb is
+begin
+    procedure report_test(...) is  -- Error: not allowed here
+    begin
+        -- procedure body
+    end procedure;
+    
+    test_process : process
+    begin
+        -- test code
+    end process;
+end architecture;
+```
+
+**Solution**: Declare procedures within processes
+```vhdl
+-- ✅ Procedures declared within process
+architecture test of entity_tb is
+begin
+    test_process : process
+        -- Test Helper Procedures (declared within process)
+        procedure report_test(...) is
+        begin
+            -- procedure body
+        end procedure;
+        
+    begin
+        -- test code using procedures
+    end process;
+end architecture;
+```
+
+### 9. Variable vs Signal for Procedure Parameters
+
+**Problem**: `error: variable parameter must be a variable`
+```vhdl
+-- ❌ Using signal for inout parameter
+signal test_number : natural := 0;
+procedure report_test(test_name : string; test_num : inout natural);
+-- Called with signal
+report_test("Test name", test_number);  -- Error: test_number is signal
+```
+
+**Solution**: Use variables for procedure parameters
+```vhdl
+-- ✅ Using variable for inout parameter
+test_process : process
+    variable test_number : natural := 0;  -- Use variable, not signal
+    
+    procedure report_test(test_name : string; test_num : inout natural) is
+    begin
+        -- procedure body
+    end procedure;
+    
+begin
+    report_test("Test name", test_number);  -- Correct: test_number is variable
+end process;
+```
+
+### 10. Testbench Termination Best Practices
+
+**Problem**: Testbench runs indefinitely with `wait;` statement
+```vhdl
+-- ❌ Can cause infinite loops
+test_process : process
+begin
+    -- ... tests ...
+    wait; -- End simulation - can hang indefinitely
+end process;
+```
+
+**Solution**: Use proper termination methods
+```vhdl
+-- ✅ Clean termination
+library STD.ENV.ALL;  -- Add this to library declarations
+
+test_process : process
+begin
+    -- ... tests ...
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    
+    stop(0); -- Clean termination with exit code 0
+end process;
+```
+
+**Alternative**: Use assert false for termination
+```vhdl
+-- ✅ Alternative termination method
+test_process : process
+begin
+    -- ... tests ...
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    
+    assert false report "Simulation completed" severity failure;
+end process;
+```
+
+### 11. Complex Module Integration Patterns
+
+**What Worked Well in ProbeHero8**: The implementation successfully compiled and ran with these patterns:
+
+#### **Direct Instantiation in Top Layer**
+```vhdl
+-- ✅ Required for top layer files
+U1: entity WORK.probe_hero8_core
+    generic map (
+        MODULE_NAME => "probe_hero8_core",
+        STATUS_REG_WIDTH => 32,
+        MODULE_STATUS_BITS => 16
+    )
+    port map (
+        clk => clk,
+        rst_n => rst_n,
+        -- ... other ports
+    );
+```
+
+#### **Package-Based Configuration**
+```vhdl
+-- ✅ Use packages for complex data structures
+library WORK;
+use WORK.probe_config_pkg.ALL;
+use WORK.probe_status_pkg.ALL;
+
+-- Configuration record assembly
+probe_config <= (
+    probe_selection    => cfg_safety_probe_selection,
+    firing_voltage     => cfg_safety_firing_voltage,
+    firing_duration    => cfg_safety_firing_duration,
+    cooling_duration   => cfg_safety_cooling_duration,
+    enable_auto_arm    => cfg_safety_enable_auto_arm,
+    enable_safety_mode => cfg_safety_enable_safety_mode
+);
+```
+
+#### **State Machine with Safety Features**
+```vhdl
+-- ✅ Clear state encoding with safety validation
+constant ST_IDLE       : std_logic_vector(3 downto 0) := "0010";  -- 0x2
+constant ST_ARMED      : std_logic_vector(3 downto 0) := "0011";  -- 0x3
+constant ST_FIRING     : std_logic_vector(3 downto 0) := "0100";  -- 0x4
+constant ST_COOLING    : std_logic_vector(3 downto 0) := "0101";  -- 0x5
+constant ST_HARD_FAULT : std_logic_vector(3 downto 0) := "1111";  -- 0xF
+
+-- Parameter validation process
+parameter_validation : process(probe_config)
+begin
+    if is_valid_probe_config(probe_config) then
+        cfg_params_valid <= '1';
+    else
+        cfg_params_valid <= '0';
+    end if;
+end process;
+```
+
+### 12. Compilation Order for Complex Modules
+
+**Successful Compilation Sequence**:
+```bash
+# 1. Compile packages first (dependency order)
+ghdl -a --std=08 modules/probe_hero8/datadef/*.vhd
+
+# 2. Compile core entities
+ghdl -a --std=08 modules/probe_hero8/core/*.vhd
+
+# 3. Compile top entities
+ghdl -a --std=08 modules/probe_hero8/top/*.vhd
+
+# 4. Compile testbenches
+ghdl -a --std=08 modules/probe_hero8/tb/core/*.vhd
+ghdl -a --std=08 modules/probe_hero8/tb/top/*.vhd
+
+# 5. Elaborate and run
+ghdl -e --std=08 probe_hero8_core_tb
+ghdl -r --std=08 probe_hero8_core_tb
+```
+
 ## Summary Checklist
 
 Before submitting a testbench, ensure:
@@ -540,6 +756,10 @@ Before submitting a testbench, ensure:
 - [ ] Tests all required functionality and edge cases
 - [ ] Uses direct instantiation for DUT
 - [ ] Follows project coding standards
+- [ ] **NEW**: Case statements use literal values, not constants
+- [ ] **NEW**: Procedures declared within processes, not in architecture body
+- [ ] **NEW**: Procedure parameters use variables, not signals
+- [ ] **NEW**: Includes `library STD.ENV.ALL;` for proper termination
 
 ## Quick Reference Commands
 
