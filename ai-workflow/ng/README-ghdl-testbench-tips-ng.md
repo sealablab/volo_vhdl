@@ -302,3 +302,20 @@ begin
 end process;
 ```
 **Tags**: #candidate #unreviewed #variables #scope #ghdl-warning
+
+### Candidate: GHDL-04: Metavalue warnings in NUMERIC_STD operations
+**Problem**: GHDL warnings about metavalues detected in NUMERIC_STD operations during simulation.  
+**Cause**: Uninitialized signals or undefined values being used in arithmetic/comparison operations.  
+**Solution**: Initialize all signals properly and ensure all inputs are defined before use.  
+**Pattern**:
+```vhdl
+-- Initialize signals to avoid metavalues
+signal counter : unsigned(15 downto 0) := (others => '0');
+signal data_in : std_logic_vector(7 downto 0) := (others => '0');
+
+-- Check for valid values before arithmetic
+if data_in /= "UUUUUUUU" then
+  result <= unsigned(data_in) + 1;
+end if;
+```
+**Tags**: #candidate #unreviewed #metavalues #initialization #numeric-std
