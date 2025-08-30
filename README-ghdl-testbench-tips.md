@@ -402,6 +402,166 @@ procedure report_test(
 -- 3. inout parameters are variables, not signals
 ```
 
+### 16. Enhanced Package Integration Issues
+
+**Problem**: `error: no declaration for "function_name"` when integrating enhanced packages
+```vhdl
+-- This fails when enhanced packages are missing functions that original packages had:
+use work.Moku_Voltage_pkg_en.all;
+if not is_valid_moku_voltage(config.probe_trigger_voltage) then  -- Function not found
+```
+
+**Solution**: Add missing functions to enhanced packages
+```vhdl
+-- Add to enhanced package declaration:
+function is_valid_moku_voltage(voltage : real) return boolean;
+function is_valid_moku_digital(digital : signed(15 downto 0)) return boolean;
+function digital_to_string(digital : signed(15 downto 0)) return string;
+
+-- Add to enhanced package body:
+function is_valid_moku_voltage(voltage : real) return boolean is
+begin
+    return (voltage >= MOKU_VOLTAGE_MIN) and (voltage <= MOKU_VOLTAGE_MAX);
+end function;
+```
+
+**Best Practice**: Ensure enhanced packages have feature parity with original packages
+```bash
+# Compare function availability between original and enhanced packages
+grep -n "function.*" modules/probe_driver/datadef/Moku_Voltage_pkg.vhd
+grep -n "function.*" modules/probe_driver/datadef/Moku_Voltage_pkg_en.vhd
+```
+
+### 17. Package Function Name Conflicts
+
+**Problem**: `error: can't resolve overload for function call` when multiple packages define the same function
+```vhdl
+-- This fails when both packages define the same function:
+use work.Probe_Config_pkg_en.all;
+use work.Global_Probe_Table_pkg_en.all;
+-- Both packages define validate_units_consistency()
+if not validate_units_consistency(config) then  -- Ambiguous call
+```
+
+**Solution 1**: Remove duplicate function declarations from one package
+```vhdl
+-- Remove from Global_Probe_Table_pkg_en.vhd:
+-- function validate_units_consistency(config : t_probe_config) return boolean;
+
+-- Remove from Global_Probe_Table_pkg_en_body.vhd:
+-- function validate_units_consistency(config : t_probe_config) return boolean is
+--     -- implementation
+-- end function;
+```
+
+**Solution 2**: Use fully qualified names (if needed)
+```vhdl
+-- Use specific package name:
+if not Probe_Config_pkg_en.validate_units_consistency(config) then
+```
+
+**Best Practice**: Design packages to avoid function name conflicts
+- Keep validation functions in the package that owns the data type
+- Use package-specific prefixes for utility functions
+- Document which package provides which functions
+
+### 18. Package Body Compilation Order
+
+**Problem**: `error: body of package "Package_Name" was never analyzed` when elaborating
+```vhdl
+-- This fails:
+ghdl -e --std=08 testbench_entity
+-- Error: body of package "Moku_Voltage_pkg_en" was never analyzed
+```
+
+**Solution**: Always compile package bodies after package declarations
+```bash
+# Correct order:
+ghdl -a --std=08 Moku_Voltage_pkg_en.vhd           # Package declaration
+ghdl -a --std=08 Moku_Voltage_pkg_en_body.vhd      # Package body
+ghdl -a --std=08 PercentLut_pkg_en.vhd             # Next package declaration
+ghdl -a --std=08 PercentLut_pkg_en_body.vhd        # Next package body
+ghdl -a --std=08 testbench.vhd                     # Testbench
+ghdl -e --std=08 testbench_entity                  # Elaborate
+```
+
+**Automated Solution**: Compile all packages in one command
+```bash
+# Compile all enhanced packages in correct order:
+ghdl -a --std=08 Moku_Voltage_pkg_en.vhd Moku_Voltage_pkg_en_body.vhd \
+     PercentLut_pkg_en.vhd PercentLut_pkg_en_body.vhd \
+     Probe_Config_pkg_en.vhd Probe_Config_pkg_en_body.vhd \
+     Global_Probe_Table_pkg_en.vhd Global_Probe_Table_pkg_en_body.vhd
+```
+
+### 19. Integration Test Design Patterns
+
+**Problem**: Complex integration tests fail with bound check failures and function call issues
+```vhdl
+-- This can fail:
+test_probe_name := get_probe_name(test_probe_id);  -- Bound check failure
+test_passed := (test_probe_name = "PROBE");        -- String comparison issues
+```
+
+**Solution**: Design integration tests with proper error handling
+```vhdl
+-- Test 1: Basic functionality with known values
+test_number := test_number + 1;
+test_voltage := 1.5;  -- Known test value
+test_digital_signed := voltage_to_digital(test_voltage);
+test_passed := (test_digital_signed = MOKU_DIGITAL_1V);  -- Compare with known constant
+report_test("Voltage conversion (1.5V)", test_passed, test_number);
+
+-- Test 2: Function availability (don't test return values, just that function works)
+test_number := test_number + 1;
+test_probe_config := get_probe_config(0);  -- Use known valid ID
+test_passed := is_valid_probe_config(test_probe_config);  -- Test validation, not string content
+report_test("Probe config retrieval", test_passed, test_number);
+```
+
+**Best Practice**: Structure integration tests in logical groups
+```vhdl
+-- Group 1: Enhanced Package Basic Functionality
+-- Group 2: Enhanced Package Integration  
+-- Group 3: Unit Hinting Validation
+-- Group 4: Edge Case and Error Handling
+-- Group 5: Performance and Stress Tests
+```
+
+### 20. Enhanced Package Migration Strategy
+
+**Problem**: Migrating from original packages to enhanced packages causes compilation issues
+```vhdl
+-- Original code:
+use work.Moku_Voltage_pkg.all;
+use work.PercentLut_pkg.all;
+
+-- Enhanced code:
+use work.Moku_Voltage_pkg_en.all;
+use work.PercentLut_pkg_en.all;
+-- But some functions might be missing or have different signatures
+```
+
+**Solution**: Systematic migration approach
+```bash
+# Step 1: Create enhanced package copy
+cp -r probe_driver probe_driver_en
+
+# Step 2: Update package imports systematically
+find probe_driver_en -name "*.vhd" -exec sed -i '' 's/Moku_Voltage_pkg\.all/Moku_Voltage_pkg_en.all/g' {} \;
+find probe_driver_en -name "*.vhd" -exec sed -i '' 's/PercentLut_pkg\.all/PercentLut_pkg_en.all/g' {} \;
+
+# Step 3: Add missing functions to enhanced packages
+# Step 4: Test compilation incrementally
+# Step 5: Run integration tests
+```
+
+**Best Practice**: Maintain feature parity during migration
+- Keep original packages as reference
+- Add missing functions to enhanced packages
+- Test each package individually before integration
+- Use integration tests to validate the complete system
+
 ## Package Testing Best Practices
 
 ### 1. Package Testbench Structure
@@ -814,6 +974,10 @@ Before submitting a testbench, ensure:
 - [ ] **NEW**: Package dependencies are correctly imported and function names verified
 - [ ] **NEW**: Package recompilation follows proper dependency order (declaration → body → dependents)
 - [ ] **NEW**: Procedure parameter order and types match exactly when calling procedures
+- [ ] **NEW**: Enhanced packages have feature parity with original packages (all functions available)
+- [ ] **NEW**: Package function name conflicts are resolved by removing duplicates or using qualified names
+- [ ] **NEW**: Integration tests use known test values and avoid complex string comparisons
+- [ ] **NEW**: Package migration follows systematic approach with incremental testing
 
 ## Quick Reference Commands
 
