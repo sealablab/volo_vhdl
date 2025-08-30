@@ -48,6 +48,26 @@ This document provides guidelines for AI agents working with the Volo VHDL proje
 - Avoid complex type hierarchies
 - Keep interfaces simple and Verilog-compatible
 
+## Status Register Implementation Standards
+
+### Default Behavior for All VOLO Modules
+- **Update Timing**: All status bits updated synchronously on rising edge of clock
+- **Fault Bits**: FAULT and ALARM bits are sticky (cleared only on reset)
+- **State Bits**: Operational status bits reflect current state
+- **Reset Behavior**: All bits cleared on reset
+- **Bit 7-6 Convention**: FAULT (bit 7) and ALARM (bit 6) reserved for error conditions
+
+### Status Bit Categories
+- **Sticky Bits**: FAULT, ALARM, FIRED - persist until reset
+- **State Bits**: COOL, FIRING, ARMED - reflect current operational state
+- **Reserved Bits**: Bits 5-4 typically reserved for future use
+
+### Implementation Requirements
+- **Synchronous Updates**: All status bit changes must occur on rising edge of clock
+- **Reset Clearing**: All status bits must be cleared when reset is asserted
+- **Sticky Behavior**: Fault and alarm bits must remain set until reset
+- **State Reflection**: Operational status bits must accurately reflect current module state
+
 ## Module Architecture
 
 ### Directory Structure
