@@ -23,8 +23,13 @@ This bitstream generates configurable sine, square, and triangle waveforms with 
 
 ```
 volo_vhdl/
-├─ .cursor/rules              # Project rules for AI agents
+├─ .cursor/rules.mdc          # Project rules for AI agents
 ├─ AGENTS.md                  # Comprehensive agent guidelines
+├─ ai-workflow/               # AI-powered development workflow
+│  ├─ prompts/                # AI prompts for different phases
+│  ├─ templates/              # Input form templates
+│  ├─ examples/               # Complete workflow examples
+│  └─ README.md               # AI workflow guide
 ├─ modules/                   # VHDL modules with standardized structure
 │  ├─ README.md              # Module structure documentation
 │  └─ [module_name]/
@@ -43,15 +48,17 @@ volo_vhdl/
 
 ## Quick Start
 
-1. **Read the Rules**: Start with `.cursor/rules` and `AGENTS.md`
-2. **Follow the Structure**: Use the standardized module layout in `modules/`
-3. **Use Templates**: Leverage pre-built templates in `templates/`
-4. **Build and Test**: Use the Makefile in each module directory for compilation and testing
-5. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
-6. **Direct Instantiation**: Use `entity WORK.module_name` pattern for all top-level files
+1. **Read the Rules**: Start with `.cursor/rules.mdc` and `AGENTS.md`
+2. **Use AI Workflow**: Follow the AI-powered development workflow in `ai-workflow/`
+3. **Follow the Structure**: Use the standardized module layout in `modules/`
+4. **Use Templates**: Leverage pre-built templates in `templates/`
+5. **Build and Test**: Use the Makefile in each module directory for compilation and testing
+6. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
+7. **Direct Instantiation**: Use `entity WORK.module_name` pattern for all top-level files
 
 ## Key Features
 
+- **AI-Powered Development**: Complete workflow from requirements to VHDL generation
 - **Verilog Portable**: All VHDL code designed for easy conversion
 - **Tiered Rule System**: Three-tier approach balancing portability with practicality
 - **Standardized Architecture**: Consistent module structure across the project
@@ -70,6 +77,38 @@ The project uses a **three-tier rule system** to balance Verilog portability req
 - **Tier 3 (Testbenches)**: `tb/` - Full VHDL-2008 features allowed
 
 This approach ensures synthesizable RTL maintains full Verilog compatibility while allowing appropriate flexibility for data definitions and verification code. See `.cursor/rules.mdc` for complete details.
+
+## 🚀 **AI-Powered Development Workflow**
+
+The project features a **comprehensive AI workflow** that enables rapid, consistent VHDL development:
+
+### **Workflow Phases**
+1. **Interface Definition**: AI-guided requirements refinement and interface specification
+2. **Code Generation**: Automated VHDL generation from refined requirements (coming soon)
+3. **Validation**: Automated testing and standards compliance checking (coming soon)
+
+### **Key Benefits**
+- **Rapid Development**: Generate VHDL from requirements in minutes, not hours
+- **Consistent Quality**: All code follows VOLO standards automatically
+- **Interactive Refinement**: AI guides you through requirements clarification
+- **Standards Compliance**: Built-in validation ensures Verilog portability
+- **Professional Output**: Clean, maintainable code with proper documentation
+
+### **Getting Started with AI Workflow**
+1. **Copy a Template**: Start with `ai-workflow/templates/requirements/BLANK-requirements-template.md`
+2. **Fill in Requirements**: Describe your module's purpose and interface
+3. **Run AI Prompt**: Use `ai-workflow/prompts/interface-refinement/PROMPT-02--interface refinement.md`
+4. **Iterate and Refine**: Let AI guide you to complete requirements
+5. **Generate Code**: Get VHDL constants, entity, and testbench automatically
+
+### **Complete Examples**
+- **ProbeHero6**: Basic workflow demonstration
+- **ProbeHero7**: Enhanced workflow with units convention
+- **More Coming**: Additional examples for different module types
+
+See **[ai-workflow/README.md](ai-workflow/README.md)** for complete documentation and examples.
+
+---
 
 ## Platform Interface Package Approach
 
