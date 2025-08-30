@@ -301,6 +301,71 @@ sed -i '' 's/report_test(\([^,]*\), \([^,]*\), \([^,]*\));/report_test(\1, \2, \
 
 **Note**: This is a one-time fix. For new testbenches, use the correct procedure signature from the start.
 
+### 13. Package Dependency Management Issues
+
+**Problem**: `error: no declaration for "function_name"` when using functions from imported packages
+```vhdl
+-- This fails:
+use work.Moku_Voltage_pkg_en.all;  -- Enhanced package
+-- Later in code:
+if not is_valid_moku_voltage(config.probe_trigger_voltage) then  -- Function not found
+```
+
+**Solution**: Ensure correct package imports and check function availability
+```vhdl
+-- Check what functions are available in the package
+use work.Moku_Voltage_pkg.all;  -- Use original package if enhanced version doesn't have the function
+
+-- Or use the correct function names from the enhanced package
+use work.Moku_Voltage_pkg_en.all;
+-- Use: validate_voltage_range() instead of is_valid_moku_voltage()
+```
+
+**Alternative**: Import multiple packages if needed
+```vhdl
+-- Import all required packages
+use work.Moku_Voltage_pkg.all;
+use work.PercentLut_pkg.all;
+use work.Probe_Config_pkg_en.all;
+```
+
+**Best Practice**: Always check package contents before using functions
+```bash
+# Use grep to find available functions
+grep -n "function.*valid" modules/probe_driver/datadef/Moku_Voltage_pkg.vhd
+grep -n "function.*digital_to_string" modules/probe_driver/datadef/Moku_Voltage_pkg.vhd
+```
+
+### 14. Package Recompilation Requirements
+
+**Problem**: `error: file "package.vhd" has changed and must be reanalysed` when recompiling
+```vhdl
+-- This fails when package declaration changes:
+use work.Probe_Config_pkg_en.all;  -- Package declaration was modified
+```
+
+**Solution**: Always recompile packages in dependency order
+```bash
+# 1. Recompile the modified package declaration first
+ghdl -a --std=08 modules/probe_driver/datadef/Probe_Config_pkg_en.vhd
+
+# 2. Then recompile the package body
+ghdl -a --std=08 modules/probe_driver/datadef/Probe_Config_pkg_en_body.vhd
+
+# 3. Finally recompile dependent files
+ghdl -a --std=08 modules/probe_driver/tb/datadef/Probe_Config_pkg_en_tb.vhd
+```
+
+**Automated Solution**: Use a single command to recompile everything
+```bash
+# Compile in correct order with && operator
+ghdl -a --std=08 package.vhd && \
+ghdl -a --std=08 package_body.vhd && \
+ghdl -a --std=08 testbench.vhd && \
+ghdl -e --std=08 testbench_entity && \
+ghdl -r --std=08 testbench_entity
+```
+
 ## Package Testing Best Practices
 
 ### 1. Package Testbench Structure
@@ -710,6 +775,8 @@ Before submitting a testbench, ensure:
 - [ ] **NEW**: Procedure parameters use inout variables, not signals for test result tracking
 - [ ] **NEW**: Enhanced package features (unit validation, test data generation) are properly tested
 - [ ] **NEW**: Complex return types (arrays, records) are tested with proper bounds checking
+- [ ] **NEW**: Package dependencies are correctly imported and function names verified
+- [ ] **NEW**: Package recompilation follows proper dependency order (declaration → body → dependents)
 
 ## Quick Reference Commands
 
