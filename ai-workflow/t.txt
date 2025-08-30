@@ -1,0 +1,9 @@
+→ I tried to optimize the @ai-workflow/TODO-PH8-implementation-plan.md and ended up with @TODO-PH8-implementation-plan-CONDENSED.md
+ │I am interested in running an experiment to try both and see which one 'works better' 
+  can you: elaborate on if this is smart  or not ? ;)
+ Assuming it doesnt seem like a waste of time 
+- come up with a hypothesis statement and a way to grade the results of each
+- pre-generate the necessary prompt / shell files to: 
+* create a new feature branch, one for each set of directions
+* elaborate through to the same end point
+* compare the results and (if relevant) refine what works best into the file `./README-implementation-plan-tips.md` 
