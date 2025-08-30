@@ -282,12 +282,30 @@ Do not modify the main body above.
 
 ------- New Tips here-------
 
-### Candidate: TB-XX
-**Problem**: …  
-**Cause**: …  
-**Solution**: …  
+### Candidate: TB-07: Comprehensive test vector design
+**Problem**: Ad-hoc test cases lead to incomplete coverage and inconsistent results.  
+**Cause**: Lack of systematic approach to test case generation and validation.  
+**Solution**: Use structured test vectors with expected results for systematic testing.  
 **Pattern**:
 ```vhdl
--- example
+-- Define test vector record type
+type test_vector_t is record
+    input1    : std_logic_vector(7 downto 0);
+    input2    : std_logic_vector(7 downto 0);
+    expected  : boolean;
+end record;
+
+-- Create test vector array
+constant test_vectors : test_vector_array_t := (
+    ("00000001", "00000001", true),   -- Valid case 1
+    ("00000000", "00000001", false),  -- Invalid case 1
+    ("11111111", "00000001", true)    -- Valid case 2
+);
+
+-- Use in test loop
+for i in test_vectors'range loop
+    apply_stimulus(test_vectors(i).input1, test_vectors(i).input2);
+    check_result(test_vectors(i).expected);
+end loop;
 ```
-**Tags**: #candidate #unreviewed
+**Tags**: #candidate #unreviewed #test-vectors #systematic-testing #coverage

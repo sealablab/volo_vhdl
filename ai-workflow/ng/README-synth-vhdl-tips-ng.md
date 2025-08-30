@@ -175,12 +175,27 @@ Do not modify the main body above.
 
 ------- New Tips here-------
 
-### Candidate: PROC-XX
-**Problem**: …  
-**Cause**: …  
-**Solution**: …  
+### Candidate: TIM-02: Pipeline registers for complex calculations
+**Problem**: Long combinatorial paths causing timing violations in complex calculations.  
+**Cause**: Multi-stage arithmetic or logic operations in single clock cycle.  
+**Solution**: Break complex calculations into pipeline stages with intermediate registers.  
 **Pattern**:
 ```vhdl
--- example
+-- Pipeline complex calculation across multiple clock cycles
+process(clk)
+begin
+  if rising_edge(clk) then
+    -- Stage 1: Input processing
+    stage1 <= unsigned(input_data);
+    -- Stage 2: Arithmetic operation
+    stage2 <= to_signed(to_integer(stage1) * 16, 16);
+    -- Stage 3: Output with clamping
+    if stage2 > MAX_VALUE then
+      output <= MAX_VALUE;
+    else
+      output <= stage2;
+    end if;
+  end if;
+end process;
 ```
-**Tags**: #candidate #unreviewed
+**Tags**: #candidate #unreviewed #pipeline #timing #critical-paths
