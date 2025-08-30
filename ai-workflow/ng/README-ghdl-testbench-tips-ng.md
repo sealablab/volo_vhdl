@@ -282,12 +282,23 @@ Do not modify the main body above.
 
 ------- New Tips here-------
 
-### Candidate: TB-XX
-**Problem**: …  
-**Cause**: …  
-**Solution**: …  
+### Candidate: VS-03: Variable name hiding in nested scopes
+**Problem**: GHDL warning about variable name hiding when declaring variables with same name in nested scopes.  
+**Cause**: Declaring variables with identical names in procedure and containing process.  
+**Solution**: Use unique variable names in nested scopes or accept the warning if intentional.  
 **Pattern**:
 ```vhdl
--- example
+process
+  variable l: line;  -- Main process variable
+  procedure report_test(name: string) is
+    variable l: line;  -- WARNING: hides outer 'l'
+  begin
+    write(l, name);
+    writeline(output, l);
+  end procedure;
+begin
+  -- Use different names to avoid hiding
+  report_test("test");
+end process;
 ```
-**Tags**: #candidate #unreviewed
+**Tags**: #candidate #unreviewed #variables #scope #ghdl-warning
