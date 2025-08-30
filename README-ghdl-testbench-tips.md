@@ -105,6 +105,152 @@ ghdl -e --std=08 entity_tb
 ghdl -r --std=08 entity_tb
 ```
 
+### 6. Array Type Constraints in Function Returns
+
+**Problem**: `error: name expected for a type mark` when using constrained arrays in function return types
+```vhdl
+-- This fails:
+function generate_data(size : natural) return real_vector(0 to 255);
+```
+
+**Solution**: Use unconstrained array types in function declarations
+```vhdl
+-- Define unconstrained type
+type real_vector is array (natural range <>) of real;
+
+-- Use unconstrained in function declaration
+function generate_data(size : natural) return real_vector;
+
+-- Constrain in function body
+function generate_data(size : natural) return real_vector is
+    variable result : real_vector(0 to size-1);
+begin
+    -- implementation
+    return result;
+end function;
+```
+
+**Alternative**: Use standard types instead of custom arrays
+```vhdl
+-- Instead of returning arrays, return single values
+function generate_single_value(index : natural; total : natural) return real;
+```
+
+### 7. String Parameters in Functions
+
+**Problem**: `error: interface declaration expected` when using string parameters in functions
+```vhdl
+-- This can cause issues:
+function validate_units(value : real; units : string) return boolean;
+```
+
+**Solution**: Avoid string parameters in functions, use specific types instead
+```vhdl
+-- Better approach - specific validation functions
+function validate_voltage_range(value : real; min_val : real; max_val : real) return boolean;
+function validate_digital_range(value : signed(15 downto 0); min_val : signed(15 downto 0); max_val : signed(15 downto 0)) return boolean;
+```
+
+### 8. Function Return Type Specifications
+
+**Problem**: `error: name expected for a type mark` when specifying bit widths in function return types
+```vhdl
+-- This fails:
+function get_digital_value return signed(15 downto 0);
+```
+
+**Solution**: Use base type without bit width specification
+```vhdl
+-- Correct:
+function get_digital_value return signed;
+```
+
+**Note**: The bit width is determined by the function implementation, not the declaration.
+
+## Package Testing Best Practices
+
+### 1. Package Testbench Structure
+
+**For packages containing only functions (no entities)**:
+```vhdl
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_TEXTIO.ALL;
+use STD.TEXTIO.ALL;
+
+-- Import the package being tested
+use WORK.Package_Name.ALL;
+
+entity Package_Name_tb is
+end entity Package_Name_tb;
+
+architecture test of Package_Name_tb is
+    signal all_tests_passed : boolean := true;
+    
+    -- Test helper procedure
+    procedure report_test(test_name : string; passed : boolean; test_num : inout natural) is
+        variable l : line;
+    begin
+        test_num := test_num + 1;
+        if passed then
+            write(l, string'("Test " & integer'image(test_num) & ": " & test_name & " - PASSED"));
+        else
+            write(l, string'("Test " & integer'image(test_num) & ": " & test_name & " - FAILED"));
+        end if;
+        writeline(output, l);
+    end procedure report_test;
+begin
+    -- Test process implementation
+end architecture test;
+```
+
+### 2. Testing Function Overloading
+
+**When packages have multiple versions of the same function**:
+```vhdl
+-- Test both signed and std_logic_vector versions
+test_digital_signed := to_signed(6554, 16);
+test_digital_vector := std_logic_vector(test_digital_signed);
+
+-- Test signed version
+test_passed := is_voltage_equal(test_digital_signed, 1.0, 0.01);
+report_test("Voltage equality (signed)", test_passed, test_number);
+
+-- Test std_logic_vector version
+test_passed := is_voltage_equal(test_digital_vector, 1.0, 0.01);
+report_test("Voltage equality (std_logic_vector)", test_passed, test_number);
+```
+
+### 3. Testing Enhanced Package Features
+
+**For packages with unit validation and test data generation**:
+```vhdl
+-- Test enhanced validation functions
+test_result := validate_voltage_range(2.5, MOKU_VOLTAGE_MIN, MOKU_VOLTAGE_MAX);
+report_test("Enhanced voltage range validation", test_result, test_number);
+
+-- Test test data generation
+test_voltage := generate_voltage_test_value(-1.0, 1.0, 0, 5);
+test_passed := (abs(test_voltage - (-1.0)) < 0.001);
+report_test("Test data generation (first value)", test_passed, test_number);
+```
+
+### 4. Edge Case Testing for Packages
+
+**Test boundary conditions and error handling**:
+```vhdl
+-- Test edge cases
+test_voltage := generate_voltage_test_value(2.0, 2.0, 0, 1);  -- Single value
+test_passed := (abs(test_voltage - 2.0) < 0.001);
+report_test("Single value generation", test_passed, test_number);
+
+-- Test error conditions
+test_voltage := generate_voltage_test_value(6.0, 7.0, 0, 5);  -- Out of range
+test_passed := (abs(test_voltage - 0.0) < 0.001);  -- Should return 0.0 on error
+report_test("Invalid range handling", test_passed, test_number);
+```
+
 ## Testbench Design Best Practices
 
 ### 1. Test Structure and Organization
