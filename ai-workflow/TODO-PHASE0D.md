@@ -22,7 +22,9 @@ Once we have some clarity I suggest we then write them to a (tentative)
 
 ### **DATADEF Analysis Complete**
 - **Analysis Document**: `DATADEF_ANALYSIS.md` - Comprehensive analysis of existing datadef properties
+- **Enhanced Analysis**: `DATADEF_ANALYSIS_ENHANCED.md` - Integration with unit hinting system
 - **Key Findings**: Identified 4 core property categories with specific examples
+- **Unit Hinting**: Discovered perfect complement to datadef system for type safety
 - **Standardization**: Proposed required vs. optional properties for all datadefs
 
 ### **PercentLut Generation Proposal Complete**
@@ -33,9 +35,10 @@ Once we have some clarity I suggest we then write them to a (tentative)
 ## 🎯 **NEXT STEPS**
 
 ### **Immediate Actions (This Week)**
-1. **Review Analysis**: Validate the DATADEF properties against your vision
-2. **Template Development**: Start creating VHDL generation templates
-3. **Proof of Concept**: Generate a simple datadef package as validation
+1. **Review Enhanced Analysis**: Validate the DATADEF properties and unit hinting integration
+2. **Unit Hinting Pilot**: Add unit hints to one existing datadef package as proof of concept
+3. **Template Development**: Start creating VHDL generation templates with unit support
+4. **Proof of Concept**: Generate a simple datadef package as validation
 
 ### **Short-term Goals (Next 2 Weeks)**
 1. **Generation Engine**: Implement basic VHDL code generation
@@ -50,11 +53,12 @@ Once we have some clarity I suggest we then write them to a (tentative)
 ## 🔍 **Key Insights from Analysis**
 
 ### **What Makes a DATADEF**
-1. **SYSTEM_* Constants**: Fundamental data widths and sizes
+1. **SYSTEM_* Constants**: Fundamental data widths and sizes with unit hints
 2. **Explicit Type Definitions**: Clear, Verilog-portable data structures
 3. **Validation Functions**: Bounds checking and data integrity
 4. **Safe Access Patterns**: Bounds-checked data retrieval
 5. **Verilog Conversion Documentation**: Clear conversion strategies
+6. **Unit Hinting**: Semantic meaning documentation for type safety (NEW!)
 
 ### **Current Strengths**
 - ✅ Consistent naming conventions
@@ -67,9 +71,14 @@ Once we have some clarity I suggest we then write them to a (tentative)
 - 🔄 Consistent error handling
 - 🔄 Automated generation system
 - 🔄 Verilog compatibility verification
+- 🔄 Unit hinting integration and validation (NEW!)
 
 ## 🚀 **Recommendation**
 
-**Proceed with Template Development**: The analysis shows your existing datadefs are well-structured and follow good patterns. The proposed generation system will standardize these patterns and make future development more efficient.
+**Proceed with Enhanced Template Development**: The analysis shows your existing datadefs are well-structured and follow good patterns. The **unit hinting integration** provides a perfect complement for type safety without synthesis overhead.
 
-**Start Simple**: Begin with basic VHDL templates for constants, types, and functions. Validate with a simple datadef package before tackling the full PercentLut recreation.
+**Unit Hinting First**: Start by adding unit hints to one existing datadef package as a pilot. This will validate the approach and provide immediate benefits for development and testing.
+
+**Then Template Development**: Once unit hinting is validated, proceed with VHDL generation templates that incorporate unit support. This will standardize patterns and make future development more efficient.
+
+**Start Simple**: Begin with basic VHDL templates for constants, types, and functions with unit hints. Validate with a simple datadef package before tackling the full PercentLut recreation.
