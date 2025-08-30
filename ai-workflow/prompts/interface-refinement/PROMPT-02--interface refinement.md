@@ -9,8 +9,8 @@
 - **@rules.mdc** - Repository-specific coding rules and workflow guidelines
 
 **HIGHLY RECOMMENDED - Reference these for best practices:**
-- **@README-direct-instantiation.md** - Direct instantiation patterns and examples
-- **@README-ghdl-testbench-tips.md** - Testbench development best practices
+- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns and examples
+- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench development best practices
 
 ## Execution Mode Detection
 

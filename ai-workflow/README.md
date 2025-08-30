@@ -83,8 +83,8 @@ The workflow is designed to be:
 
 - **@AGENTS.md** - Core VHDL coding standards
 - **@rules.mdc** - Repository-specific rules
-- **@README-direct-instantiation.md** - Direct instantiation patterns
-- **@README-ghdl-testbench-tips.md** - Testbench best practices
+- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns
+- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench best practices
 
 ## 🤝 **Contributing**
 
