@@ -319,3 +319,56 @@ if data_in /= "UUUUUUUU" then
 end if;
 ```
 **Tags**: #candidate #unreviewed #metavalues #initialization #numeric-std
+
+### Candidate: TB-07: Comprehensive test vector design
+**Problem**: Ad-hoc test cases lead to incomplete coverage and inconsistent results.  
+**Cause**: Lack of systematic approach to test case generation and validation.  
+**Solution**: Use structured test vectors with expected results for systematic testing.  
+**Pattern**:
+```vhdl
+-- Define test vector record type
+type test_vector_t is record
+    input1    : std_logic_vector(7 downto 0);
+    input2    : std_logic_vector(7 downto 0);
+    expected  : boolean;
+end record;
+
+-- Create test vector array
+constant test_vectors : test_vector_array_t := (
+    ("00000001", "00000001", true),   -- Valid case 1
+    ("00000000", "00000001", false),  -- Invalid case 1
+    ("11111111", "00000001", true)    -- Valid case 2
+);
+
+-- Use in test loop
+for i in test_vectors'range loop
+    apply_stimulus(test_vectors(i).input1, test_vectors(i).input2);
+    check_result(test_vectors(i).expected);
+end loop;
+```
+**Tags**: #candidate #unreviewed #test-vectors #systematic-testing #coverage
+
+### Candidate: TB-08: System integration testing with operational mode validation
+**Problem**: Top-level testbenches only test basic functionality, missing system-level integration validation.  
+**Cause**: Lack of comprehensive system state testing and operational mode validation.  
+**Solution**: Test system-level integration with operational mode validation and comprehensive system state checking.  
+**Pattern**:
+```vhdl
+-- System integration test with operational mode validation
+type system_test_vector_t is record
+    input_config : std_logic_vector(7 downto 0);
+    expected_ready : boolean;
+    expected_mode  : std_logic_vector(1 downto 0);
+end record;
+
+-- Test system integration
+for i in system_test_vectors'range loop
+    apply_system_stimulus(system_test_vectors(i).input_config);
+    
+    -- Validate system state
+    check_system_ready(system_test_vectors(i).expected_ready);
+    check_operational_mode(system_test_vectors(i).expected_mode);
+    check_system_integration();
+end loop;
+```
+**Tags**: #candidate #unreviewed #system-integration #operational-modes #top-level-testing

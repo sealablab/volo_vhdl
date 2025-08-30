@@ -204,3 +204,56 @@ begin
 end architecture;
 ```
 **Tags**: #candidate #unreviewed #functions #architecture #ghdl-error
+
+### Candidate: TIM-02: Pipeline registers for complex calculations
+**Problem**: Long combinatorial paths causing timing violations in complex calculations.  
+**Cause**: Multi-stage arithmetic or logic operations in single clock cycle.  
+**Solution**: Break complex calculations into pipeline stages with intermediate registers.  
+**Pattern**:
+```vhdl
+-- Pipeline complex calculation across multiple clock cycles
+process(clk)
+begin
+  if rising_edge(clk) then
+    -- Stage 1: Input processing
+    stage1 <= unsigned(input_data);
+    -- Stage 2: Arithmetic operation
+    stage2 <= to_signed(to_integer(stage1) * 16, 16);
+    -- Stage 3: Output with clamping
+    if stage2 > MAX_VALUE then
+      output <= MAX_VALUE;
+    else
+      output <= stage2;
+    end if;
+  end if;
+end process;
+```
+**Tags**: #candidate #unreviewed #pipeline #timing #critical-paths
+
+### Candidate: SIG-04: Comprehensive status reporting in top-level modules
+**Problem**: Limited visibility into system state and operational status in top-level modules.  
+**Cause**: Only basic status register provided, missing system-level status information.  
+**Solution**: Add comprehensive status outputs including system_ready, config_valid, and operational_mode.  
+**Pattern**:
+```vhdl
+-- Top-level module with comprehensive status reporting
+entity top_module is
+  port (
+    -- Standard outputs
+    data_out : out std_logic_vector(7 downto 0);
+    status_reg : out std_logic_vector(7 downto 0);
+    
+    -- Additional status outputs
+    stat_system_ready : out std_logic;
+    stat_config_valid : out std_logic;
+    stat_operational_mode : out std_logic_vector(1 downto 0)
+  );
+end entity;
+
+-- Status generation
+system_ready <= all_config_valid and (not fault_condition);
+stat_system_ready <= system_ready;
+stat_config_valid <= all_config_valid;
+stat_operational_mode <= operational_mode;
+```
+**Tags**: #candidate #unreviewed #status-reporting #top-level #system-integration
