@@ -309,3 +309,28 @@ for i in test_vectors'range loop
 end loop;
 ```
 **Tags**: #candidate #unreviewed #test-vectors #systematic-testing #coverage
+
+### Candidate: TB-08: System integration testing with operational mode validation
+**Problem**: Top-level testbenches only test basic functionality, missing system-level integration validation.  
+**Cause**: Lack of comprehensive system state testing and operational mode validation.  
+**Solution**: Test system-level integration with operational mode validation and comprehensive system state checking.  
+**Pattern**:
+```vhdl
+-- System integration test with operational mode validation
+type system_test_vector_t is record
+    input_config : std_logic_vector(7 downto 0);
+    expected_ready : boolean;
+    expected_mode  : std_logic_vector(1 downto 0);
+end record;
+
+-- Test system integration
+for i in system_test_vectors'range loop
+    apply_system_stimulus(system_test_vectors(i).input_config);
+    
+    -- Validate system state
+    check_system_ready(system_test_vectors(i).expected_ready);
+    check_operational_mode(system_test_vectors(i).expected_mode);
+    check_system_integration();
+end loop;
+```
+**Tags**: #candidate #unreviewed #system-integration #operational-modes #top-level-testing
