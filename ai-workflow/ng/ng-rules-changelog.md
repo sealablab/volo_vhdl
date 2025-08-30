@@ -7,6 +7,43 @@
 
 ---
 
+## Version 1.2 - Agent Guidance Integration
+**Date**: January 27, 2025  
+**Tag**: `agent-guidance-v1.0`  
+**Branch**: `main-ng`
+
+### 🎯 **Integration Summary**
+Added comprehensive agent guidance sections to workspace rules files while preserving all existing institutional knowledge. Establishes clear first-chunk guardrails and deterministic startup procedures for AI agents.
+
+### 📈 **Changes Made**
+
+#### **AGENTS.md**
+- **✅ Added "Usage for Agents" section** at the top with core guidance
+- **✅ Added "Fresh Window Checklist"** for deterministic session startup
+- **✅ Preserved all existing comprehensive guidelines** (533+ lines)
+- **✅ Fixed path references** to canonical `ai-workflow/ng/` locations
+
+#### **.cursor/rules.mdc**
+- **✅ Added minimal mirror section** at the top for first-chunk guardrails
+- **✅ Preserved all existing comprehensive rules** (464+ lines)
+- **✅ Added "Repo Facts" and "Fresh Window Checklist"** for quick reference
+- **✅ Fixed path references** to canonical locations
+
+### 🎯 **Key Benefits**
+- **First-chunk guardrails**: Agents get immediate guidance in first context chunks
+- **Deterministic startup**: Clear checklist ensures consistent sessions
+- **Separation of concerns**: `-ng` files remain source of truth, agents append candidates
+- **Preserved knowledge**: All existing comprehensive rules and guidelines maintained
+- **Fixed consistency**: All path references point to correct canonical locations
+
+### 📊 **Impact**
+- **Agent onboarding**: Faster, more consistent agent orientation
+- **Session reliability**: Deterministic startup procedures
+- **Content preservation**: Zero loss of institutional knowledge
+- **Reference accuracy**: All paths point to correct canonical files
+
+---
+
 ## Version 1.1 - Agent Integration & Quality Refinement
 **Date**: August 30, 2025  
 **Tag**: `enhanced-structured-rule-system-v1.1`  
