@@ -1,4 +1,4 @@
-# Synthesizable VHDL Tips and Best Practices (Structured)
+# Synthesizable VHDL Tips and Best Practices (Structured, -ng)
 
 > Dual-purpose format: concise, machine-friendly rules in the open text; deeper human notes and long examples inside HTML comments.
 
@@ -14,15 +14,10 @@
 | Error/Clue (optional) | Category | Tip ID | Title |
 |------------------------|----------|--------|-------|
 | latch inferred         | PROC     | PROC-01 | Avoid unintended latches |
-| port mismatch at elaboration | PROC | PROC-02 | Direct instantiation patterns |
-| signal priority confusion | PROC | PROC-03 | Reset/enable signal hierarchy |
 | multiple drivers error | SIG      | SIG-01  | Single-writer for signals |
-| port type mismatch     | SIG      | SIG-02  | Port mapping best practices |
-| unclear signal behavior | SIG | SIG-03 | Signal priority and truth table patterns |
+| positional map mismatch| SIG      | SIG-02  | Prefer named association & explicit conversions |
+| priority confusion     | SIG      | SIG-03  | Define signal priority & truth table |
 | timing violation       | TIM      | TIM-01  | Constrain critical paths |
-| missing unit errors    | STD      | STD-02  | Library management and compilation order |
-| generic not configured | STD | STD-03 | Generic parameter passing patterns |
-| …                      | …        | …       | … |
 
 ---
 
@@ -30,8 +25,8 @@
 
 ### PROC-01: Avoid unintended latches
 **Problem**: Latches inferred unexpectedly.  
-**Cause**: Incomplete process sensitivity list or missing default assignments.  
-**Solution**: Ensure all branches assign outputs, and use clocked processes for storage.  
+**Cause**: Incomplete process branches or missing default assignments.  
+**Solution**: Ensure all branches assign outputs; use clocked processes for storage.  
 **Pattern**:
 ```vhdl
 process(clk)
@@ -61,6 +56,45 @@ begin
 end process;
 ```
 **Tags**: #signals #drivers #discipline
+
+### SIG-02: Prefer **named association** & explicit conversions
+**Problem**: Port type mismatches and accidental mis-wiring with positional maps.  
+**Cause**: Positional association hides intent; implicit conversions not applied.  
+**Solution**: Use **named** port maps and explicit `std_logic_vector`/`unsigned` conversions.  
+**Pattern**:
+```vhdl
+u_core: entity work.core
+  port map (
+    clk   => clk,
+    rst   => rst,
+    a_in  => std_logic_vector(a_u),
+    b_in  => std_logic_vector(b_u),
+    y_out => y
+  );
+```
+**Tags**: #port-mapping #type-conversion #named-association
+
+### SIG-03: Define **signal priority** & truth table
+**Problem**: Unclear behavior when `reset`, `clock_enable`, and `enable` interact.  
+**Cause**: Priority not documented; inconsistent implementation across modules.  
+**Solution**: Adopt and document a **priority hierarchy** (e.g., `reset > clock_enable > enable`) and a truth table.  
+**Pattern**:
+```vhdl
+process(clk)
+begin
+  if rising_edge(clk) then
+    if rst = '1' then
+      y <= (others => '0');     -- highest priority
+    elsif ce = '1' then
+      if en = '1' then
+        y <= next_y;
+      end if;
+    end if;
+  end if;
+end process;
+```
+**Tags**: #signal-priority #truth-table #documentation
+<!-- Human note: mirror this priority in your module README and TBs; include an explicit truth-table for reviewers. -->
 
 ---
 
@@ -114,10 +148,9 @@ end process;
 ### STD-01: Use portable subset for Verilog
 **Problem**: Non-portable constructs.  
 **Cause**: Using VHDL features without Verilog analogues.  
-**Solution**: Stick to basic types, avoid records, keep FSM encoding explicit.  
+**Solution**: Stick to basic types; keep FSM encoding explicit.  
 **Pattern**:
 ```vhdl
--- Portable FSM
 type state_t is (IDLE, RUN, DONE);
 signal state : state_t := IDLE;
 
@@ -137,9 +170,10 @@ end process;
 ---
 
 ## Appendix: Agent-Contributed Tips
-Agents may append new candidate tips **below the following line**.  
+Agents may append new candidate tips **below this line**.  
 Do not modify the main body above.
-Use the template below 'PROC-XX'
+
+------- New Tips here-------
 
 ### Candidate: PROC-XX
 **Problem**: …  
@@ -150,154 +184,3 @@ Use the template below 'PROC-XX'
 -- example
 ```
 **Tags**: #candidate #unreviewed
-
-------- New Tips here-------
-
-### PROC-02: Direct instantiation patterns
-**Problem**: Port mismatches caught at elaboration time, not analysis time.  
-**Cause**: Using traditional component declarations instead of direct instantiation.  
-**Solution**: Use direct instantiation with proper library references and named association.  
-**Pattern**:
-```vhdl
-U1: entity WORK.DCSequencer
-    port map (
-        Clk => Clk,
-        Reset => Reset,
-        DataIn => InputA,
-        HIThreshold => signed(Control0(31 downto 16)),
-        LOThreshold => signed(Control0(15 downto 0)),
-        DataOutA => DataOutA,
-        DataOutB => DataOutB
-    );
-```
-**Tags**: #direct-instantiation #port-mapping #library-management
-<!-- See README-direct-instantiation.md for detailed examples and advanced patterns -->
-
-### PROC-03: Reset/enable signal hierarchy
-**Problem**: Confusion about signal priority and behavior.  
-**Cause**: Unclear hierarchy between reset, clock enable, and functional enable.  
-**Solution**: Follow strict priority: Reset > clk_en > enable.  
-**Pattern**:
-```vhdl
-process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        -- Reset dominates
-        state <= IDLE;
-    elsif rising_edge(clk) then
-        if clk_en = '1' then
-            if enable = '1' then
-                -- Normal operation
-                state <= next_state;
-            end if;
-            -- clk_en='0' holds state
-        end if;
-    end if;
-end process;
-```
-**Tags**: #reset #clock-enable #signal-hierarchy
-<!-- See README-RESET.md for complete truth table and behavior details -->
-
-### SIG-02: Port mapping best practices
-**Problem**: Port type mismatches and missing connections.  
-**Cause**: Incorrect port mapping syntax or missing type conversions.  
-**Solution**: Use named association with explicit type conversions.  
-**Pattern**:
-```vhdl
--- Named association (recommended)
-U1: entity WORK.DCSequencer
-    port map (
-        Clk => Clk,
-        Reset => Reset,
-        DataIn => InputA,
-        HIThreshold => signed(Control0(31 downto 16)),  -- explicit conversion
-        LOThreshold => signed(Control0(15 downto 0)),   -- explicit conversion
-        DataOutA => DataOutA,
-        DataOutB => DataOutB
-    );
-```
-**Tags**: #port-mapping #type-conversion #named-association
-
-### SIG-03: Signal priority and truth table patterns
-**Problem**: Unclear signal behavior in complex enable/reset scenarios.  
-**Cause**: Missing clear priority hierarchy and truth table documentation.  
-**Solution**: Document signal priority and use consistent truth table patterns.  
-**Pattern**:
-```vhdl
--- Signal priority: Reset > clk_en > enable
--- Truth table:
--- Reset | clk_en | enable | Behavior
---   1   |   X    |   X    | Reset dominates → safe defaults
---   0   |   0    |   X    | Clock frozen → hold state, no updates
---   0   |   1    |   0    | Idle/hold → state stable, outputs parked
---   0   |   1    |   1    | Normal operation → advance state, process data
-
-process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        -- Reset dominates
-        output <= (others => '0');
-        state <= IDLE;
-    elsif rising_edge(clk) then
-        if clk_en = '1' then
-            if enable = '1' then
-                -- Normal operation
-                output <= next_output;
-                state <= next_state;
-            end if;
-            -- clk_en='0' holds state
-        end if;
-    end if;
-end process;
-```
-**Tags**: #signal-hierarchy #truth-table #reset-priority
-
-### STD-02: Library management and compilation order
-**Problem**: Missing unit errors and compilation failures.  
-**Cause**: Incorrect library references or wrong compilation order.  
-**Solution**: Use proper library references and compile in dependency order.  
-**Pattern**:
-```vhdl
--- Always specify library for direct instantiation
-U1: entity WORK.DCSequencer port map (...);  -- WORK library
-U2: entity IEEE.STD_LOGIC_ARITH.ALL;         -- IEEE library
-U3: entity my_lib.my_entity port map (...);  -- Custom library
-```
-```bash
-# Compilation order: dependencies first
-ghdl -a --std=08 dependency.vhd
-ghdl -a --std=08 entity.vhd
-ghdl -a --std=08 top.vhd
-ghdl -e --std=08 top
-```
-**Tags**: #library-management #compilation-order #dependencies
-
-### STD-03: Generic parameter passing patterns
-**Problem**: Generic parameters not properly configured for different instances.  
-**Cause**: Missing or incorrect generic map usage.  
-**Solution**: Use explicit generic map with named association.  
-**Pattern**:
-```vhdl
--- Single instance with generics
-U1: entity WORK.Counter
-    generic map (
-        WIDTH => 32,
-        MAX_VALUE => 1000
-    )
-    port map (
-        clk => clk,
-        rst => rst,
-        count => counter_out
-    );
-
--- Multiple instances with different configurations
-U1: entity WORK.Counter
-    generic map (WIDTH => 8)
-    port map (clk => clk, rst => rst, count => count8);
-
-U2: entity WORK.Counter
-    generic map (WIDTH => 16)
-    port map (clk => clk, rst => rst, count => count16);
-```
-**Tags**: #generics #parameter-passing #configuration
-
