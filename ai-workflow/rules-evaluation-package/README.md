@@ -21,6 +21,14 @@ This package contains all files needed to evaluate and integrate 8 new candidate
   - `probe_hero8_top_detailed.vhd` - Top-level with SIG-04 comprehensive status reporting
   - `probe_hero8_top_detailed_tb.vhd` - Top-level testbench with TB-08 system integration
 
+### 🔧 Experiment Scripts (Archive)
+- **`experiment-scripts/`** - Complete scripts used to run the experiment
+  - `run-full-experiment-ng.sh` - Master script for full automated experiment
+  - `setup-ng-experiment.sh` - Infrastructure setup
+  - `start-condensed-ng.sh` - Condensed approach setup
+  - `start-detailed-ng.sh` - Detailed approach setup
+  - `compare-results-ng.sh` - Results analysis and comparison
+
 ## Quick Start for Agent
 
 ### 1. Read the Task Prompt
@@ -72,11 +80,18 @@ rules-evaluation-package/
 ├── README-ghdl-testbench-tips-ng.md    # Rules with VS-03, GHDL-04, TB-07, TB-08
 ├── EXPERIMENT_CONVERSATION_SUMMARY.md  # Complete experiment context
 ├── MANUAL_COMPARISON_RESULTS.md        # Detailed analysis results
-└── implementation-evidence/             # Working VHDL code
-    ├── probe_hero8_core_detailed.vhd
-    ├── probe_hero8_core_detailed_tb.vhd
-    ├── probe_hero8_top_detailed.vhd
-    └── probe_hero8_top_detailed_tb.vhd
+├── implementation-evidence/             # Working VHDL code
+│   ├── probe_hero8_core_detailed.vhd
+│   ├── probe_hero8_core_detailed_tb.vhd
+│   ├── probe_hero8_top_detailed.vhd
+│   └── probe_hero8_top_detailed_tb.vhd
+└── experiment-scripts/                  # Experiment scripts (archive)
+    ├── README.md
+    ├── run-full-experiment-ng.sh
+    ├── setup-ng-experiment.sh
+    ├── start-condensed-ng.sh
+    ├── start-detailed-ng.sh
+    └── compare-results-ng.sh
 ```
 
 ## Success Criteria
