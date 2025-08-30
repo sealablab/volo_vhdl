@@ -12,17 +12,19 @@ I think it would be wise to include a minimal set of states as well as a (very) 
 I think we should also include a 
 - HARD_FAULT -- modules should enter this when input parameters fail to validate, as well as any other safety critical failures.
 - Once a module enters `HARD_FAULT` it should the 'FAULT' bit in the module status register. By convention this is the topmost bit. The module shall not leave `HARD_FAULT` via any mechanism short of the `reset` control signal resetting the module.
--
-### Datadefs minimal properties
-a proper datad defintion should __clearly__ define:
-	- datastructure widths, valid ranges, 
-	as well as vhdl functions that implement and identify these bounds.
- p
-### @DEX: Can you analyze the current set of 'datadefintions' and come up with more properties ?
 
-4. Test with ProbeHero7**
-- Use the refined requirements we created today
-- Generate complete VHDL implementation
-- Validate against VOLO coding standards
----
+I am hesitant to proscribe the exact names etc of these states myself. Is there an obvious industry convention? 
 
+
+Also: What do you think about 'encoding' the resulting template state transition diagram as a **mermaidjs** diagram? It seems somewhat experimental, but computers and humans both seem to speak it pretty well. 😅
+
+If you think we can resolve this in a single context window, give me a sign by creating a new feature branch
+
+----
+While Dex cooks on that lets think of our next move..
+
+we now have a base state machine - 
+should we update the AGENTS.md and rules.mdc __now__.. or should we perhaps clearly define the (default) reset mechanism and input parameter verification approach? 
+
+Once we have the state machine base commited and a reset testing / testbench handling convention sorted it may make more sense to 'merge' them both at once. 
+(conceptually anyway). 

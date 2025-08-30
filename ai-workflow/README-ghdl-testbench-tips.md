@@ -105,6 +105,86 @@ ghdl -e --std=08 entity_tb
 ghdl -r --std=08 entity_tb
 ```
 
+### 6. Successful Compilation Patterns (From State Machine Base)
+
+**What Worked Well**: The state machine base compiled successfully with minimal issues. Key patterns:
+
+#### **Clean Entity/Architecture Structure**
+```vhdl
+-- Simple, clear entity declaration
+entity state_machine_base is
+    generic (
+        MODULE_NAME : string := "state_machine_base";
+        STATUS_REG_WIDTH : integer := 32;
+        MODULE_STATUS_BITS : integer := 16
+    );
+    port (
+        -- Clear, well-documented ports
+        clk : in std_logic;
+        rst_n : in std_logic;
+        -- ... other ports
+    );
+end entity state_machine_base;
+```
+
+#### **Process Organization**
+```vhdl
+-- Separate processes for different concerns
+-- 1. Parameter validation (combinational)
+parameter_validation : process(cfg_param1, cfg_param2, cfg_param3)
+begin
+    -- Simple validation logic
+end process;
+
+-- 2. State machine (clocked)
+state_machine_proc : process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        current_state <= ST_RESET;
+    elsif rising_edge(clk) then
+        current_state <= next_state;
+    end if;
+end process;
+
+-- 3. Status register (clocked)
+status_reg_proc : process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        status_reg <= (others => '0');
+    elsif rising_edge(clk) then
+        -- Update status register
+    end if;
+end process;
+```
+
+#### **Avoid These Patterns (Caused Compilation Errors)**
+```vhdl
+-- ❌ Complex aggregates with non-static choices
+status_reg <= (31 => fault_bit, 30 downto 28 => (others => '0'), ...);
+
+-- ❌ Mixing signal and variable types in procedures
+procedure report_test(test_name : string; passed : boolean; test_num : inout natural);
+-- Called with signal instead of variable
+
+-- ❌ Incorrect bit width assignments
+status_reg(6 downto 3) <= "000";  -- 3 bits to 4-bit slice
+```
+
+#### **Use These Patterns Instead**
+```vhdl
+-- ✅ Simple process assignments
+status_reg(31) <= fault_bit;
+status_reg(30 downto 28) <= (others => '0');
+status_reg(27 downto 24) <= current_state;
+
+-- ✅ Use variables for local computations
+variable test_number : natural := 0;
+report_test("Test name", test_passed, test_number);
+
+-- ✅ Match exact bit widths
+status_reg(6 downto 3) <= "0000";  -- 4 bits to 4-bit slice
+```
+
 ## Testbench Design Best Practices
 
 ### 1. Test Structure and Organization
@@ -365,6 +445,84 @@ modules/module_name/
 ├── tb/top/         # Top-level testbenches
 └── tb/datadef/     # Package testbenches
 ```
+
+## Recent Success Patterns (State Machine Base Implementation)
+
+### What Made This Implementation Successful
+
+The state machine base template was implemented with minimal compilation issues. Here are the key patterns that worked well:
+
+#### 1. **Proper Signal Initialization**
+```vhdl
+-- Initialize all signals with explicit values
+signal current_state : std_logic_vector(3 downto 0) := ST_RESET;
+signal status_reg : std_logic_vector(STATUS_REG_WIDTH-1 downto 0) := (others => '0');
+signal cfg_param_valid : std_logic;  -- No initialization needed for combinational signals
+```
+
+#### 2. **Clean Process Structure**
+```vhdl
+-- Separate processes for different concerns
+state_machine_proc : process(clk, rst_n)  -- Clocked process
+parameter_validation : process(cfg_param1, cfg_param2, cfg_param3)  -- Combinational process
+status_reg_proc : process(clk, rst_n)  -- Clocked process
+```
+
+#### 3. **Proper Clock Edge Handling in Testbenches**
+```vhdl
+-- Wait for clock edges before checking status register updates
+wait_clk(1);  -- Wait for status register to update
+check_status_bit(31, '0', "FAULT bit reset to 0");
+```
+
+#### 4. **Clear State Encoding**
+```vhdl
+-- Use clear, documented state encodings
+constant ST_RESET      : std_logic_vector(3 downto 0) := "0000";  -- 0x0
+constant ST_READY      : std_logic_vector(3 downto 0) := "0001";  -- 0x1
+constant ST_IDLE       : std_logic_vector(3 downto 0) := "0010";  -- 0x2
+constant ST_HARD_FAULT : std_logic_vector(3 downto 0) := "1111";  -- 0xF
+```
+
+#### 5. **Avoid Complex Aggregates**
+```vhdl
+-- Instead of complex aggregates (which caused compilation errors):
+-- status_reg <= (31 => fault_bit, 30 downto 28 => (others => '0'), ...);
+
+-- Use simple process assignments:
+status_reg(31) <= fault_bit;
+status_reg(30 downto 28) <= (others => '0');
+status_reg(27 downto 24) <= current_state;
+```
+
+#### 6. **Testbench Timing Patterns**
+```vhdl
+-- Pattern that worked well for state machine testing:
+-- 1. Apply reset
+-- 2. Wait for clock edge
+-- 3. Check initial state
+-- 4. Apply inputs
+-- 5. Wait for clock edge
+-- 6. Check results
+-- 7. Repeat for next test
+```
+
+### Key Success Factors
+
+1. **Explicit Initialization**: All signals properly initialized
+2. **Process Separation**: Different concerns in different processes
+3. **Clock-Aware Testing**: Testbenches account for clock delays
+4. **Simple Constructs**: Avoid complex VHDL features that cause compilation issues
+5. **Clear Documentation**: Well-commented code with clear intent
+6. **Incremental Testing**: Test one feature at a time
+
+### What We've Learned
+
+- **VHDL-2008 + Verilog portability** is achievable with careful design
+- **Simple, explicit code** compiles more reliably than clever constructs
+- **Clock delays in testbenches** are crucial for proper testing
+- **Process separation** makes code more maintainable and debuggable
+- **Clear state encodings** make debugging much easier
 
 ## Summary Checklist
 
