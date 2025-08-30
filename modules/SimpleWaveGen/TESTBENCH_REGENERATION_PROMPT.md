@@ -149,3 +149,4 @@ ghdl -r --std=08 <testbench_name>
 - **README-ghdl-testbench-tips.md**: GHDL-specific testing best practices
 - **Current implementation files**: For understanding the refactored structure
 
+

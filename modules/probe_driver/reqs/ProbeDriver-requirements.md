@@ -22,7 +22,7 @@ The **ProbeDriver** shall only depend on the following vhdl modules / packages
 The Following style/code generations guides shall be applied to ProbeDriver
 * [[vhdl/reqs/NAMING-Readme|NAMING-Readme]]
 * [[vhdl/reqs/REGISTERS-Readme|REGISTERS-Readme]]
-* [[vhdl/reqs/RESET-Readme|RESET-Readme]]
+* [[volo_vhdl/modules/README-RESET|README-RESET]]
 
 
 ## 2 Inputs (compile time)

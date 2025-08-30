@@ -5,3 +5,4 @@ work-obj*.cf
 *_tb
 *.o
 *.exe
+*.mov
