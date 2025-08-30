@@ -175,12 +175,32 @@ Do not modify the main body above.
 
 ------- New Tips here-------
 
-### Candidate: PROC-XX
-**Problem**: …  
-**Cause**: …  
-**Solution**: …  
+### Candidate: PROC-02: Function declarations in architectures
+**Problem**: GHDL error when declaring functions directly in architecture body.  
+**Cause**: Functions must be declared in packages or within processes, not as standalone declarations in architecture.  
+**Solution**: Move function logic into processes or create separate packages for reusable functions.  
 **Pattern**:
 ```vhdl
--- example
+-- WRONG: Function in architecture body
+architecture behavioral of entity is
+  function my_func(x: std_logic_vector) return std_logic_vector is
+  begin
+    return x;
+  end function;
+begin
+  -- ...
+end architecture;
+
+-- CORRECT: Function logic in process
+architecture behavioral of entity is
+begin
+  process(input)
+    variable result: std_logic_vector(7 downto 0);
+  begin
+    -- Function logic here
+    result := input + 1;
+    output <= result;
+  end process;
+end architecture;
 ```
-**Tags**: #candidate #unreviewed
+**Tags**: #candidate #unreviewed #functions #architecture #ghdl-error
