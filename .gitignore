@@ -6,3 +6,6 @@ work-obj*.cf
 *.o
 *.exe
 *.mov
+
+# External examples and submodules
+moku-dev-examples/
