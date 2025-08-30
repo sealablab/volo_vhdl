@@ -48,6 +48,40 @@ This document provides guidelines for AI agents working with the Volo VHDL proje
 - Avoid complex type hierarchies
 - Keep interfaces simple and Verilog-compatible
 
+## Standard Control Signal Implementation
+
+### Signal Definitions
+All VOLO modules must implement these four standard control signals:
+- **`clk`**: Primary clock input (`std_logic`)
+- **`reset`**: Active-low reset (`std_logic`, typically `n_reset` or `reset_n`)
+- **`enable`**: Functional enable (`std_logic`)
+- **`clk_en`**: Clock enable (`std_logic`)
+
+### Signal Priorities
+1. **Reset** - Highest priority, forces safe state regardless of other signals
+2. **Clock Enable** - Second priority, freezes sequential logic when low
+3. **Functional Enable** - Lowest priority, gates functional work
+
+### Implementation Requirements
+- **Reset Behavior**: All outputs go to safe defaults, all registers cleared
+- **Clock Enable**: When `clk_en='0'`, sequential logic holds state (no updates)
+- **Functional Enable**: When `enable='0'`, DUT is idle/holding, outputs parked
+- **Safe State**: All outputs must have defined safe values when not operating
+
+### Truth Table
+| Reset | clk_en | enable | DUT Behavior                          |
+|-------|--------|--------|----------------------------------------|
+| 1     | X      | X      | **Reset dominates** → safe defaults    |
+| 0     | 0      | X      | **Clock frozen** → hold state, no updates |
+| 0     | 1      | 0      | **Idle/hold** → state stable, outputs parked |
+| 0     | 1      | 1      | **Normal operation** → advance state, process data |
+
+### Naming Conventions
+- **Clock**: Always `clk` (not configurable)
+- **Reset**: `n_reset` or `reset_n` (active low, synchronous)
+- **Enable**: `enable` (functional enable)
+- **Clock Enable**: `clk_en` (clock gating control)
+
 ## Status Register Implementation Standards
 
 ### Default Behavior for All VOLO Modules
