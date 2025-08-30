@@ -1,5 +1,29 @@
 # Volo VHDL Project - Agent Guidelines
 
+## Usage for Agents
+- Treat `ai-workflow/ng/README-synth-vhdl-tips-ng.md` and `ai-workflow/ng/README-ghdl-testbench-tips-ng.md` as **source of truth**.
+- Do **not** reorganize their main bodies. If you discover a new tip, **append only** below the footer marker:
+  `------- New Tips here-------`.
+- Respect the schema in those files: **Problem / Cause / Solution / Pattern / Tags**.
+- Human-only elaboration goes in HTML comments: `<!-- … -->`.
+- Testbench style: **edge-synchronous + clock-enable**; tiny post-edge nudge allowed only if documented.
+- Global control priority (repo standard): **`reset > clock_enable > enable`**.
+
+## Fresh Window Checklist
+1) **Open rules**: Load `ai-workflow/ng/README-synth-vhdl-tips-ng.md` and `ai-workflow/ng/README-ghdl-testbench-tips-ng.md`. Read their **Usage for Agents** blocks.
+2) **Footer rule**: Confirm you must **append** new tips only after `------- New Tips here-------`.
+3) **Standards**: Remember
+   - TB timing: edge-synchronous + CE; post-edge nudge only if justified.
+   - Control priority: `reset > clock_enable > enable` (STD-02).
+4) **Workspace sanity**:
+   - Use the repo's build scripts/Makefiles; prefer `--std=08` for GHDL.
+   - Run a quick compile/test on the active module (or `make quick-test`) to ensure environment health.
+5) **Edits protocol**:
+   - For `.cursor/rules.mdc` and `AGENTS.md`, **show a unified diff** before changing anything.
+   - Keep changes **idempotent** (re-running the same update shouldn't duplicate sections).
+6) **New tips**:
+   - After a successful elaboration or a resolved failure, write a **candidate tip** at the relevant file's footer using the short schema.
+
 ## Overview
 This document provides guidelines for AI agents working with the Volo VHDL project. The project follows strict VHDL-2008 coding standards designed for **Verilog portability**.
 

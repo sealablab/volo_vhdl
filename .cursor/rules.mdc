@@ -6,6 +6,28 @@ applies_to: "all_files"
 priority: "high"
 ---
 
+# .cursor/rules.mdc
+
+## Usage for Agents
+- Don't reorganize `ai-workflow/ng/README-*-tips-ng.md` files; **append new tips** below `------- New Tips here-------`.
+- Use the schema **Problem / Cause / Solution / Pattern / Tags**. Long human context → HTML comments.
+- TB style: edge-synchronous + CE; post-edge nudge only if documented.
+- Global control priority: `reset > clock_enable > enable`.
+
+## Repo Facts
+- Synth tips: `ai-workflow/ng/README-synth-vhdl-tips-ng.md`
+- TB tips: `ai-workflow/ng/README-ghdl-testbench-tips-ng.md`
+- Both provide a **manual Quick Index**, standard schema, and a footer sandbox.
+
+## Fresh Window Checklist
+- Load the two `-ng` files; read "Usage for Agents."
+- Confirm footer-only append rule; never reorganize main bodies.
+- Build sanity: run GHDL with `--std=08`; run module Makefile quick test.
+- Show diffs before changing `.cursor/rules.mdc` or `AGENTS.md`.
+- After success/learning, append a candidate tip at the footer using the schema.
+
+---
+
 # Volo VHDL Project - Agent Guidelines
 
 ## Overview
