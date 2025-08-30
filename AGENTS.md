@@ -479,6 +479,48 @@ For datadef packages with records, ensure:
 - [ ] Test coverage and test cases are documented
 - [ ] GHDL compilation commands provided
 
+## Enhanced Structured Rule System
+
+### AI-Assisted Development Resources
+For comprehensive, structured guidance on VHDL development patterns and common issues, utilize the enhanced rule system:
+
+#### **Primary Resources**
+- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Structured synthesizable VHDL tips
+  - Problem/Cause/Solution/Pattern format for rapid issue resolution
+  - Quick Index for error message lookup
+  - Canonical code patterns for common scenarios
+  - Covers: Direct instantiation, reset/enable hierarchy, port mapping, library management
+
+- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - Structured GHDL testbench development tips
+  - Variables vs signals guidance
+  - Data type and width handling
+  - Simulation output and logging patterns
+  - GHDL toolchain quirks and solutions
+  - Testbench patterns and best practices
+
+- **`ai-workflow/ng/README-index.md`** - Overview and navigation guide
+
+#### **Key Features for AI Agents**
+- **Machine-friendly format**: Structured Problem/Cause/Solution patterns
+- **Error-driven lookup**: Quick Index organized by error messages and clues
+- **Canonical patterns**: Exact code snippets as reference implementations
+- **Cross-references**: HTML comments link to detailed documentation
+- **Extensible**: Agent contribution sections for new tips
+
+#### **Integration with Workspace Rules**
+The structured rule system provides implementation details for the architectural patterns defined in the workspace rules:
+- **Direct instantiation patterns** (complements workspace direct instantiation requirements)
+- **Reset/enable signal hierarchy** (implements workspace signal priority rules)
+- **GHDL compilation and testing** (supports workspace testbench requirements)
+- **Verilog portability patterns** (reinforces workspace portability goals)
+
+#### **Usage Guidelines for AI Agents**
+1. **Start with Quick Index**: Look up error messages or problem categories
+2. **Follow Pattern snippets**: Use canonical code patterns as templates
+3. **Reference detailed guides**: Check HTML comments for comprehensive examples
+4. **Contribute new tips**: Add discoveries to the agent contribution sections
+5. **Cross-reference workspace rules**: Ensure compliance with architectural requirements
+
 ## Questions for Clarification
 When working on this project, consider asking:
 1. What is the target frequency and timing requirements?

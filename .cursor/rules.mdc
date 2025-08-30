@@ -307,6 +307,29 @@ Before submitting code, ensure:
 - [ ] Testbench prints required messages
 - [ ] **Top layer files use direct instantiation for all module connections**
 
+## Structured Rule System Reference
+
+### Enhanced AI-Assisted Development Rules
+For detailed, structured guidance on common VHDL development patterns and GHDL testbench issues, refer to the enhanced rule system:
+
+- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Structured synthesizable VHDL tips with Problem/Cause/Solution patterns
+- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - Structured GHDL testbench development tips
+- **`ai-workflow/ng/README-index.md`** - Index and overview of the structured rule system
+
+### Key Features of the Structured Rule System
+- **Machine-friendly format**: Problem/Cause/Solution/Pattern structure for AI agents
+- **Quick Index**: Error message lookup for rapid problem resolution
+- **Canonical patterns**: Exact code snippets for common scenarios
+- **Cross-references**: Links to detailed documentation in HTML comments
+- **Agent contributions**: Built-in mechanism for AI agents to contribute new tips
+
+### Integration with Existing Rules
+The structured rule system complements these workspace rules by providing:
+- **Implementation details** for the architectural patterns defined here
+- **Common pitfalls** and their solutions
+- **GHDL-specific guidance** for testbench development
+- **Verilog portability patterns** for synthesizable code
+
 ## Questions for Clarification
 When working on this project, consider asking:
 1. What is the target frequency and timing requirements?
