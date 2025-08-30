@@ -366,6 +366,42 @@ ghdl -e --std=08 testbench_entity && \
 ghdl -r --std=08 testbench_entity
 ```
 
+### 15. Procedure Parameter Order Issues
+
+**Problem**: `error: can't associate "parameter" with constant interface "expected_type"` when calling procedures with wrong parameter order
+```vhdl
+-- This fails:
+procedure report_test(test_name : string; passed : boolean; test_num : inout natural; all_passed : inout boolean) is
+-- Called with wrong order:
+report_test("Test name", test_number, all_passed);  -- Wrong: test_number is natural, not boolean
+```
+
+**Solution**: Always match parameter types and order exactly
+```vhdl
+-- Correct call:
+report_test("Test name", test_passed, test_number, all_passed);
+-- Where: test_passed is boolean, test_number is natural, all_passed is boolean
+```
+
+**Best Practice**: Use consistent parameter order across all procedures
+```vhdl
+-- Standard order for test reporting procedures:
+procedure report_test(
+    test_name : string;           -- Test description
+    passed : boolean;             -- Test result
+    test_num : inout natural;     -- Test counter
+    all_passed : inout boolean    -- Overall result tracker
+) is
+```
+
+**Debugging Tip**: Check parameter types when getting association errors
+```vhdl
+-- If you get type mismatch errors, verify:
+-- 1. Parameter order matches procedure declaration
+-- 2. Parameter types match exactly (natural vs boolean vs string)
+-- 3. inout parameters are variables, not signals
+```
+
 ## Package Testing Best Practices
 
 ### 1. Package Testbench Structure
@@ -777,6 +813,7 @@ Before submitting a testbench, ensure:
 - [ ] **NEW**: Complex return types (arrays, records) are tested with proper bounds checking
 - [ ] **NEW**: Package dependencies are correctly imported and function names verified
 - [ ] **NEW**: Package recompilation follows proper dependency order (declaration → body → dependents)
+- [ ] **NEW**: Procedure parameter order and types match exactly when calling procedures
 
 ## Quick Reference Commands
 
