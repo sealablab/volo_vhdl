@@ -1,0 +1,149 @@
+# Synthesizable VHDL Tips and Best Practices (Structured)
+
+> Dual-purpose format: concise, machine-friendly rules in the open text; deeper human notes and long examples inside HTML comments.
+
+## Usage for Agents
+- Ignore HTML comments (`<!-- … -->`).
+- Consume only headings, **Problem/Cause/Solution**, **Pattern** snippets, and **Tags**.
+- Prefer **Pattern** snippets as canonical forms when generating code.
+- ⚠️ Do not edit or reorganize the main body of this file.
+- If you believe you have discovered a **new tip**, append it to the footer section marked
+  `------- New Tips here-------` instead of altering the main text.
+
+## Quick Index (maintained by humans)
+| Error/Clue (optional) | Category | Tip ID | Title |
+|------------------------|----------|--------|-------|
+| latch inferred         | PROC     | PROC-01 | Avoid unintended latches |
+| multiple drivers error | SIG      | SIG-01  | Single-writer for signals |
+| timing violation       | TIM      | TIM-01  | Constrain critical paths |
+| …                      | …        | …       | … |
+
+---
+
+## 1) Processes & State Machines (PROC)
+
+### PROC-01: Avoid unintended latches
+**Problem**: Latches inferred unexpectedly.  
+**Cause**: Incomplete process sensitivity list or missing default assignments.  
+**Solution**: Ensure all branches assign outputs, and use clocked processes for storage.  
+**Pattern**:
+```vhdl
+process(clk)
+begin
+  if rising_edge(clk) then
+    q <= d;
+  end if;
+end process;
+```
+**Tags**: #process #fsm #latch
+
+---
+
+## 2) Signals & Assignments (SIG)
+
+### SIG-01: Single-writer for signals
+**Problem**: Multiple drivers create 'X' or 'U'.  
+**Cause**: Same signal assigned from different processes.  
+**Solution**: Follow single-writer rule; resolve externally if needed.  
+**Pattern**:
+```vhdl
+process(clk)
+begin
+  if rising_edge(clk) then
+    out_sig <= next_val;
+  end if;
+end process;
+```
+**Tags**: #signals #drivers #discipline
+
+---
+
+## 3) Timing & Clocks (TIM)
+
+### TIM-01: Constrain critical paths
+**Problem**: Timing violations in synthesis.  
+**Cause**: Long combinatorial logic between flops.  
+**Solution**: Add pipeline registers; use proper clock constraints.  
+**Pattern**:
+```vhdl
+process(clk)
+begin
+  if rising_edge(clk) then
+    stage1 <= a + b;
+    stage2 <= stage1 + c;
+  end if;
+end process;
+```
+**Tags**: #timing #pipeline #constraints
+
+---
+
+## 4) Resources & Structures (RES)
+
+### RES-01: BRAM inference patterns
+**Problem**: Memory inferred as registers instead of BRAM.  
+**Cause**: Incorrect coding style.  
+**Solution**: Use array + clocked process style.  
+**Pattern**:
+```vhdl
+type ram_t is array(0 to 255) of std_logic_vector(7 downto 0);
+signal ram : ram_t;
+...
+process(clk)
+begin
+  if rising_edge(clk) then
+    if we = '1' then
+      ram(addr) <= din;
+    end if;
+    dout <= ram(addr);
+  end if;
+end process;
+```
+**Tags**: #bram #inference
+
+---
+
+## 5) Portability & Standards (STD)
+
+### STD-01: Use portable subset for Verilog
+**Problem**: Non-portable constructs.  
+**Cause**: Using VHDL features without Verilog analogues.  
+**Solution**: Stick to basic types, avoid records, keep FSM encoding explicit.  
+**Pattern**:
+```vhdl
+-- Portable FSM
+type state_t is (IDLE, RUN, DONE);
+signal state : state_t := IDLE;
+
+process(clk)
+begin
+  if rising_edge(clk) then
+    case state is
+      when IDLE => state <= RUN;
+      when RUN  => state <= DONE;
+      when DONE => state <= IDLE;
+    end case;
+  end if;
+end process;
+```
+**Tags**: #portability #verilog #fsm
+
+---
+
+## Appendix: Agent-Contributed Tips
+Agents may append new candidate tips **below the following line**.  
+Do not modify the main body above.
+Use the template below 'PROC-XX'
+
+### Candidate: PROC-XX
+**Problem**: …  
+**Cause**: …  
+**Solution**: …  
+**Pattern**:
+```vhdl
+-- example
+```
+**Tags**: #candidate #unreviewed
+
+------- New Tips here-------
+
