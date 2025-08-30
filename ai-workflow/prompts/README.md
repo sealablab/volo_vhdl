@@ -111,6 +111,13 @@ Each prompt can be customized for:
 5. **Document**: Keep track of decisions and changes
 6. **Share**: Contribute improvements back to the workflow
 
+## 📖 **Essential Reading**
+
+Before using AI prompts, review these key documents:
+- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
+- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns
+- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench best practices
+
 ## 🤝 **Getting Help**
 
 If you encounter issues with prompts:

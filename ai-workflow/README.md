@@ -85,6 +85,7 @@ The workflow is designed to be:
 - **@rules.mdc** - Repository-specific rules
 - **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns
 - **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench best practices
+- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
 
 ## 🤝 **Contributing**
 
