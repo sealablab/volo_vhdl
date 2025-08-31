@@ -1,4 +1,4 @@
-# GHDL Testbench Development Tips and Best Practices (Structured, -ng)
+# GHDL Testbench Development Tips and Best Practices (Structured)
 
 > Dual‑purpose format: concise, machine‑friendly rules in the open text; deeper human notes and long examples inside HTML comments.
 
@@ -6,21 +6,23 @@
 - Ignore HTML comments (`<!-- … -->`).
 - Consume only headings, **Problem/Cause/Solution**, **Pattern** snippets, and **Tags**.
 - Prefer **Pattern** snippets as canonical forms when generating code.
-- ⚠️ Do not edit or reorganize the main body of this file.
-- If you believe you have discovered a **new tip**, append it to the footer section marked
-  `------- New Tips here-------` instead of altering the main text.
 
 ## Quick Index (maintained by humans)
 | Error/Clue (optional) | Category | Tip ID | Title |
 |------------------------|----------|--------|-------|
-| variable parameter must be a variable | VS | VS-01 | Procedure parameters must be variables |
-| string length does not match         | DT | DT-01 | String/width alignment |
-| use/writeline/TextIO confusion       | LOG | LOG-02 | TextIO write/writeline patterns |
-| needs --std=08                       | GHDL | GHDL-01 | Use VHDL‑2008 consistently |
-| clock discipline/CE usage            | TB | TB-05 | Clock & timing management |
-| reset held long enough               | TB | TB-06 | Reset & initialization testing |
-| layered testbench architecture       | ARCH | ARCH-01 | 4-layer testbench architecture |
-| multiple driver conflicts            | ARCH | ARCH-02 | Multiple driver prevention |
+| `variable parameter must be a variable` | VS | VS-01 | Procedure parameters must be variables |
+| `variable parameter must be a variable` | VS | VS-03 | Procedure parameter issues and alternatives |
+| `string length does not match` | DT | DT-01 | String/width alignment |
+| `string length does not match` | DT | DT-04 | String concatenation and bit width issues |
+| `writeline` usage unclear | LOG | LOG-02 | TextIO write/writeline patterns |
+| unclear test organization | LOG | LOG-04 | Test structure and organization |
+| `--std=08` required | GHDL | GHDL-01 | Use VHDL‑2008 consistently |
+| `architecture is obsoleted` | GHDL | GHDL-04 | Compilation order dependencies |
+| flaky tests | TB | TB-05 | Clock and timing management |
+| incomplete reset testing | TB | TB-06 | Reset and initialization testing |
+| incomplete state testing | TB | TB-07 | State machine and output testing |
+| infinite simulation loops | TB | TB-08 | Infinite simulation loops and termination |
+| (add more rows as new tips are added) |  |  |  |
 
 ---
 
@@ -52,7 +54,7 @@ If you must interact with DUT signals, copy to locals, compute, then assign back
 **Solution**: Use **variables** for local computation/counters; use **signals** for DUT I/O and cross-process communication.  
 **Pattern**:
 ```vhdl
-clk <= not clk after 16 ns;  -- signal shared across processes
+clk <= not clk after 16 ns;  -- signal used across processes
 process
   variable cnt : natural := 0; -- local, instant updates
 begin
@@ -61,6 +63,7 @@ begin
 end process;
 ```
 **Tags**: #variables #signals #delta-cycles #tb-architecture
+<!-- Longer examples: show a failing version that uses signals as counters and passes them into procedures, then the fixed variant. -->
 
 ---
 
@@ -119,7 +122,7 @@ assert (a = b)
 report "ALL_TESTS_PASSED" severity note; -- machine-friendly sentinel
 ```
 **Tags**: #assert #report #automation #magic-strings
-<!-- Consider a wrapper proc: report_test(name, passed, id) that emits both human text and machine sentinel. -->
+<!-- Human note: consider a small wrapper proc: report_test(name, passed, id) that emits both human text and machine sentinel. -->
 
 ### LOG-02: `textio` / `writeline` canonical usage
 **Problem**: Confusion printing composite values and newlines.  
@@ -250,269 +253,241 @@ assert probe_sel /= "1111" report "invalid code must fault" severity error;
 ```
 **Tags**: #edge-cases #fault-injection
 
-### TB-05: Clock & timing management
-**Problem**: Flaky tests from inconsistent timing and CE discipline.  
-**Cause**: Free-running stimuli or implicit delays relative to clock.  
-**Solution**: Drive enable/updates **synchronously**, prefer clock-enables over `wait for` when checking logic.  
-**Pattern**:
-```vhdl
-wait until rising_edge(clk);
-if ce = '1' then
-  drive_inputs;
-end if;
-```
-**Tags**: #clock #timing #clock-enable #determinism
-<!-- Human note: when possible, sample DUT outputs only on edges; avoid mid-cycle sampling that depends on delta timing. -->
-
-### TB-06: Reset & initialization testing
-**Problem**: DUT passes nominal tests but fails power-up/first-cycle.  
-**Cause**: Reset not held long enough; uninitialized regs/ROMs; missing deassertion sequencing.  
-**Solution**: Create a dedicated reset/boot test that verifies post-reset defaults and first valid transaction.  
-**Pattern**:
-```vhdl
-rst <= '1'; wait for 10*CLK_PERIOD;
-rst <= '0'; wait until rising_edge(clk);
-assert outputs = DEFAULTS report "post-reset defaults wrong" severity error;
-```
-**Tags**: #reset #initialization #timing
-
 ---
-
 ## Appendix: Agent-Contributed Tips
-Agents may append new candidate tips **below this line**.  
+Agents may append new candidate tips **below the following line**.  
 Do not modify the main body above.
+Use the template below 'PROC-XX'
+
+### Candidate: PROC-XX
+**Problem**: …  
+**Cause**: …  
+**Solution**: …  
+**Pattern**:
+```vhdl
+-- example
+```
+**Tags**: #candidate #unreviewed
 
 ------- New Tips here-------
 
-### Candidate: VS-03: Variable name hiding in nested scopes
-**Problem**: GHDL warning about variable name hiding when declaring variables with same name in nested scopes.  
-**Cause**: Declaring variables with identical names in procedure and containing process.  
-**Solution**: Use unique variable names in nested scopes or accept the warning if intentional.  
+### VS-03: Procedure parameter issues and alternatives
+**Problem**: `error: variable parameter must be a variable` when calling procedures from processes.  
+**Cause**: Passing signals to procedure formals defined as variables, or using procedures unnecessarily.  
+**Solution**: Use local variables for procedure parameters, or avoid procedures entirely with direct test reporting.  
 **Pattern**:
 ```vhdl
+-- Option 1: Use local variables
 process
-  variable l: line;  -- Main process variable
-  procedure report_test(name: string) is
-    variable l: line;  -- WARNING: hides outer 'l'
-  begin
-    write(l, name);
-    writeline(output, l);
-  end procedure;
+    variable local_test_number : natural := 0;
 begin
-  -- Use different names to avoid hiding
-  report_test("test");
+    report_test("Test name", test_passed, local_test_number);
+end process;
+
+-- Option 2: Avoid procedures entirely (recommended)
+process
+    variable test_number : natural := 0;
+begin
+    test_number := test_number + 1;
+    if test_passed then
+        write(l, string'("Test " & integer'image(test_number) & ": Test name - PASSED"));
+    else
+        write(l, string'("Test " & integer'image(test_number) & ": Test name - FAILED"));
+    end if;
+    writeline(output, l);
 end process;
 ```
-**Tags**: #candidate #unreviewed #variables #scope #ghdl-warning
+**Tags**: #variables #procedures #ghdl-error #test-reporting
+<!-- See README-ghdl-testbench-tips.md for detailed examples and alternatives -->
 
-### Candidate: GHDL-04: Metavalue warnings in NUMERIC_STD operations
-**Problem**: GHDL warnings about metavalues detected in NUMERIC_STD operations during simulation.  
-**Cause**: Uninitialized signals or undefined values being used in arithmetic/comparison operations.  
-**Solution**: Initialize all signals properly and ensure all inputs are defined before use.  
+### DT-04: String concatenation and bit width issues
+**Problem**: `error: string length does not match` or bit width mismatches.  
+**Cause**: Implicit size assumptions or incorrect bit slice assignments.  
+**Solution**: Match exact widths and use explicit bit assignments.  
 **Pattern**:
 ```vhdl
--- Initialize signals to avoid metavalues
-signal counter : unsigned(15 downto 0) := (others => '0');
-signal data_in : std_logic_vector(7 downto 0) := (others => '0');
+-- Correct bit width matching
+status_reg(6 downto 3) <= "0000";  -- 4 bits assigned to 4-bit slice
+status_reg(7) <= enabled_reg;       -- single bit assignment
+status_reg(2 downto 0) <= wave_select_reg;  -- 3 bits assigned to 3-bit slice
 
--- Check for valid values before arithmetic
-if data_in /= "UUUUUUUU" then
-  result <= unsigned(data_in) + 1;
+-- Alternative: individual bit assignments
+status_reg(7) <= enabled_reg;
+status_reg(6 downto 3) <= "0000";
+status_reg(2 downto 0) <= wave_select_reg;
+```
+**Tags**: #widths #slices #bit-assignment #string-format
+
+### LOG-04: Test structure and organization
+**Problem**: Unclear test organization and inconsistent reporting.  
+**Cause**: Ad-hoc test structure without clear patterns.  
+**Solution**: Use structured test process with clear reporting and proper termination.  
+**Pattern**:
+```vhdl
+library STD.ENV.all;  -- For stop() function
+
+test_process : process
+    variable l : line;
+    variable test_passed : boolean;
+    variable test_number : natural := 0;
+begin
+    -- Test initialization
+    write(l, string'("=== TestBench Started ==="));
+    writeline(output, l);
+    
+    -- Individual tests with clear reporting
+    test_passed := (actual_result = expected_result);
+    test_number := test_number + 1;
+    if test_passed then
+        write(l, string'("Test " & integer'image(test_number) & ": Description - PASSED"));
+    else
+        write(l, string'("Test " & integer'image(test_number) & ": Description - FAILED"));
+    end if;
+    writeline(output, l);
+    
+    -- Final results
+    if all_tests_passed then
+        write(l, string'("ALL TESTS PASSED"));
+    else
+        write(l, string'("TEST FAILED"));
+    end if;
+    writeline(output, l);
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    
+    stop(0); -- Clean termination (recommended)
+end process;
+```
+**Tags**: #test-structure #reporting #termination #organization
+
+### GHDL-04: Compilation order dependencies
+**Problem**: `error: architecture "test" of "entity" is obsoleted by entity "other_entity"`.  
+**Cause**: Recompiling entities that other files depend on without proper order.  
+**Solution**: Always recompile in dependency order: packages → entities → testbenches.  
+**Pattern**:
+```bash
+# 1. Compile dependencies first
+ghdl -a --std=08 modules/dependency/package.vhd
+
+# 2. Compile entities
+ghdl -a --std=08 modules/module/core/entity.vhd
+
+# 3. Compile testbenches
+ghdl -a --std=08 modules/module/tb/core/entity_tb.vhd
+
+# 4. Elaborate
+ghdl -e --std=08 entity_tb
+
+# 5. Run
+ghdl -r --std=08 entity_tb
+```
+**Tags**: #compile-order #dependencies #packages #entities #tb
+
+### TB-05: Clock and timing management
+**Problem**: Flaky tests due to inconsistent clock generation and timing.  
+**Cause**: Ad-hoc clock generation without proper timing discipline.  
+**Solution**: Use canonical clock generation and proper timing management.  
+**Pattern**:
+```vhdl
+-- Clock generation
+clk_process : process
+begin
+    clk <= '0';
+    wait for CLK_PERIOD/2;
+    clk <= '1';
+    wait for CLK_PERIOD/2;
+end process;
+
+-- Clock enable simulation
+clk_en_process : process
+begin
+    clk_en <= '0';
+    wait for CLK_PERIOD * 3;  -- Low period
+    clk_en <= '1';
+    wait for CLK_PERIOD;      -- High period
+end process;
+
+-- Proper timing in tests
+wait until rising_edge(clk);
+stim <= next_stimulus;  -- deterministic sequence
+wait for CLK_PERIOD;
+```
+**Tags**: #clock #timing #clock-enable #determinism
+
+### TB-06: Reset and initialization testing
+**Problem**: Incomplete reset testing and initialization issues.  
+**Cause**: Insufficient reset timing or missing initialization checks.  
+**Solution**: Use proper reset timing and comprehensive initialization testing.  
+**Pattern**:
+```vhdl
+-- Apply reset
+rst <= '1';
+wait for CLK_PERIOD * 2;  -- Ensure reset is held long enough
+rst <= '0';
+wait for CLK_PERIOD;      -- Wait for reset to propagate
+
+-- Test reset behavior
+test_passed := (output = expected_reset_value) and (status = expected_status);
+
+-- Initialize all signals
+signal test_signal : std_logic_vector(15 downto 0) := (others => '0');
+signal test_enable : std_logic := '0';
+```
+**Tags**: #reset #initialization #timing #testing
+
+### TB-07: State machine and output testing
+**Problem**: Incomplete state machine testing and output verification.  
+**Cause**: Missing state change verification and output comparison.  
+**Solution**: Test state changes and compare expected vs actual outputs.  
+**Pattern**:
+```vhdl
+-- Wait for clock enable
+wait until clk_en = '1';
+prev_output := current_output;
+wait for CLK_PERIOD;
+wait until clk_en = '1';
+wait for CLK_PERIOD;
+
+-- Check for expected change
+test_passed := (current_output /= prev_output) and (current_output = expected_value);
+
+-- Expected vs actual comparison
+test_passed := (actual_value = expected_value);
+if not test_passed then
+    write(l, string'("Expected: " & to_hstring(expected_value)));
+    write(l, string'("Actual: " & to_hstring(actual_value)));
+    writeline(output, l);
 end if;
 ```
-**Tags**: #candidate #unreviewed #metavalues #initialization #numeric-std
+**Tags**: #state-machine #output-testing #comparison #verification
 
-### Candidate: TB-07: Comprehensive test vector design
-**Problem**: Ad-hoc test cases lead to incomplete coverage and inconsistent results.  
-**Cause**: Lack of systematic approach to test case generation and validation.  
-**Solution**: Use structured test vectors with expected results for systematic testing.  
+### TB-08: Infinite simulation loops and termination
+**Problem**: Testbench runs indefinitely without completing.  
+**Cause**: Using `wait;` statement or missing proper termination.  
+**Solution**: Use `std.env.stop()` for clean termination or `assert false` as alternative.  
 **Pattern**:
 ```vhdl
--- Define test vector record type
-type test_vector_t is record
-    input1    : std_logic_vector(7 downto 0);
-    input2    : std_logic_vector(7 downto 0);
-    expected  : boolean;
-end record;
+library STD.ENV.all;  -- Add this to library declarations
 
--- Create test vector array
-constant test_vectors : test_vector_array_t := (
-    ("00000001", "00000001", true),   -- Valid case 1
-    ("00000000", "00000001", false),  -- Invalid case 1
-    ("11111111", "00000001", true)    -- Valid case 2
-);
-
--- Use in test loop
-for i in test_vectors'range loop
-    apply_stimulus(test_vectors(i).input1, test_vectors(i).input2);
-    check_result(test_vectors(i).expected);
-end loop;
-```
-**Tags**: #candidate #unreviewed #test-vectors #systematic-testing #coverage
-
-### Candidate: TB-08: System integration testing with operational mode validation
-**Problem**: Top-level testbenches only test basic functionality, missing system-level integration validation.  
-**Cause**: Lack of comprehensive system state testing and operational mode validation.  
-**Solution**: Test system-level integration with operational mode validation and comprehensive system state checking.  
-**Pattern**:
-```vhdl
--- System integration test with operational mode validation
-type system_test_vector_t is record
-    input_config : std_logic_vector(7 downto 0);
-    expected_ready : boolean;
-    expected_mode  : std_logic_vector(1 downto 0);
-end record;
-
--- Test system integration
-for i in system_test_vectors'range loop
-    apply_system_stimulus(system_test_vectors(i).input_config);
+test_process : process
+begin
+    -- ... tests ...
     
-    -- Validate system state
-    check_system_ready(system_test_vectors(i).expected_ready);
-    check_operational_mode(system_test_vectors(i).expected_mode);
-    check_system_integration();
-end loop;
-```
-**Tags**: #candidate #unreviewed #system-integration #operational-modes #top-level-testing
-
-### Candidate: TB-09: Multiple driver metavalue issues
-**Problem**: GHDL metavalue warnings when same signal is driven by multiple processes.  
-**Cause**: Combinational process and clocked process both assigning to the same signal.  
-**Solution**: Ensure single-writer discipline - only one process should drive each signal.  
-**Pattern**:
-```vhdl
--- BAD: Multiple drivers
-process(current_state, data_in)  -- Combinational
-begin
-  if current_state = READY then
-    counter <= unsigned(data_in);  -- Driver 1
-  end if;
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    stop(0); -- Clean termination with exit code 0
 end process;
 
-process(clk)  -- Clocked
+-- Alternative: Use assert false
+test_process : process
 begin
-  if rising_edge(clk) then
-    counter <= counter - 1;  -- Driver 2 - CONFLICT!
-  end if;
-end process;
-
--- GOOD: Single driver
-process(clk)
-begin
-  if rising_edge(clk) then
-    if current_state = READY then
-      counter <= unsigned(data_in);  -- Load
-    elsif current_state = ACTIVE then
-      counter <= counter - 1;  -- Count down
-    end if;
-  end if;
+    -- ... tests ...
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    assert false report "Simulation completed" severity failure;
 end process;
 ```
-**Tags**: #candidate #unreviewed #multiple-drivers #metavalues #single-writer
-
-### Candidate: TB-10: Proper testbench termination
-**Problem**: Testbench runs indefinitely even after completing all tests.  
-**Cause**: Missing proper simulation termination mechanism.  
-**Solution**: Use `assert false severity failure` to terminate simulation cleanly.  
-**Pattern**:
-```vhdl
-process
-begin
-  -- Run all tests
-  run_test_suite();
-  
-  -- Print final results
-  print_test_completion(all_tests_passed);
-  
-  -- Terminate simulation
-  wait for 100 ns;  -- Allow final outputs to settle
-  assert false report "Simulation completed successfully" severity failure;
-end process;
-```
-**Tags**: #candidate #unreviewed #termination #assert-false #simulation-control
-
-### Candidate: TB-11: Package separation for synthesis vs simulation
-**Problem**: Mixing synthesizable and simulation-only constructs in same package.  
-**Cause**: Testbench utilities mixed with RTL utilities.  
-**Solution**: Create separate packages for synthesizable vs simulation-only utilities.  
-**Pattern**:
-```vhdl
--- synthesizable_pkg.vhd - RTL utilities only
-package synthesizable_pkg is
-  function clamp_to_range(value: natural; min, max: natural) return natural;
-  constant STATUS_BITS : natural := 8;
-end package;
-
--- tb_utilities_pkg.vhd - Simulation utilities only  
-package tb_utilities_pkg is
-  procedure report_test(name: string; passed: boolean; test_num: inout natural);
-  procedure print_completion(all_passed: boolean);
-end package;
-
--- In testbench:
-use WORK.synthesizable_pkg.ALL;      -- For constants/functions
-use WORK.tb_utilities_pkg.ALL;       -- For testbench procedures
-```
-**Tags**: #candidate #unreviewed #package-separation #synthesis #simulation
-
----
-
-## Development Context: Hard-Earned Debugging Insights
-
-These three candidate tips (TB-09, TB-10, TB-11) were discovered through real debugging pain while developing the base module testbench. The issues encountered were:
-
-1. **Metavalue warnings** from multiple processes driving the same signal (counter_register)
-2. **Infinite simulation loops** due to improper testbench termination
-3. **Architectural confusion** from mixing synthesizable and simulation-only constructs
-
-The debugging process involved:
-- Identifying NUMERIC_STD metavalue warnings in simulation output
-- Tracing signal drivers to find multiple-writer conflicts
-- Implementing proper simulation termination with assert false
-- Creating clean package separation for maintainable code
-
-These patterns represent real-world solutions to common VHDL testbench development issues and should be considered for promotion to main tips after validation.
-
-## ARCH-01: 4-Layer Testbench Architecture
-**Problem**: Testbenches become implementation-dependent, hard to maintain, and fail when internal logic changes.  
-**Cause**: Testing internal state machine behavior instead of external interface behavior.  
-**Solution**: Use 4-layer testbench architecture: Layer 1 (Interface), Layer 2 (Validation), Layer 3 (Functional), Layer 4 (Generic).  
-**Pattern**:
-```vhdl
--- Layer 1: Interface Testing (Status Register)
-test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '1');
-
--- Layer 2: Validation Testing  
-test_passed := (stat_status_out(STATUS_FAULT_BIT) = '1' or 
-               stat_status_out(STATUS_ALARM_BIT) = '1');
-
--- Layer 3: Functional Testing
-test_passed := (stat_status_out(STATUS_FAULT_BIT) = '0');
-
--- Layer 4: Generic Parameter Testing
-test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
-```
-**Tags**: #architecture #testbench #layered #maintainable #interface
-
-## ARCH-02: Multiple Driver Prevention
-**Problem**: Signals driven by multiple processes causing 'X' (unknown) values and simulation failures.  
-**Cause**: Same signal assigned in multiple processes, violating VHDL single driver rule.  
-**Solution**: Ensure each signal has exactly one driver; separate state machine from status logic.  
-**Pattern**:
-```vhdl
--- ✅ GOOD: Single driver per signal
-state_process: process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        current_state <= RESET_STATE;  -- Only state machine
-    elsif rising_edge(clk) then
-        current_state <= next_state;
-    end if;
-end process;
-
-status_process: process(current_state, enable)
-begin
-    status_reg <= compute_status(current_state, enable);  -- Only status
-end process;
-```
-**Tags**: #architecture #multiple-drivers #vhdl-rules #signal-management
+**Tags**: #termination #simulation-loops #stop #assert-false
+<!-- See README-ghdl-testbench-tips.md for detailed examples and when to use each approach -->
