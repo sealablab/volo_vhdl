@@ -109,33 +109,79 @@
   - State transition timing
   - ALARM generation timing
 
-#### **2.5 GHDL Validation** 🔄 **IN PROGRESS**
+#### **2.5 GHDL Validation** ✅ **COMPLETED**
 - [x] Compile with `ghdl --std=08`
 - [x] Run all tests to completion (infrastructure working)
 - [x] Fix metavalue warnings and infinite loops
 - [x] Ensure proper error reporting
-- [ ] **CURRENT ISSUE**: Most tests failing - need to debug test logic vs core behavior
+- [x] **MAJOR MILESTONE**: Implemented layered testbench architecture (v0.1.0-layered-testbench)
+
+#### **2.6 Layered Testbench Architecture** ✅ **COMPLETED**
+- [x] **4-Layer Testing Approach**: Interface, Validation, Functional, Generic
+- [x] **Template System**: Standardized testbench template for all modules
+- [x] **Documentation**: Comprehensive guides and compliance checklists
+- [x] **Enhanced Rules Integration**: ARCH-01 and ARCH-02 tips added
+- [x] **Multiple Driver Prevention**: Systematic approach to prevent 'X' values
+- [x] **Test Results**: 10/14 tests passing, 4 alarm-related tests failing
 
 ## 🎯 **CURRENT STATUS (Updated)**
 
 ### **✅ COMPLETED INFRASTRUCTURE:**
+- **Layered Testbench Architecture**: Complete 4-layer testing system with templates
 - **Base Module Core**: 4-state FSM with alarm functionality
 - **Base Module Top**: Clean integration layer with direct instantiation
 - **Shared Packages**: `volo_common_pkg.vhd` (synthesizable) + `volo_common_tb_pkg.vhd` (testbench)
 - **Testbench Infrastructure**: Working compilation, execution, and termination
 - **Debugging Tools**: Fixed metavalue warnings, infinite loops, multiple drivers
+- **Prevention Systems**: Multiple driver prevention patterns and documentation
+
+### **🚨 CRITICAL DISCOVERY:**
+**Architectural Issues Found** - During test debugging, discovered 5 critical architectural problems in the base module core that will be replicated in ALL future modules:
+
+1. **State Machine Logic Flaw**: Invalid inputs cause permanent FAULT_STATE with no recovery
+2. **Counter Loading Timing Problem**: Race condition in counter value capture
+3. **Alarm Logic Dependency Issue**: Combinational alarm logic with clocked dependencies
+4. **State Machine Design Flaw**: No completion mechanism, stays in IDLE forever
+5. **Validation Logic Timing**: Continuous validation causes unexpected state transitions
 
 ### **🔄 CURRENT FOCUS:**
-**Test Logic Debugging** - The testbench infrastructure is working perfectly, but most tests are failing. This indicates either:
-1. **Test expectations are wrong** - testbench logic doesn't match intended behavior
-2. **Core module behavior is wrong** - implementation doesn't match design intent
-3. **Status register logic issues** - bit assignments don't match test expectations
+**CRITICAL ARCHITECTURAL REVIEW** - These issues must be fixed before this becomes a template, as they will be replicated everywhere.
 
 ### **📋 NEXT STEPS:**
-1. **Debug test failures systematically** - analyze each failing test
-2. **Verify core module behavior** - ensure state machine works as designed
-3. **Fix status register logic** - ensure bit assignments match VOLO conventions
-4. **Validate alarm functionality** - ensure countdown and alarm logic works correctly
+1. **Systematic Architectural Review** - Address each of the 5 critical issues
+2. **Design Philosophy Decisions** - Define intended behavior for each issue
+3. **Architectural Redesign** - Fix core module before proceeding
+4. **Template Validation** - Ensure fixed architecture works as intended
+
+### **Phase 2.7: Critical Architectural Review** 🚨 **CURRENT PHASE**
+**Goal:** Fix critical architectural issues before template deployment
+
+#### **2.7.1 Architectural Issue Analysis**
+- [ ] **Issue 1**: State Machine Logic Flaw - Define recovery vs fault behavior
+- [ ] **Issue 2**: Counter Loading Timing - Define counter capture strategy  
+- [ ] **Issue 3**: Alarm Logic Dependencies - Define synchronous vs combinational approach
+- [ ] **Issue 4**: State Machine Design - Define completion and closure behavior
+- [ ] **Issue 5**: Validation Logic Timing - Define input sensitivity during operation
+
+#### **2.7.2 Design Philosophy Decisions**
+- [ ] **Recovery vs Fault**: Define behavior for invalid inputs
+- [ ] **Input Sensitivity**: Define response to runtime input changes
+- [ ] **Completion Behavior**: Define countdown completion handling
+- [ ] **State Machine Closure**: Define state machine lifecycle
+- [ ] **Timing Requirements**: Define alarm and transition timing
+
+#### **2.7.3 Architectural Redesign**
+- [ ] **Robust State Machine**: Implement proper state transitions and recovery
+- [ ] **Proper Counter Management**: Fix counter capture and countdown logic
+- [ ] **Synchronous Alarm Logic**: Implement proper alarm timing
+- [ ] **Completion Handling**: Add completion states and signals
+- [ ] **Input Validation Strategy**: Implement proper validation timing
+
+#### **2.7.4 Template Validation**
+- [ ] **Architectural Testing**: Validate all architectural fixes
+- [ ] **Template Readiness**: Ensure base module is ready for replication
+- [ ] **Documentation Update**: Update architectural patterns and guidelines
+- [ ] **Quality Assurance**: Comprehensive testing of fixed architecture
 
 ### **Phase 3: Enhanced Package Integration**
 **Goal:** Ensure base module works seamlessly with enhanced packages
