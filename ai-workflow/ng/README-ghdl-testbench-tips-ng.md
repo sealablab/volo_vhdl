@@ -19,6 +19,7 @@
 | needs --std=08                       | GHDL | GHDL-01 | Use VHDL‑2008 consistently |
 | clock discipline/CE usage            | TB | TB-05 | Clock & timing management |
 | reset held long enough               | TB | TB-06 | Reset & initialization testing |
+| layered testbench architecture       | ARCH | ARCH-01 | 4-layer testbench architecture |
 
 ---
 
@@ -470,3 +471,24 @@ The debugging process involved:
 - Creating clean package separation for maintainable code
 
 These patterns represent real-world solutions to common VHDL testbench development issues and should be considered for promotion to main tips after validation.
+
+## ARCH-01: 4-Layer Testbench Architecture
+**Problem**: Testbenches become implementation-dependent, hard to maintain, and fail when internal logic changes.  
+**Cause**: Testing internal state machine behavior instead of external interface behavior.  
+**Solution**: Use 4-layer testbench architecture: Layer 1 (Interface), Layer 2 (Validation), Layer 3 (Functional), Layer 4 (Generic).  
+**Pattern**:
+```vhdl
+-- Layer 1: Interface Testing (Status Register)
+test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '1');
+
+-- Layer 2: Validation Testing  
+test_passed := (stat_status_out(STATUS_FAULT_BIT) = '1' or 
+               stat_status_out(STATUS_ALARM_BIT) = '1');
+
+-- Layer 3: Functional Testing
+test_passed := (stat_status_out(STATUS_FAULT_BIT) = '0');
+
+-- Layer 4: Generic Parameter Testing
+test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
+```
+**Tags**: #architecture #testbench #layered #maintainable #interface

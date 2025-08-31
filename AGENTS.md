@@ -522,6 +522,12 @@ For comprehensive, structured guidance on VHDL development patterns and common i
   - GHDL toolchain quirks and solutions
   - Testbench patterns and best practices
 
+- **`ai-workflow/ng/README-layered-testbench-ng.md`** - Layered testbench architecture standard
+  - 4-layer testing approach (Interface, Validation, Functional, Generic)
+  - Interface-focused testing philosophy
+  - Maintainable testbench patterns
+  - Comprehensive coverage guidelines
+
 - **`ai-workflow/ng/README-index.md`** - Overview and navigation guide
 
 #### **Key Features for AI Agents**
@@ -537,13 +543,15 @@ The structured rule system provides implementation details for the architectural
 - **Reset/enable signal hierarchy** (implements workspace signal priority rules)
 - **GHDL compilation and testing** (supports workspace testbench requirements)
 - **Verilog portability patterns** (reinforces workspace portability goals)
+- **Layered testbench architecture** (ensures comprehensive, maintainable testing)
 
 #### **Usage Guidelines for AI Agents**
 1. **Start with Quick Index**: Look up error messages or problem categories
 2. **Follow Pattern snippets**: Use canonical code patterns as templates
 3. **Reference detailed guides**: Check HTML comments for comprehensive examples
-4. **Contribute new tips**: Add discoveries to the agent contribution sections
-5. **Cross-reference workspace rules**: Ensure compliance with architectural requirements
+4. **Use layered testbench architecture**: Follow 4-layer testing approach for all testbenches
+5. **Contribute new tips**: Add discoveries to the agent contribution sections
+6. **Cross-reference workspace rules**: Ensure compliance with architectural requirements
 
 ## Questions for Clarification
 When working on this project, consider asking:
