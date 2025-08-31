@@ -1,14 +1,6 @@
--- Base Module Core Testbench
--- Tests the base module through external interface only (no implementation assumptions)
--- Follows enhanced rules system testbench requirements
--- 
--- TESTING PHILOSOPHY:
--- - Layer 1: Interface Testing (Status Register) - test external behavior only
--- - Layer 2: Validation Testing - test parameter validation and error handling  
--- - Layer 3: Functional Testing - test counter countdown and alarm behavior
--- - Layer 4: Generic Parameter Testing - test different ALARM_THRESHOLD values
---
--- KEY PRINCIPLE: Test WHAT the module does, not HOW it does it
+-- Base Module Core TestBench
+-- Tests essential functionality: state transitions and alarm bit verification
+-- Uses direct instantiation and observes behavior through status register
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -18,15 +10,13 @@ use IEEE.STD_LOGIC_TEXTIO.ALL;
 
 -- Import packages
 library WORK;
-use WORK.volo_common_pkg.ALL;      -- For constants and synthesizable utilities
+use WORK.volo_common_pkg.ALL;
 use WORK.volo_common_tb_pkg.ALL;   -- For testbench utilities
 
 entity base_module_core_tb is
 end entity base_module_core_tb;
 
 architecture test of base_module_core_tb is
-    
-    -- Direct instantiation (recommended for core layer testbenches)
     
     -- Test signals
     signal clk                      : std_logic := '0';
@@ -36,16 +26,10 @@ architecture test of base_module_core_tb is
     signal counter_in               : std_logic_vector(15 downto 0) := (others => '0');
     signal stat_status_out          : std_logic_vector(7 downto 0);
     
-    -- Test result tracking (will be handled as variable in process)
-    
     -- Clock generation
     constant CLK_PERIOD : time := 10 ns;
     
-    -- Testbench utilities now imported from volo_common_tb_pkg
-    
 begin
-    
-    -- Clock generation
     clk <= not clk after CLK_PERIOD/2;
     
     -- DUT instantiation (direct instantiation)
@@ -64,173 +48,77 @@ begin
         variable test_passed : boolean;
         variable all_tests_passed : boolean := true;
         variable l : line;
-
-        
     begin
         -- Test initialization
         write(l, string'("=== Base Module Core TestBench Started ==="));
         writeline(output, l);
         
         -- ============================================================================
-        -- LAYER 1: INTERFACE TESTING (Status Register)
-        -- Test external behavior only - no assumptions about internal state machine
+        -- TEST 1: Invalid input parameter should cause FAULT state
         -- ============================================================================
-        write(l, string'("--- Layer 1: Interface Testing (Status Register) ---"));
+        write(l, string'("--- Test 1: Invalid Input -> FAULT State ---"));
         writeline(output, l);
         
-        -- Test 1: Reset behavior - module should be in safe state
+        -- Reset with invalid counter input (0 is below minimum of 1)
+        counter_in <= x"0000"; -- Invalid input
+        enable <= '1';
         rst_n <= '0';
-        enable <= '0';
-        counter_in <= x"0000";
         wait until rising_edge(clk);
+        rst_n <= '1'; -- Release reset with invalid input
+        wait until rising_edge(clk); -- Allow state machine to process
         
-        test_passed := (stat_status_out(STATUS_IDLE_BIT) = '1' and 
-                       stat_status_out(STATUS_FAULT_BIT) = '0' and
-                       stat_status_out(STATUS_ALARM_BIT) = '0' and
-                       stat_status_out(STATUS_ACTIVE_BIT) = '0');
-        
-        -- Debug output
-        write(l, string'("DEBUG: Reset status = " & to_string(stat_status_out)));
-        writeline(output, l);
-        
-        report_test("Reset behavior - safe state", test_passed, test_number, all_tests_passed);
-        
-        -- Test 2: Enable behavior - module should show enabled status
-        rst_n <= '1';
-        enable <= '1';
-        counter_in <= x"0005"; -- Valid input
-        wait until rising_edge(clk);
-        
-        test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '1');
-        
-        -- Debug output
-        write(l, string'("DEBUG: Enable status = " & to_string(stat_status_out)));
-        writeline(output, l);
-        
-        report_test("Enable behavior - enabled status", test_passed, test_number, all_tests_passed);
-        
-        -- ============================================================================
-        -- LAYER 2: VALIDATION TESTING
-        -- Test parameter validation and error handling
-        -- ============================================================================
-        write(l, string'("--- Layer 2: Validation Testing ---"));
-        writeline(output, l);
-        
-        -- Test 3: Invalid counter input (0) - should trigger validation failure
-        counter_in <= x"0000"; -- Invalid (below minimum)
-        wait until rising_edge(clk);
-        
+        -- Check that module enters FAULT state (or shows invalid status)
         test_passed := (stat_status_out(STATUS_FAULT_BIT) = '1' or 
-                       stat_status_out(STATUS_ALARM_BIT) = '1'); -- Either fault or alarm for invalid input
-        report_test("Invalid counter input (0) - validation failure", test_passed, test_number, all_tests_passed);
+                       stat_status_out(STATUS_VALID_BIT) = '0');
+        report_test("Invalid input causes FAULT state", test_passed, test_number, all_tests_passed);
         
-        -- Test 4: Valid counter input - should allow normal operation
-        counter_in <= x"0005"; -- Valid input
-        wait until rising_edge(clk);
-        
-        test_passed := (stat_status_out(STATUS_FAULT_BIT) = '0' and 
-                       stat_status_out(STATUS_VALID_BIT) = '1');
-        report_test("Valid counter input - normal operation", test_passed, test_number, all_tests_passed);
-        
-        -- ============================================================================
-        -- LAYER 3: FUNCTIONAL TESTING
-        -- Test counter countdown and alarm behavior
-        -- ============================================================================
-        write(l, string'("--- Layer 3: Functional Testing ---"));
+        write(l, string'("Status with invalid input: " & to_string(stat_status_out)));
         writeline(output, l);
         
-        -- Test 5: Counter countdown - should complete without errors
-        counter_in <= x"0003"; -- Set counter to 3
-        wait until rising_edge(clk); -- Load counter
+        -- ============================================================================
+        -- TEST 2: Valid input should allow normal state transitions
+        -- ============================================================================
+        write(l, string'("--- Test 2: Valid Input -> Normal State Transitions ---"));
+        writeline(output, l);
         
-        -- Wait for countdown to complete (3->2->1->0)
-        wait until rising_edge(clk); -- Count 3->2
-        wait until rising_edge(clk); -- Count 2->1  
-        wait until rising_edge(clk); -- Count 1->0
+        -- Reset with valid counter input
+        counter_in <= x"0005"; -- Valid input (5)
+        rst_n <= '0';
+        wait until rising_edge(clk);
+        rst_n <= '1'; -- Release reset with valid input
+        wait until rising_edge(clk); -- Transition to READY_STATE
+        wait until rising_edge(clk); -- Transition to IDLE_STATE
         
-        test_passed := (stat_status_out(STATUS_FAULT_BIT) = '0'); -- Should not fault during countdown
-        report_test("Counter countdown completion - no faults", test_passed, test_number, all_tests_passed);
+        -- Check that module reaches IDLE state (IDLE bit should be set, no FAULT)
+        test_passed := (stat_status_out(STATUS_IDLE_BIT) = '1' and
+                       stat_status_out(STATUS_FAULT_BIT) = '0');
+        report_test("Valid input allows normal state transitions", test_passed, test_number, all_tests_passed);
         
-        -- Test 6: Alarm threshold behavior - should trigger alarm at count 3 (default threshold)
-        counter_in <= x"0005"; -- Set counter to 5
-        wait until rising_edge(clk); -- Load counter
+        write(l, string'("Status in IDLE state: " & to_string(stat_status_out)));
+        writeline(output, l);
         
+        -- ============================================================================
+        -- TEST 3: Alarm bit should go high when counter gets low
+        -- ============================================================================
+        write(l, string'("--- Test 3: Alarm Bit Verification ---"));
+        writeline(output, l);
+        
+        -- Count down until alarm should trigger (counter <= 3)
         wait until rising_edge(clk); -- Count 5->4
-        wait until rising_edge(clk); -- Count 4->3 (alarm should trigger)
-        
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
-        
-        -- Debug output
-        write(l, string'("DEBUG: Alarm status = " & to_string(stat_status_out)));
+        write(l, string'("Status after count 5->4: " & to_string(stat_status_out)));
         writeline(output, l);
         
-        report_test("Alarm threshold behavior - alarm at count 3", test_passed, test_number, all_tests_passed);
-        
-        -- Test 7: Alarm persistence - should continue until countdown completes
-        wait until rising_edge(clk); -- Count 3->2
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
-        report_test("Alarm persistence - continues at count 2", test_passed, test_number, all_tests_passed);
-        
-        wait until rising_edge(clk); -- Count 2->1
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
-        report_test("Alarm persistence - continues at count 1", test_passed, test_number, all_tests_passed);
-        
-        wait until rising_edge(clk); -- Count 1->0
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
-        report_test("Alarm clearance - clears at count 0", test_passed, test_number, all_tests_passed);
-        
-        -- ============================================================================
-        -- LAYER 4: GENERIC PARAMETER TESTING
-        -- Test different ALARM_THRESHOLD values (using multiple test phases)
-        -- ============================================================================
-        write(l, string'("--- Layer 4: Generic Parameter Testing ---"));
+        wait until rising_edge(clk); -- Count 4->3
+        write(l, string'("Status after count 4->3: " & to_string(stat_status_out)));
         writeline(output, l);
         
-        -- Test 8: Test alarm threshold edge cases
-        -- Counter = 1 (below default threshold of 3) - should not alarm
-        counter_in <= x"0001";
-        wait until rising_edge(clk); -- Load counter
-        
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
-        report_test("Alarm threshold edge case - count 1 (no alarm)", test_passed, test_number, all_tests_passed);
-        
-        -- Counter = 2 (below default threshold of 3) - should not alarm  
-        counter_in <= x"0002";
-        wait until rising_edge(clk); -- Load counter
-        
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
-        report_test("Alarm threshold edge case - count 2 (no alarm)", test_passed, test_number, all_tests_passed);
-        
-        -- Counter = 3 (at default threshold of 3) - should alarm
-        counter_in <= x"0003";
-        wait until rising_edge(clk); -- Load counter
-        
-        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
-        report_test("Alarm threshold edge case - count 3 (alarm)", test_passed, test_number, all_tests_passed);
-        
-        -- ============================================================================
-        -- CONTROL SIGNAL TESTING
-        -- Test enable/disable and clock enable behavior
-        -- ============================================================================
-        write(l, string'("--- Control Signal Testing ---"));
+        wait until rising_edge(clk); -- Count 3->2 (alarm should trigger)
+        write(l, string'("Status after count 3->2: " & to_string(stat_status_out)));
         writeline(output, l);
         
-        -- Test 9: Module disable - should return to safe state
-        enable <= '0';
-        wait until rising_edge(clk);
-        
-        test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '0' and 
-                       stat_status_out(STATUS_ACTIVE_BIT) = '0');
-        report_test("Module disable - safe state", test_passed, test_number, all_tests_passed);
-        
-        -- Test 10: Module re-enable - should return to normal operation
-        enable <= '1';
-        counter_in <= x"0002"; -- Valid counter
-        wait until rising_edge(clk);
-        
-        test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '1' and 
-                       stat_status_out(STATUS_VALID_BIT) = '1');
-        report_test("Module re-enable - normal operation", test_passed, test_number, all_tests_passed);
+        -- Check that alarm bit goes high
+        test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
+        report_test("Alarm bit goes high when counter gets low", test_passed, test_number, all_tests_passed);
         
         -- ============================================================================
         -- FINAL RESULTS

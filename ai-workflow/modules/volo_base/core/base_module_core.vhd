@@ -61,7 +61,6 @@ architecture behavioral of base_module_core is
     
     -- Status signals
     signal status_reg                : std_logic_vector(7 downto 0) := (others => '0');
-    signal alarm_active              : std_logic := '0';
     
 begin
     
@@ -82,6 +81,14 @@ begin
                     -- State machine logic (simplified - no next_state)
                     case current_state is
                         when RESET_STATE =>
+                            -- Capture counter value during reset
+                            counter_register <= unsigned(counter_in);
+                            -- Update status register directly
+                            status_reg <= (others => '0');
+                            status_reg(STATUS_IDLE_BIT) <= '1';
+                            status_reg(STATUS_VALID_BIT) <= '1';
+                            status_reg(STATUS_ENABLED_BIT) <= enable;
+                            -- Validate captured counter value
                             if counter_valid = '1' and alarm_threshold_valid = '1' then
                                 current_state <= READY_STATE;
                             elsif counter_valid = '0' or alarm_threshold_valid = '0' then
@@ -90,7 +97,12 @@ begin
                             
                         when READY_STATE =>
                             current_state <= IDLE_STATE; -- Automatic transition (inviolate)
-                            counter_register <= unsigned(counter_in); -- Load counter when entering READY
+                            -- Counter already captured in RESET_STATE, no need to reload
+                            -- Update status register directly
+                            status_reg <= (others => '0');
+                            status_reg(STATUS_READY_BIT) <= '1';
+                            status_reg(STATUS_VALID_BIT) <= '1';
+                            status_reg(STATUS_ENABLED_BIT) <= enable;
                             
                         when IDLE_STATE =>
                             -- Count down from counter_in
@@ -99,9 +111,27 @@ begin
                             end if;
                             -- Stay in IDLE_STATE for normal operation (user custom logic hook)
                             
+                            -- Update status register directly (SIMPLE)
+                            status_reg(STATUS_FAULT_BIT) <= '0';
+                            status_reg(STATUS_BUSY_BIT) <= '0';
+                            status_reg(STATUS_READY_BIT) <= '0';
+                            status_reg(STATUS_ACTIVE_BIT) <= '1';
+                            status_reg(STATUS_IDLE_BIT) <= '1';
+                            status_reg(STATUS_VALID_BIT) <= '1';
+                            status_reg(STATUS_ENABLED_BIT) <= enable;
+                            -- Simple alarm: set when counter is low (check AFTER decrement)
+                            if (counter_register - 1) <= ALARM_THRESHOLD and counter_register > 0 then
+                                status_reg(STATUS_ALARM_BIT) <= '1';
+                            else
+                                status_reg(STATUS_ALARM_BIT) <= '0';
+                            end if;
+                            
                         when FAULT_STATE =>
                             -- Stay in fault state until reset
                             current_state <= FAULT_STATE;
+                            -- Update status register directly
+                            status_reg <= (others => '0');
+                            status_reg(STATUS_FAULT_BIT) <= '1';
                             
                         when others =>
                             current_state <= FAULT_STATE;
@@ -123,54 +153,8 @@ begin
     -- Alarm threshold validation
     alarm_threshold_valid <= '1' when is_in_range(ALARM_THRESHOLD, BASE_ALARM_THRESHOLD_MIN, BASE_ALARM_THRESHOLD_MAX) else '0';
     
-    -- Alarm logic: Set alarm when counter is ALARM_THRESHOLD clocks away from bottom
-    alarm_active <= '1' when (current_state = IDLE_STATE and counter_register <= ALARM_THRESHOLD and counter_register > 0) else '0';
-    
     -- Counter loading now handled in main clocked process
-    
-    -- Status register update process (4-state FSM)
-    status_update: process(current_state, enable, counter_valid, alarm_threshold_valid, alarm_active)
-        variable status: std_logic_vector(7 downto 0);
-    begin
-        status := (others => '0');
-        
-        -- FAULT bit
-        if current_state = FAULT_STATE then
-            status(STATUS_FAULT_BIT) := '1';
-        end if;
-        
-        -- ALARM bit (counter near bottom OR invalid parameters, but not during reset)
-        if (alarm_active = '1' or counter_valid = '0' or alarm_threshold_valid = '0') and current_state /= RESET_STATE then
-            status(STATUS_ALARM_BIT) := '1';
-        end if;
-        
-        -- READY bit
-        if current_state = READY_STATE then
-            status(STATUS_READY_BIT) := '1';
-        end if;
-        
-        -- ENABLED bit
-        if enable = '1' then
-            status(STATUS_ENABLED_BIT) := '1';
-        end if;
-        
-        -- ACTIVE bit (IDLE state is the active processing state)
-        if current_state = IDLE_STATE then
-            status(STATUS_ACTIVE_BIT) := '1';
-        end if;
-        
-        -- VALID bit
-        if counter_valid = '1' and alarm_threshold_valid = '1' then
-            status(STATUS_VALID_BIT) := '1';
-        end if;
-        
-        -- IDLE bit (RESET state is "armed/idle", IDLE state is "active/idle")
-        if current_state = RESET_STATE or current_state = IDLE_STATE then
-            status(STATUS_IDLE_BIT) := '1';
-        end if;
-        
-        status_reg <= status;
-    end process status_update;
+    -- Status register now updated synchronously in main process
     
     -- Output assignments
     stat_status_out <= status_reg;
