@@ -175,6 +175,94 @@ Do not modify the main body above.
 
 ------- New Tips here-------
 
+### SIG-04: Prohibit mixed synchronous/combinational logic
+**Problem**: Mixed synchronous/combinational logic creates timing dependencies and race conditions.  
+**Cause**: Combinational processes that depend on clocked signals, or clocked processes that depend on combinational signals.  
+**Solution**: Keep logic purely synchronous OR purely combinational. Never mix clocked and combinational dependencies.  
+
+**Context**: This rule was discovered during base module architectural review when alarm logic failed tests. The original implementation had a combinational status register process that depended on `counter_register` (a clocked signal), creating a race condition where the status register would update based on stale counter values.
+
+**Real Example from Base Module**:
+```vhdl
+-- ❌ ORIGINAL BROKEN CODE: Mixed logic causing test failures
+signal counter_register : unsigned(15 downto 0);  -- Clocked signal
+signal alarm_active : std_logic;  -- Intermediate signal
+
+-- Clocked process updates counter
+process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        counter_register <= (others => '0');
+    elsif rising_edge(clk) then
+        if clk_en = '1' then
+            counter_register <= counter_register - 1;  -- Clocked update
+        end if;
+    end if;
+end process;
+
+-- Combinational process depends on clocked signal - RACE CONDITION!
+alarm_active <= '1' when counter_register <= threshold else '0';
+
+-- Another combinational process depends on the intermediate signal
+status_update: process(current_state, alarm_active)  -- Still mixed!
+begin
+    status_reg(ALARM_BIT) <= alarm_active;
+end process;
+```
+
+**Pattern**:
+```vhdl
+-- ✅ CORRECT: Purely synchronous status register
+process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        status_reg <= (others => '0');
+        counter_register <= (others => '0');
+    elsif rising_edge(clk) then
+        if clk_en = '1' then
+            -- All logic in one synchronous process
+            if counter_register > 0 then
+                counter_register <= counter_register - 1;
+            end if;
+            
+            -- Status register updated synchronously with counter
+            status_reg <= create_status_reg(
+                fault => '1' when current_state = FAULT_STATE else '0',
+                alarm => '1' when counter_register <= threshold else '0',
+                -- ... other bits
+            );
+        end if;
+    end if;
+end process;
+
+-- ❌ FORBIDDEN: Mixed logic - combinational process depending on clocked signals
+process(current_state, counter_register)  -- counter_register is clocked!
+begin
+    alarm_active <= '1' when counter_register <= threshold else '0';
+end process;
+
+-- ❌ FORBIDDEN: Intermediate signals between clocked and combinational
+signal intermediate_signal : std_logic;  -- Avoid this pattern
+```
+
+**Detection Methods**:
+- Look for combinational processes in sensitivity list that include clocked signals
+- Look for intermediate signals that are assigned in clocked processes but used in combinational processes
+- Check for status registers or output logic that depends on internal state signals
+
+**Test Symptoms**:
+- Tests pass intermittently (timing-dependent)
+- Status bits not updating as expected
+- Alarm/warning logic not triggering correctly
+- Debug output shows correct internal state but wrong outputs
+
+**Verification**:
+- All combinational processes should only depend on inputs and other combinational signals
+- All clocked processes should contain all logic that depends on internal state
+- Status registers should be updated synchronously in the main clocked process
+
+**Tags**: #mixed-logic #timing #race-condition #synchronous #combinational #base-module #architectural-review
+
 ### Candidate: PROC-02: Function declarations in architectures
 **Problem**: GHDL error when declaring functions directly in architecture body.  
 **Cause**: Functions must be declared in packages or within processes, not as standalone declarations in architecture.  
