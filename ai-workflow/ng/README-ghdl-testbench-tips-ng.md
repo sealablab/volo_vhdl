@@ -372,3 +372,101 @@ for i in system_test_vectors'range loop
 end loop;
 ```
 **Tags**: #candidate #unreviewed #system-integration #operational-modes #top-level-testing
+
+### Candidate: TB-09: Multiple driver metavalue issues
+**Problem**: GHDL metavalue warnings when same signal is driven by multiple processes.  
+**Cause**: Combinational process and clocked process both assigning to the same signal.  
+**Solution**: Ensure single-writer discipline - only one process should drive each signal.  
+**Pattern**:
+```vhdl
+-- BAD: Multiple drivers
+process(current_state, data_in)  -- Combinational
+begin
+  if current_state = READY then
+    counter <= unsigned(data_in);  -- Driver 1
+  end if;
+end process;
+
+process(clk)  -- Clocked
+begin
+  if rising_edge(clk) then
+    counter <= counter - 1;  -- Driver 2 - CONFLICT!
+  end if;
+end process;
+
+-- GOOD: Single driver
+process(clk)
+begin
+  if rising_edge(clk) then
+    if current_state = READY then
+      counter <= unsigned(data_in);  -- Load
+    elsif current_state = ACTIVE then
+      counter <= counter - 1;  -- Count down
+    end if;
+  end if;
+end process;
+```
+**Tags**: #candidate #unreviewed #multiple-drivers #metavalues #single-writer
+
+### Candidate: TB-10: Proper testbench termination
+**Problem**: Testbench runs indefinitely even after completing all tests.  
+**Cause**: Missing proper simulation termination mechanism.  
+**Solution**: Use `assert false severity failure` to terminate simulation cleanly.  
+**Pattern**:
+```vhdl
+process
+begin
+  -- Run all tests
+  run_test_suite();
+  
+  -- Print final results
+  print_test_completion(all_tests_passed);
+  
+  -- Terminate simulation
+  wait for 100 ns;  -- Allow final outputs to settle
+  assert false report "Simulation completed successfully" severity failure;
+end process;
+```
+**Tags**: #candidate #unreviewed #termination #assert-false #simulation-control
+
+### Candidate: TB-11: Package separation for synthesis vs simulation
+**Problem**: Mixing synthesizable and simulation-only constructs in same package.  
+**Cause**: Testbench utilities mixed with RTL utilities.  
+**Solution**: Create separate packages for synthesizable vs simulation-only utilities.  
+**Pattern**:
+```vhdl
+-- synthesizable_pkg.vhd - RTL utilities only
+package synthesizable_pkg is
+  function clamp_to_range(value: natural; min, max: natural) return natural;
+  constant STATUS_BITS : natural := 8;
+end package;
+
+-- tb_utilities_pkg.vhd - Simulation utilities only  
+package tb_utilities_pkg is
+  procedure report_test(name: string; passed: boolean; test_num: inout natural);
+  procedure print_completion(all_passed: boolean);
+end package;
+
+-- In testbench:
+use WORK.synthesizable_pkg.ALL;      -- For constants/functions
+use WORK.tb_utilities_pkg.ALL;       -- For testbench procedures
+```
+**Tags**: #candidate #unreviewed #package-separation #synthesis #simulation
+
+---
+
+## Development Context: Hard-Earned Debugging Insights
+
+These three candidate tips (TB-09, TB-10, TB-11) were discovered through real debugging pain while developing the base module testbench. The issues encountered were:
+
+1. **Metavalue warnings** from multiple processes driving the same signal (counter_register)
+2. **Infinite simulation loops** due to improper testbench termination
+3. **Architectural confusion** from mixing synthesizable and simulation-only constructs
+
+The debugging process involved:
+- Identifying NUMERIC_STD metavalue warnings in simulation output
+- Tracing signal drivers to find multiple-writer conflicts
+- Implementing proper simulation termination with assert false
+- Creating clean package separation for maintainable code
+
+These patterns represent real-world solutions to common VHDL testbench development issues and should be considered for promotion to main tips after validation.
