@@ -9,3 +9,6 @@ work-obj*.cf
 
 # External examples and submodules
 moku-dev-examples/
+
+# Large log files and static content
+static/

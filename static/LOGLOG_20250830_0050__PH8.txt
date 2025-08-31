@@ -1,381 +1,0 @@
-Script started on Sat Aug 30 00:51:26 2025
-Welcome to fish, the friendly interactive shell
-Type [32mhelp(B[m for instructions on how to use fish
-[?2004h]7;file://DRP-e1.local/Users/johnycsh/volo_codes/volo_vhdl/ai-workflow]0;~/v/v/ai-workflow[30m(B[m[92mjohnycsh(B[m@(B[mDRP-e1(B[m [32m~/v/v/ai-workflow(B[m (feature/probehero8-condensed-plan)(B[m> [K[130C[1m[32m(base) (B[m[130C[71Cl[130C[1m[32m(base) (B[m[130C[72C[91ml[30m(B[m[130C[1m[32m(base) (B[m[130C[72C[90ms[30m(B[m[130C[1m[32m(base) (B[m[130C[72C[91ms[30m(B[m[130C[1m[32m(base) (B[m[130C[73C[130C[1m[32m(base) (B[m[130C[73C[34mls[30m(B[m[130C[1m[32m(base) (B[m[130C[73C[130C[1m[32m(base) (B[m[130C[73C
-[30m(B[m[?2004l]0;ls ~/v/v/ai-workflow[30m(B[m[31mcompare-results.sh[39;49m[0m*                        [31mprobe_hero8_core_tb[39;49m[0m*                       [31mstart-detailed-approach.sh[39;49m[0m*
-condensed-approach-prompt.md               probe_hero8_core_tb.o                      t.txt
-DATADEF_ANALYSIS_ENHANCED.md               probe_hero8_core.o                         t2.txt
-DATADEF_ANALYSIS.md                        probe_hero8_top_tb.o                       [34mtemplates[39;49m[0m/
-detailed-approach-prompt.md                probe_hero8_top.o                          TODO-PH8-implementation-plan-CONDENSED.md
-e~probe_hero8_core_tb.o                    probe_status_pkg.o                         TODO-PH8-implementation-plan.md
-evaluation-criteria.md                     [34mprompts[39;49m[0m/                                   TODO-PHASE0D.md
-[34mexamples[39;49m[0m/                                  README-0D-DataDefs.md                      TODO-PHASE0S.md
-experiment-hypothesis.md                   README-direct-instantiation.md             TODO-PHASE2.md
-EXPERIMENT-README.md                       README-ghdl-testbench-tips.md              TODO-TOMOROOW.md
-[34mexperiment-results[39;49m[0m/                        README-RESET.md                            WIP_claifiying-2025-09-29-2215-answers.md
-[34mmodules[39;49m[0m/                                   README.md                                  work-obj08.cf
-PERCENTLUT_GENERATION_PROPOSAL.md          [31msetup-experiment-branches.sh[39;49m[0m*
-probe_config_pkg.o                         [31mstart-condensed-approach.sh[39;49m[0m*
-[2m⏎(B[m                                                                                                                                        ⏎ [K[?2004h]0;~/v/v/ai-workflow[30m(B[m[92mjohnycsh(B[m@(B[mDRP-e1(B[m [32m~/v/v/ai-workflow(B[m (feature/probehero8-condensed-plan)(B[m> [K[130C[1m[32m(base) (B[m[130C[71C.[130C[1m[32m(base) (B[m[130C[72C[34m.[30m(B[m[130C[1m[32m(base) (B[m[130C[72C[90m/start-condensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[72C[34m/[90mstart-condensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[73C[34ms[90mtart-condensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[74C[91m./s[90mtart-condensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[74C[91mt[90mart-condensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[75C./start-[90mcondensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C
-[1m[4m./start-(B[mcondensed-approach.sh  ([33m[3mcommand[30m(B[m)  [1m[4m./start-(B[mdetailed-approach.sh  ([33m[3mcommand[30m(B[m)[A[79C[91m./start-[90mcondensed-approach.sh[30m(B[m[130C[1m[32m(base) (B[m[130C[79C[91md[30m(B[m[J[130C[1m[32m(base) (B[m[130C[80C[90metailed-approach.sh [30m(B[m[130C[1m[32m(base) (B[m[130C[80C[91me[90mtailed-approach.sh [30m(B[m[130C[1m[32m(base) (B[m[130C[81C[10D./start-detailed-approach.sh [130C[1m[32m(base) (B[m[130C[100C[29D[34m./start-detailed-approach.sh[30m(B[m [130C[1m[32m(base) (B[m[130C[100C
-[30m(B[m[?2004l]0;./start-detailed-app ~/v/v/ai-workflow[30m(B[m🚀 Starting Detailed Approach Implementation
-=============================================
-🌿 Switching to detailed approach branch...
-M	moku-dev-examples
-Switched to branch 'feature/probehero8-detailed-plan'
-📊 Setting up progress tracking...
-⏱️ Setting up time tracking...
-[feature/probehero8-detailed-plan 86e1fdb] Detailed Approach: Setup progress and time tracking
- 2 files changed, 131 insertions(+)
- create mode 100644 ai-workflow/experiment-results/detailed-approach/progress-log.md
- create mode 100644 ai-workflow/experiment-results/detailed-approach/time-tracking.md
-
-✅ Detailed approach setup complete!
-
-📋 You are now on branch: feature/probehero8-detailed-plan
-
-📄 Next steps:
-1. Read the detailed implementation plan: TODO-PH8-implementation-plan.md
-2. Review the implementation prompt: detailed-approach-prompt.md
-3. Begin Phase 1: Core Entity Development
-4. Track your progress in experiment-results/detailed-approach/
-
-🎯 Remember: Focus on comprehensive understanding and thorough implementation!
-
-📊 Start time: Sat Aug 30 00:51:41 PDT 2025
-[2m⏎(B[m                                                                                                                                        ⏎ [K[?2004h]0;~/v/v/ai-workflow[30m(B[m[92mjohnycsh(B[m@(B[mDRP-e1(B[m [32m~/v/v/ai-workflow(B[m (feature/probehero8-detailed-plan)(B[m> [K[130C[1m[32m(base) (B[m[130C[70Cc[130C[1m[32m(base) (B[m[130C[71C[91mc[30m(B[m[130C[1m[32m(base) (B[m[130C[71C[90md ~/volo_codes/[30m(B[m[130C[1m[32m(base) (B[m[130C[71C[91ma[30m(B[m[K[130C[1m[32m(base) (B[m[130C[72C[90mt t2.txt[30m(B[m[130C[1m[32m(base) (B[m[130C[72C[91mt[90m t2.txt[30m(B[m[130C[1m[32m(base) (B[m[130C[73C[34mcat[90m t2.txt[30m(B[m[130C[1m[32m(base) (B[m[130C[73C[34m [90mt2.txt[30m(B[m[130C[1m[32m(base) (B[m[130C[74C [90mt2.txt[30m(B[m[130C[1m[32m(base) (B[m[130C[74CD[K[130C[1m[32m(base) (B[m[130C[75C[36m[4mD[30m(B[m[130C[1m[32m(base) (B[m[130C[75C[90mATADEF_ANALYSIS.md [30m(B[m[130C[1m[32m(base) (B[m[130C[75C[36m[4mO[30m(B[m[K[130C[1m[32m(base) (B[m[130C[76C[36mDO[30m(B[m[130C[1m[32m(base) (B[m[130C[76C[K[130C[1m[32m(base) (B[m[130C[75C[36m[4mD[30m(B[m[130C[1m[32m(base) (B[m[130C[75C[K[130C[1m[32m(base) (B[m[130C[74CT[130C[1m[32m(base) (B[m[130C[75C[90mODO-PHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[75C[36m[4mT[90m[24mODO-PHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[75C[36m[4mO[90m[24mDO-PHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[76C[36m[4mD[90m[24mO-PHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[77C[36m[4mO[90m[24m-PHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[78C[36m[4m-[90m[24mPHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[79C[36m[4mP[90m[24mHASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[80C[36m[4mH[90m[24mASE2.md[30m(B[m[130C[1m[32m(base) (B[m[130C[81C[130C[1m[32m(base) (B[m[130C
-[1m[4mTODO-PH(B[m8-implementation-plan.md  [1m[4mTODO-PH(B[m8-implementation-plan-CONDENSED.md  [1m[4mTODO-PH(B[mASE0D.md  [1m[4mTODO-PH(B[mASE0S.md  [1m[4mTODO-PH(B[mASE2.md[A[81C[36m[4m8[30m(B[m[J[130C[1m[32m(base) (B[m[130C[82C[90m-implementation-plan.md [30m(B[m[130C[1m[32m(base) (B[m[130C[82C[12Dcat TODO-PH8-implementation-plan[90m.md [30m(B[m[130C[1m[32m(base) (B[m[130C
-[1m[4m…tion-plan(B[m.md  [1m[4m…tion-plan(B[m-CONDENSED.md[A[102C[32D[34mcat[30m(B[m [36m[4mTODO-PH8-implementation-plan[90m[24m.md [30m(B[m[130C[1m[32m(base) (B[m[130C[102C[36m[4m.[90m[24mmd [30m(B[m[J[130C[1m[32m(base) (B[m[130C[103C[33Dcat TODO-PH8-implementation-plan.md [130C[1m[32m(base) (B[m[130C[106C[36D[34mcat[30m(B[m [36m[4mTODO-PH8-implementation-plan.md[30m(B[m [130C[1m[32m(base) (B[m[130C[106C[K[130C[1m[32m(base) (B[m[130C[105C[36m[4m [30m(B[m[130C[1m[32m(base) (B[m[130C[106C [130C[1m[32m(base) (B[m[130C[106C[K[130C[1m[32m(base) (B[m[130C[105C[36m[4m;[30m(B[m[130C[1m[32m(base) (B[m[130C[106C[32m;[30m(B[m[130C[1m[32m(base) (B[m[130C[106C[32m [30m(B[m[130C[1m[32m(base) (B[m[130C[107C [130C[1m[32m(base) (B[m[130C[107Cc[130C[1m[32m(base) (B[m[130C[108C[91mc[30m(B[m[130C[1m[32m(base) (B[m[130C[108C[90m++ [30m(B[m[130C[1m[32m(base) (B[m[130C[108C[91ma[30m(B[m[K[130C[1m[32m(base) (B[m[130C[109C[90mffeinate [30m(B[m[130C[1m[32m(base) (B[m[130C[109C[91mt[30m(B[m[K[130C[1m[32m(base) (B[m[130C[110C[34mcat[30m(B[m[130C[1m[32m(base) (B[m[130C[110C[90m [30m(B[m[130C[1m[32m(base) (B[m[130C[110C[34m [30m(B[m[130C[1m[32m(base) (B[m[130C[111C [130C[1m[32m(base) (B[m[130C[111Cd[130C[1m[32m(base) (B[m[130C[112C[36m[4md[30m(B[m[130C[1m[32m(base) (B[m[130C[112C[90metailed-approach…[30m(B[m[130C[1m[32m(base) (B[m[130C[112C[36m[4me[90m[24mtailed-approach…[30m(B[m[130C[1m[32m(base) (B[m[130C[113C[36m[4mt[90m[24mailed-approach…[30m(B[m[130C[1m[32m(base) (B[m[130C[114C[44Dcat TODO-PH8-implementation-plan.md; cat detailed-approach-prompt.m[Kd [K[A
-[C[C[A[68C[34mcat[30m(B[m [36m[4mTODO-PH8-implementation-plan.md[32m[24m;[30m(B[m [34mcat[30m(B[m [36m[4mdetailed-approach-prompt.m[30m(B[m[36m[4md[30m(B[m [A
-[C[C
-[30m(B[m[?2004l]0;cat TODO-PH8-impleme ~/v/v/ai-workflow[30m(B[m# ProbeHero8 Implementation Plan
-
-## 🚨 **GIT WORKFLOW - READ BEFORE STARTING!**
-
-### **Initial Setup (Do This First!)**
-```bash
-# 1. Sync with main branch
-git checkout main
-git pull origin main
-
-# 2. Create feature branch for ProbeHero8 development
-git checkout -b feature/probehero8-implementation
-
-# 3. Verify you're on the feature branch
-git branch
-# Should show: * feature/probehero8-implementation
-```
-
-### **Daily Workflow**
-```bash
-# Start of day: Sync feature branch with main
-git checkout main
-git pull origin main
-git checkout feature/probehero8-implementation
-git merge main
-
-# End of day: Commit progress
-git add .
-git commit -m "ProbeHero8: [describe what was accomplished]"
-git push origin feature/probehero8-implementation
-```
-
-### **When Ready to Merge**
-```bash
-# Create pull request from feature branch to main
-# After approval and merge, clean up:
-git checkout main
-git pull origin main
-git branch -d feature/probehero8-implementation
-git push origin --delete feature/probehero8-implementation
-```
-
----
-
-## 🎯 **Project Overview**
-**ProbeHero8** is the enhanced version of ProbeHero7, leveraging all the enhanced datadef packages, state machine templates, and validation infrastructure we've built. This will serve as a comprehensive test of our enhanced development workflow.
-
-## 🚀 **Why ProbeHero8 Now?**
-
-### **Infrastructure Ready:**
-✅ **Enhanced datadef packages** - All packages now have proper validation, error handling, and enhanced functionality  
-✅ **State machine templates** - Clean, Verilog-portable FSM base with proper status register handling  
-✅ **Reset and validation infrastructure** - Comprehensive parameter validation and error handling patterns  
-✅ **Testbench framework** - Organized by layer with proper GHDL compatibility  
-
-### **Learning Objectives:**
-- **Validate the entire workflow** from datadef → core → top → testbench
-- **Real-world testing** of enhanced packages and templates
-- **End-to-end validation** of our development process
-- **Immediate feedback** on what works and what needs refinement
-
-## 📋 **Implementation Roadmap**
-
-### **Phase 1: Core Entity Development**
-**Goal:** Create the main ProbeHero8 core using enhanced packages
-
-#### **1.1 Core Entity Structure**
-- [ ] Create `modules/probe_driver_en/core/probe_hero8_core.vhd`
-- [ ] Implement interface using enhanced packages:
-  - `Probe_Config_pkg_en` for probe configuration
-  - `Global_Probe_Table_pkg_en` for probe selection
-  - `Moku_Voltage_pkg_en` for voltage handling
-  - `PercentLut_pkg_en` for intensity scaling
-- [ ] Use state machine template as base
-- [ ] Implement proper port validation and error handling
-
-#### **1.2 State Machine Implementation**
-- [ ] Use `state_machine_base.vhd` template
-- [ ] Implement states: IDLE, ARMED, FIRING, COOLING, HARDFAULT
-- [ ] Add probe-specific logic for firing sequence
-- [ ] Implement proper status register updates
-
-#### **1.3 Validation Logic**
-- [ ] Use enhanced package validation functions
-- [ ] Implement parameter clamping with ALARM signaling
-- [ ] Add safety checks for probe configuration
-- [ ] Handle invalid inputs gracefully
-
-### **Phase 2: Core Testbench Development**
-**Goal:** Validate core functionality with comprehensive testing
-
-#### **2.1 Testbench Structure**
-- [ ] Create `modules/probe_driver_en/tb/core/probe_hero8_core_tb.vhd`
-- [ ] Follow layer-organized testbench structure
-- [ ] Use direct instantiation for consistency
-- [ ] Implement comprehensive test coverage
-
-#### **2.2 Test Scenarios**
-- [ ] **Basic functionality tests:**
-  - Reset behavior
-  - Enable/disable functionality
-  - State transitions
-- [ ] **Parameter validation tests:**
-  - Valid probe selection
-  - Invalid probe selection (should trigger HARDFAULT)
-  - Parameter clamping behavior
-  - ALARM bit setting
-- [ ] **Firing sequence tests:**
-  - Trigger detection
-  - Duration timing
-  - Output voltage validation
-  - Cooling period behavior
-- [ ] **Error condition tests:**
-  - Invalid configurations
-  - Boundary conditions
-  - Fault recovery
-
-#### **2.3 GHDL Validation**
-- [ ] Compile with `ghdl --std=08`
-- [ ] Run all tests to completion
-- [ ] Verify deterministic results
-- [ ] Ensure proper error reporting
-
-### **Phase 3: Top-Level Integration**
-**Goal:** Create top-level module with direct instantiation
-
-#### **3.1 Top Module Creation**
-- [ ] Create `modules/probe_driver_en/top/probe_hero8_top.vhd`
-- [ ] **MUST use direct instantiation** for all internal connections
-- [ ] Integrate core module with proper interface
-- [ ] Add external interface for platform control system
-- [ ] Expose control, configuration, and status registers
-
-#### **3.2 Top-Level Testbench**
-- [ ] Create `modules/probe_driver_en/tb/top/probe_hero8_top_tb.vhd`
-- [ ] **MUST use direct instantiation** for all module connections
-- [ ] Test full system integration
-- [ ] Validate register interface
-- [ ] Test end-to-end functionality
-
-### **Phase 4: System Validation**
-**Goal:** Ensure everything works together seamlessly
-
-#### **4.1 Integration Testing**
-- [ ] Test all enhanced packages working together
-- [ ] Validate error handling across the system
-- [ ] Test parameter validation end-to-end
-- [ ] Verify status register behavior
-
-#### **4.2 Performance Validation**
-- [ ] Test timing requirements
-- [ ] Validate state machine performance
-- [ ] Test error recovery mechanisms
-- [ ] Verify resource utilization
-
-## 🔧 **Technical Requirements**
-
-### **VHDL-2008 with Verilog Portability**
-- [ ] Use `std_logic` and `std_logic_vector` types
-- [ ] Implement FSMs with `std_logic_vector` state encoding
-- [ ] Use constants for state labels (no enums)
-- [ ] Avoid VHDL-only features
-
-### **Direct Instantiation Requirements**
-- [ ] **Top layer files MUST use direct instantiation**
-- [ ] **Top layer testbenches MUST use direct instantiation**
-- [ ] Use `entity WORK.module_name` pattern
-- [ ] No component declarations in top layer
-
-### **Enhanced Package Integration**
-- [ ] Use validation functions from enhanced packages
-- [ ] Implement proper error handling patterns
-- [ ] Use enhanced type safety features
-- [ ] Leverage improved utility functions
-
-## 📁 **File Structure**
-```
-modules/probe_driver_en/
-├── core/
-│   └── probe_hero8_core.vhd          # Main implementation
-├── top/
-│   └── probe_hero8_top.vhd           # Top-level integration
-└── tb/
-    ├── core/
-    │   └── probe_hero8_core_tb.vhd   # Core testing
-    └── top/
-        └── probe_hero8_top_tb.vhd    # Top-level testing
-```
-
-## 🎯 **Success Criteria**
-
-### **Functional Requirements**
-- [ ] All state transitions work correctly
-- [ ] Parameter validation functions properly
-- [ ] Error handling works as expected
-- [ ] Status register updates correctly
-- [ ] Output voltages are properly controlled
-
-### **Technical Requirements**
-- [ ] Compiles with GHDL without errors
-- [ ] All tests pass consistently
-- [ ] Direct instantiation used in top layer
-- [ ] Enhanced packages integrated properly
-- [ ] Verilog portability maintained
-
-### **Quality Requirements**
-- [ ] Comprehensive test coverage
-- [ ] Clear error reporting
-- [ ] Consistent coding style
-- [ ] Proper documentation
-- [ ] Follows VOLO coding standards
-
-## 🚨 **Risk Mitigation**
-
-### **Potential Challenges**
-1. **Package Integration Issues** - Enhanced packages may have unexpected interactions
-2. **State Machine Complexity** - Probe-specific logic may complicate the template
-3. **Validation Edge Cases** - Complex parameter validation may reveal gaps
-4. **Timing Requirements** - Real-time constraints may need refinement
-
-### **Mitigation Strategies**
-1. **Incremental Development** - Build and test in small increments
-2. **Comprehensive Testing** - Test each component thoroughly before integration
-3. **Error Handling First** - Implement robust error handling early
-4. **Documentation** - Document any deviations or discoveries
-
-## 📅 **Timeline Estimate**
-
-### **Day 1: Core Development**
-- Morning: Core entity structure and state machine
-- Afternoon: Validation logic and basic functionality
-
-### **Day 2: Core Testing**
-- Morning: Core testbench development
-- Afternoon: Test execution and debugging
-
-### **Day 3: Top-Level Integration**
-- Morning: Top module creation
-- Afternoon: Top-level testbench
-
-### **Day 4: System Validation**
-- Morning: Integration testing
-- Afternoon: Performance validation and refinement
-
-## 🔍 **Questions for Tomorrow**
-
-1. **Priority Order:** Should we start with core entity or test the enhanced packages together first?
-2. **State Machine Complexity:** How complex should the probe-specific logic be in the first iteration?
-3. **Error Handling:** What level of error detail should we provide in the status register?
-4. **Testing Strategy:** Should we use automated test vectors or manual test scenarios?
-
-## 💡 **Key Benefits of This Approach**
-
-- **Immediate validation** of our enhanced infrastructure
-- **Real-world testing** of packages and templates
-- **Complete workflow validation** from concept to implementation
-- **Foundation building** for future modules
-- **Learning opportunity** to refine our development process
-
----
-
-**Ready to build the future of VOLO VHDL development! 🚀**
-
-*This plan captures our discussion and provides a clear roadmap for implementing ProbeHero8 using all the enhanced infrastructure we've built.*
-# Detailed Approach Implementation Prompt
-
-## Context
-You are implementing ProbeHero8 using the **detailed implementation plan**. This approach emphasizes comprehensive planning, extensive documentation, and thorough risk mitigation.
-
-## Your Mission
-Follow the detailed implementation plan in `TODO-PH8-implementation-plan.md` to create a complete ProbeHero8 implementation. Focus on:
-
-1. **Comprehensive Understanding**: Read and understand all context provided
-2. **Thorough Planning**: Consider all aspects before implementation
-3. **Detailed Documentation**: Document your thought process and decisions
-4. **Risk Mitigation**: Address potential issues proactively
-5. **Quality Focus**: Prioritize correctness and maintainability
-
-## Implementation Guidelines
-
-### Phase 1: Core Entity Development
-- **Start with**: Reading the full detailed plan and understanding all requirements
-- **Focus on**: Comprehensive understanding of enhanced packages and their interactions
-- **Document**: Your analysis of package dependencies and integration points
-- **Implement**: Core entity with extensive validation and error handling
-
-### Phase 2: Core Testbench Development  
-- **Approach**: Create comprehensive test scenarios covering all edge cases
-- **Document**: Test strategy and coverage analysis
-- **Validate**: Thorough GHDL compilation and execution testing
-
-### Phase 3: Top-Level Integration
-- **Emphasize**: Proper direct instantiation and system integration
-- **Document**: Integration decisions and interface design
-- **Test**: End-to-end functionality validation
-
-### Phase 4: System Validation
-- **Focus**: Complete system validation and performance analysis
-- **Document**: Validation results and any issues discovered
-- **Refine**: Address any problems found during validation
-
-## Success Criteria
-- All requirements from the detailed plan are met
-- Comprehensive test coverage achieved
-- Full documentation of implementation decisions
-- Robust error handling and validation
-- Clean, maintainable code following VOLO standards
-
-## Tracking Your Progress
-- Document daily progress in `experiment-results/detailed-approach/progress-log.md`
-- Record time spent on each phase
-- Note any challenges or insights discovered
-- Track test results and validation outcomes
-
-## Key Differentiators of This Approach
-- **Depth over Speed**: Take time to understand everything thoroughly
-- **Documentation First**: Document your understanding before implementing
-- **Risk-Aware**: Consider potential issues and plan mitigation strategies
-- **Comprehensive Testing**: Test extensively and document test results
-- **Quality Focus**: Prioritize correctness and maintainability over speed
-
-## Remember
-This is an experiment comparing planning approaches. Your implementation will be evaluated on:
-- Development speed (30% weight)
-- Code quality (40% weight) 
-- Developer experience (20% weight)
-- Implementation accuracy (10% weight)
-
-Focus on doing the best job possible with this comprehensive planning approach![2m⏎(B[m                                                                                                                                        ⏎ [K[?2004h]0;~/v/v/ai-workflow[30m(B[m[92mjohnycsh(B[m@(B[mDRP-e1(B[m [32m~/v/v/ai-workflow(B[m (feature/probehero8-detailed-plan)(B[m> [K[130C[1m[32m(base) (B[m[130C[70C
-[30m(B[m[30m(B[m[?2004l
-Script done on Sat Aug 30 00:53:24 2025
