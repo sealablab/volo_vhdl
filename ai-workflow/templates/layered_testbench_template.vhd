@@ -10,6 +10,12 @@
 --
 -- KEY PRINCIPLE: Test WHAT the module does, not HOW it does it
 -- This ensures tests remain valid even if internal implementation changes
+--
+-- MULTIPLE DRIVER PREVENTION:
+-- - Each signal must have exactly ONE driver
+-- - Separate state machine signals from status signals
+-- - Reset only state machine signals in clocked processes
+-- - Let combinational processes handle status computation
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

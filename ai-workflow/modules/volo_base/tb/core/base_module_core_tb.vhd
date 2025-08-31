@@ -88,6 +88,11 @@ begin
                        stat_status_out(STATUS_FAULT_BIT) = '0' and
                        stat_status_out(STATUS_ALARM_BIT) = '0' and
                        stat_status_out(STATUS_ACTIVE_BIT) = '0');
+        
+        -- Debug output
+        write(l, string'("DEBUG: Reset status = " & to_string(stat_status_out)));
+        writeline(output, l);
+        
         report_test("Reset behavior - safe state", test_passed, test_number, all_tests_passed);
         
         -- Test 2: Enable behavior - module should show enabled status
@@ -97,6 +102,11 @@ begin
         wait until rising_edge(clk);
         
         test_passed := (stat_status_out(STATUS_ENABLED_BIT) = '1');
+        
+        -- Debug output
+        write(l, string'("DEBUG: Enable status = " & to_string(stat_status_out)));
+        writeline(output, l);
+        
         report_test("Enable behavior - enabled status", test_passed, test_number, all_tests_passed);
         
         -- ============================================================================
@@ -149,6 +159,11 @@ begin
         wait until rising_edge(clk); -- Count 4->3 (alarm should trigger)
         
         test_passed := (stat_status_out(STATUS_ALARM_BIT) = '1');
+        
+        -- Debug output
+        write(l, string'("DEBUG: Alarm status = " & to_string(stat_status_out)));
+        writeline(output, l);
+        
         report_test("Alarm threshold behavior - alarm at count 3", test_passed, test_number, all_tests_passed);
         
         -- Test 7: Alarm persistence - should continue until countdown completes

@@ -20,6 +20,7 @@
 | clock discipline/CE usage            | TB | TB-05 | Clock & timing management |
 | reset held long enough               | TB | TB-06 | Reset & initialization testing |
 | layered testbench architecture       | ARCH | ARCH-01 | 4-layer testbench architecture |
+| multiple driver conflicts            | ARCH | ARCH-02 | Multiple driver prevention |
 
 ---
 
@@ -492,3 +493,26 @@ test_passed := (stat_status_out(STATUS_FAULT_BIT) = '0');
 test_passed := (stat_status_out(STATUS_ALARM_BIT) = '0');
 ```
 **Tags**: #architecture #testbench #layered #maintainable #interface
+
+## ARCH-02: Multiple Driver Prevention
+**Problem**: Signals driven by multiple processes causing 'X' (unknown) values and simulation failures.  
+**Cause**: Same signal assigned in multiple processes, violating VHDL single driver rule.  
+**Solution**: Ensure each signal has exactly one driver; separate state machine from status logic.  
+**Pattern**:
+```vhdl
+-- ✅ GOOD: Single driver per signal
+state_process: process(clk, rst_n)
+begin
+    if rst_n = '0' then
+        current_state <= RESET_STATE;  -- Only state machine
+    elsif rising_edge(clk) then
+        current_state <= next_state;
+    end if;
+end process;
+
+status_process: process(current_state, enable)
+begin
+    status_reg <= compute_status(current_state, enable);  -- Only status
+end process;
+```
+**Tags**: #architecture #multiple-drivers #vhdl-rules #signal-management

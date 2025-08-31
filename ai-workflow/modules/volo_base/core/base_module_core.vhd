@@ -50,18 +50,18 @@ architecture behavioral of base_module_core is
     constant FAULT_STATE     : std_logic_vector(1 downto 0) := "11";
     
     -- Internal signals
-    signal current_state         : std_logic_vector(1 downto 0);
+    signal current_state         : std_logic_vector(1 downto 0) := RESET_STATE;
     
     -- Counter validation signals
-    signal counter_valid             : std_logic;
-    signal alarm_threshold_valid     : std_logic;
+    signal counter_valid             : std_logic := '0';
+    signal alarm_threshold_valid     : std_logic := '0';
     
     -- Processing signals (simplified for base module)
     signal counter_register          : unsigned(15 downto 0) := (others => '0');
     
     -- Status signals
-    signal status_reg                : std_logic_vector(7 downto 0);
-    signal alarm_active              : std_logic;
+    signal status_reg                : std_logic_vector(7 downto 0) := (others => '0');
+    signal alarm_active              : std_logic := '0';
     
 begin
     
@@ -73,7 +73,6 @@ begin
         if rst_n = '0' then
             current_state <= RESET_STATE;
             counter_register <= (others => '0');
-            status_reg <= (others => '0');
             
         elsif rising_edge(clk) then
             -- Second priority: Clock enable
@@ -140,8 +139,8 @@ begin
             status(STATUS_FAULT_BIT) := '1';
         end if;
         
-        -- ALARM bit (counter near bottom OR invalid parameters)
-        if alarm_active = '1' or counter_valid = '0' or alarm_threshold_valid = '0' then
+        -- ALARM bit (counter near bottom OR invalid parameters, but not during reset)
+        if (alarm_active = '1' or counter_valid = '0' or alarm_threshold_valid = '0') and current_state /= RESET_STATE then
             status(STATUS_ALARM_BIT) := '1';
         end if;
         
