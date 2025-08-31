@@ -17,20 +17,7 @@ end entity base_module_top_tb;
 
 architecture test of base_module_top_tb is
     
-    -- Component declaration
-    component base_module_top is
-        port (
-            clk                     : in  std_logic;
-            rst_n                   : in  std_logic;
-            ctrl_enable             : in  std_logic;
-            ctrl_clk_en             : in  std_logic;
-            counter_in              : in  std_logic_vector(15 downto 0);
-            stat_status_out         : out std_logic_vector(7 downto 0);
-            stat_fault_out          : out std_logic;
-            stat_alarm_out          : out std_logic;
-            stat_ready_out          : out std_logic
-        );
-    end component base_module_top;
+    -- Direct instantiation (required for top layer testbenches)
     
     -- Test signals
     signal clk                      : std_logic := '0';
@@ -39,9 +26,6 @@ architecture test of base_module_top_tb is
     signal ctrl_clk_en              : std_logic := '1';
     signal counter_in               : std_logic_vector(15 downto 0) := (others => '0');
     signal stat_status_out          : std_logic_vector(7 downto 0);
-    signal stat_fault_out           : std_logic;
-    signal stat_alarm_out           : std_logic;
-    signal stat_ready_out           : std_logic;
     
     -- Test result tracking
     signal all_tests_passed : boolean := true;
@@ -76,10 +60,7 @@ begin
             ctrl_enable             => ctrl_enable,
             ctrl_clk_en             => ctrl_clk_en,
             counter_in              => counter_in,
-            stat_status_out         => stat_status_out,
-            stat_fault_out          => stat_fault_out,
-            stat_alarm_out          => stat_alarm_out,
-            stat_ready_out          => stat_ready_out
+            stat_status_out         => stat_status_out
         );
     
     test_process : process
@@ -105,9 +86,9 @@ begin
         wait for CLK_PERIOD;
         
         test_passed := (stat_status_out(STATUS_IDLE_BIT) = '1' and 
-                       stat_fault_out = '0' and 
-                       stat_alarm_out = '0' and 
-                       stat_ready_out = '0');
+                       stat_status_out(STATUS_FAULT_BIT) = '0' and 
+                       stat_status_out(STATUS_ALARM_BIT) = '0' and 
+                       stat_status_out(STATUS_READY_BIT) = '0');
         report_test("Reset state - signal routing", test_passed, test_number);
         
         -- Test 2: Invalid counter (FAULT state)
@@ -117,9 +98,8 @@ begin
         wait for CLK_PERIOD;
         
         test_passed := (stat_status_out(STATUS_FAULT_BIT) = '1' and 
-                       stat_fault_out = '1' and 
-                       stat_alarm_out = '0' and 
-                       stat_ready_out = '0');
+                       stat_status_out(STATUS_ALARM_BIT) = '0' and 
+                       stat_status_out(STATUS_READY_BIT) = '0');
         report_test("Fault state - signal routing", test_passed, test_number);
         
         -- Test 3: Valid counter (READY state)
