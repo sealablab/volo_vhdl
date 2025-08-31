@@ -57,7 +57,7 @@ architecture behavioral of base_module_core is
     signal alarm_threshold_valid     : std_logic;
     
     -- Processing signals (simplified for base module)
-    signal counter_register          : unsigned(15 downto 0);
+    signal counter_register          : unsigned(15 downto 0) := (others => '0');
     
     -- Status signals
     signal status_reg                : std_logic_vector(7 downto 0);
@@ -91,6 +91,7 @@ begin
                             
                         when READY_STATE =>
                             current_state <= IDLE_STATE; -- Automatic transition (inviolate)
+                            counter_register <= unsigned(counter_in); -- Load counter when entering READY
                             
                         when IDLE_STATE =>
                             -- Count down from counter_in
@@ -126,13 +127,7 @@ begin
     -- Alarm logic: Set alarm when counter is ALARM_THRESHOLD clocks away from bottom
     alarm_active <= '1' when (current_state = IDLE_STATE and counter_register <= ALARM_THRESHOLD and counter_register > 0) else '0';
     
-    -- Counter initialization (load counter_in when entering IDLE state)
-    counter_init: process(current_state, counter_in)
-    begin
-        if current_state = READY_STATE then
-            counter_register <= unsigned(counter_in);
-        end if;
-    end process counter_init;
+    -- Counter loading now handled in main clocked process
     
     -- Status register update process (4-state FSM)
     status_update: process(current_state, enable, counter_valid, alarm_threshold_valid, alarm_active)
@@ -170,8 +165,8 @@ begin
             status(STATUS_VALID_BIT) := '1';
         end if;
         
-        -- IDLE bit
-        if current_state = IDLE_STATE then
+        -- IDLE bit (RESET state is "armed/idle", IDLE state is "active/idle")
+        if current_state = RESET_STATE or current_state = IDLE_STATE then
             status(STATUS_IDLE_BIT) := '1';
         end if;
         
