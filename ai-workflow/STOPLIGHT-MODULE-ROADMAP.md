@@ -25,6 +25,8 @@
 **Goal:** Create comprehensive interface requirements that can generate a working stoplight
 
 #### **1.1 Requirements Structure**
+-- NOTE to JOHNNY: you should really just create the first draft of this yourself.
+  i actually dont want to expose the interal states as RED/YELLow - i want to add them!
 - [ ] Create `ai-workflow/examples/Stoplight/stoplight-interface-requirements.md`
 - [ ] Follow VOLO requirements template structure
 - [ ] Define clear module purpose and functionality
