@@ -1,9 +1,20 @@
-# Stoplight Module Interface Requirements
+# Stoplight Module Interface Requirements (Revision 3)
+
+
+### **Issue 3: Unclear Trigger Behavior**
+**Problem**: What happens if trig_in goes high during RED/YELLOW/GREEN states?
+**trig_in** should be ignored unless the module is in IDLE state
+---
 
 ## 🎯 **Module Purpose**
 Traffic light countdown timer with configurable delays for each light state. This module demonstrates the VOLO VHDL generation workflow by customizing the base module for traffic light functionality.
 
-
+## Example usage:
+The `stoplight-core` module will, validate all input parameters on input, and
+- once __trig_in__ goes high the module will move out of the IDLE state and into the `RED_STATE`
+- After `cfg_red_delay` clock ticks it will enter the `YELLOW_STATE` for `cfg_yellow_delay` clock cycles. 
+- After `cfg_yellow_delay` clock ticks it will enter the `GREEN_STATE` for `cfg_green_delay` clock cycles
+- After `cfg_green_delay` clock cycles it will enter the IDLE state
 ### **VOLO VHDL module dependencies**
 - **volo_common_pkg**: Use for parameter validation functions
 - **Status Register**: Follow VOLO 8-bit status register convention
@@ -21,16 +32,15 @@ enable      : in  std_logic;                    -- Module enable
 clk_en      : in  std_logic;                    -- Clock enable
 
 -- User specified
-trig_in     : in  std_logic;                    -- Trigger in
+trig_in     : in  std_logic;                    -- Trigger in, starts the timers
 ```
-
 
 ### **Configuration Parameters**
 ```vhdl
 -- Traffic Light Timing Configuration
-cfg_red_cnt    : in  std_logic_vector(15 downto 0);  -- Red duration (clocks)
-cfg_yellow_cnt : in  std_logic_vector(15 downto 0);  -- Yellow duration (clocks)  
-cfg_green_cnt  : in  std_logic_vector(15 downto 0);  -- Green duration (clocks)
+cfg_red_delay    : in  std_logic_vector(15 downto 0);  -- Red duration (clks)
+cfg_yellow_delay : in  std_logic_vector(15 downto 0);  -- Yellow duration (clks)  
+cfg_green_delay  : in  std_logic_vector(15 downto 0);  -- Green duration (clks)
 ```
 
 ### **Output Signals**
@@ -41,11 +51,15 @@ cfg_green_cnt  : in  std_logic_vector(15 downto 0);  -- Green duration (clocks)
 
 -- Status Register
 -- Note: We will use three bits of the default / built-in status register to indicate the RED/YELLOW/GREEN
-stat_status_out : out std_logic_vector(7 downto 0); -- 8-bit status register
--- Bit 3: RED light (active high)
--- Bit 2: YELLOW light (active high)  
--- Bit 1: GREEN light (active high)
-
+stat_status_out : out std_logic_vector(7 downto 0); -- 8-bit status register (bits)
+-- Bit 7: FAULT active (module in error state)
+-- Bit 6: ALARM
+-- Bit 5: Enabled
+-- Bit 4: VALID (configuration parameters are valid)
+-- Bit 3: RED-Stat
+-- Bit 2: YELLOW-Stat
+-- Bit 1: GREEN-Stat
+-- Bit 0: IDLE
 ```
 
 ## 🚦 **State Machine Behavior**
@@ -53,20 +67,27 @@ stat_status_out : out std_logic_vector(7 downto 0); -- 8-bit status register
 ### **State Definitions**
 ```vhdl
 -- Internal States (not exposed externally)
-constant RED_STATE    : std_logic_vector(1 downto 0) := "00";
-constant YELLOW_STATE : std_logic_vector(1 downto 0) := "01";
-constant GREEN_STATE  : std_logic_vector(1 downto 0) := "10";
-constant FAULT_STATE  : std_logic_vector(1 downto 0) := "11";
+constant RESET_STATE  : std_logic_vector(2 downto 0) := "000";
+constant IDLE_STATE   : std_logic_vector(2 downto 0) := "001";
+
+constant RED_STATE    : ... -- autopopulate these
+constant YELLOW_STATE : ...
+constant GREEN_STATE  : ...
+
+constant FAULT_STATE  : std_logic_vector(2 downto 0) := "100";
 ```
 
 ### **State Transitions**
-1. **RESET_STATE** → **RED_STATE** (on reset release)
-2. **RED_STATE** → **YELLOW_STATE** (after red_delay countdown)
-3. **YELLOW_STATE** → **GREEN_STATE** (after yellow_delay countdown)
-4. **GREEN_STATE** → **RED_STATE** (after green_delay countdown)
-5. **Any State** → **FAULT_STATE** (on invalid configuration)
+1. **RESET_STATE** → **IDLE_STATE** (on reset release and valid configuration)
+2. **RESET State** → **FAULT_STATE** (on invalid configuration)
+
+3. **IDLE** → **RED_STATE** (on `trig_in`)
+3. **RED_STATE** → **YELLOW_STATE** (after red_delay countdown)
+4. **YELLOW_STATE** → **GREEN_STATE** (after yellow_delay countdown)
+5. **GREEN_STATE** → **IDLE_STATE** (after green_delay countdown)
 
 ### **State Behavior**
+- **RESET_STATE**: All lights OFF, waiting for valid configuration
 - **RED_STATE**: Red light ON, countdown from cfg_red_delay
 - **YELLOW_STATE**: Yellow light ON, countdown from cfg_yellow_delay  
 - **GREEN_STATE**: Green light ON, countdown from cfg_green_delay
@@ -92,7 +113,7 @@ constant FAULT_STATE  : std_logic_vector(1 downto 0) := "11";
 -- Bit 7: FAULT active (module in error state)
 -- Bit 6: ALARM
 -- Bit 5: Enabled
--- Bit 4: Active
+-- Bit 4: VALID (configuration parameters are valid)
 -- Bit 3: RED-Stat
 -- Bit 2: YELLOW-Stat
 -- Bit 1: GREEN-Stat
@@ -103,16 +124,18 @@ constant FAULT_STATE  : std_logic_vector(1 downto 0) := "11";
 - **FAULT**: Set when in FAULT_STATE or invalid configuration
 - **ALARM**: Set when in YELLOW state
 - **ENABLED**: Set when enable = '1'
-- **ACTIVE**: Set when in RED/YELLOW/GREEN states
 - **VALID**: Set when configuration parameters are valid
+- **RED-Stat**: Set when in RED_STATE
+- **YELLOW-Stat**: Set when in YELLOW_STATE
+- **GREEN-Stat**: Set when in GREEN_STATE
 - **IDLE**: Set when in RESET_STATE
 
 ## 🔧 **Configuration Validation**
 
 ### **Parameter Validation**
-- **cfg_red_delay**: 1-40000 inclusive, otherwise FAULT
-- **cfg_yellow_delay**:  1-20000 inclusive  otherwise FAULT
-- **cfg_green_delay**: 30000-65000 inclusive otherwise FAULT
+- **cfg_red_delay**: 1-40000 inclusive (clks), otherwise FAULT
+- **cfg_yellow_delay**: 1-20000 inclusive (clks), otherwise FAULT
+- **cfg_green_delay**: 30000-65000 inclusive (clks), otherwise FAULT
 - **Invalid Parameters**: Cause immediate transition to FAULT_STATE
 
 ### **Validation Timing**
@@ -121,7 +144,6 @@ constant FAULT_STATE  : std_logic_vector(1 downto 0) := "11";
 - **Error Response**: Invalid parameters trigger FAULT_STATE
 
 ## 🎯 **Customization Requirements**
-
 
 ## 📋 **Test Requirements**
 
@@ -149,4 +171,6 @@ constant FAULT_STATE  : std_logic_vector(1 downto 0) := "11";
 
 ---
 
-**Ready for AI generation! 🚦🚀**
+**STOPPING EXECUTION - CRITICAL ISSUES MUST BE RESOLVED BEFORE CODE GENERATION**
+
+<!-- End of requirements refined from stoplight-interface-requirements-r2.md -->
