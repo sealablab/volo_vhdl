@@ -119,6 +119,11 @@ modules/stoplight/
 │   └── stoplight_constants_pkg.vhd    # Constants and validation functions
 ├── core/
 │   └── stoplight_core.vhd             # Main entity with state machine
+├── top/
+│   ├── stoplight_top.vhd              # Top-level integration module
+│   ├── README.md                      # Top-level documentation
+│   └── tb/
+│       └── stoplight_top_tb.vhd       # Top-level testbench
 ├── tb/
 │   └── core/
 │       └── stoplight_core_tb.vhd      # 4-layer testbench
@@ -126,9 +131,32 @@ modules/stoplight/
 └── README.md                          # This file
 ```
 
+## Top-Level Integration
+
+The stoplight module includes a complete top-level integration (`stoplight_top.vhd`) that provides:
+
+### Register Interface
+- **32-bit Control Register**: Global enable and clock divider selection
+- **32-bit Configuration Register**: Timing parameters (red/yellow delays)
+- **32-bit Status Register**: System status and fault information
+- **32-bit State Register**: Current state and countdown value
+
+### External Interface
+- **Light Outputs**: Direct red/yellow/green light signals
+- **Trigger Input**: External trigger to start traffic light cycle
+- **Fault Output**: Global fault indication
+
+### Integration Features
+- **Clock Divider**: Integrated clock divider for timing control
+- **Direct Instantiation**: Uses VOLO direct instantiation patterns
+- **Status Monitoring**: Complete status register readback
+
+For detailed top-level documentation, see `top/README.md`.
+
 ## Dependencies
 
 - **volo_common_pkg**: Status register constants and utility functions
+- **clk_divider_core**: Clock divider for timing control
 - **VOLO Base Module Pattern**: Standard state machine transitions
 
 ## Changelog
@@ -140,4 +168,6 @@ modules/stoplight/
 - **Configuration Validation**: Parameter validation with error handling
 - **Testbench**: 4-layer testbench architecture with comprehensive coverage
 - **Build System**: Makefile integration with dependency management
+- **Top-Level Module**: Complete integration with register interface and clock divider
+- **External Interface**: Direct light outputs and trigger input
 - **Documentation**: Complete README with usage examples and interface specification
