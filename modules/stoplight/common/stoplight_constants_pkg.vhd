@@ -9,27 +9,21 @@ use IEEE.NUMERIC_STD.ALL;
 package stoplight_constants_pkg is
 
     -- ============================================================================
-    -- STATUS REGISTER BIT DEFINITIONS
+    -- STOPLIGHT-SPECIFIC CONSTANTS
     -- ============================================================================
-    -- 8-bit status register bit positions (following VOLO standard)
-    constant STATUS_FAULT_BIT     : natural := 7;  -- FAULT active (module in error state)
-    constant STATUS_ALARM_BIT     : natural := 6;  -- ALARM
-    constant STATUS_ENABLED_BIT   : natural := 5;  -- Enabled
-    constant STATUS_VALID_BIT     : natural := 4;  -- VALID (configuration parameters are valid)
-    constant STATUS_RED_BIT       : natural := 3;  -- RED-Stat
-    constant STATUS_YELLOW_BIT    : natural := 2;  -- YELLOW-Stat
-    constant STATUS_GREEN_BIT     : natural := 1;  -- GREEN-Stat
-    constant STATUS_IDLE_BIT      : natural := 0;  -- IDLE
+    -- Note: Standard status register bits are inherited from volo_common_pkg
+    -- This package only defines stoplight-specific constants
+    
+    -- Custom status register bits for stoplight states
+    constant STATUS_RED_BIT       : natural := 3;  -- RED-Stat (custom)
+    constant STATUS_YELLOW_BIT    : natural := 2;  -- YELLOW-Stat (custom) 
+    constant STATUS_GREEN_BIT     : natural := 1;  -- GREEN-Stat (custom)
 
-    -- Status register bit masks
-    constant STATUS_FAULT_MASK    : std_logic_vector(7 downto 0) := "10000000";
-    constant STATUS_ALARM_MASK    : std_logic_vector(7 downto 0) := "01000000";
-    constant STATUS_ENABLED_MASK  : std_logic_vector(7 downto 0) := "00100000";
-    constant STATUS_VALID_MASK    : std_logic_vector(7 downto 0) := "00010000";
+    -- Status register bit masks (custom bits only)
     constant STATUS_RED_MASK      : std_logic_vector(7 downto 0) := "00001000";
     constant STATUS_YELLOW_MASK   : std_logic_vector(7 downto 0) := "00000100";
     constant STATUS_GREEN_MASK    : std_logic_vector(7 downto 0) := "00000010";
-    constant STATUS_IDLE_MASK     : std_logic_vector(7 downto 0) := "00000001";
+    -- Standard bit masks are inherited from volo_common_pkg
 
     -- ============================================================================
     -- CONFIGURATION LIMITS AND VALIDATION RANGES

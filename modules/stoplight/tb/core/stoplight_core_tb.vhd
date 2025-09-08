@@ -40,9 +40,8 @@ architecture behavioral of stoplight_core_tb is
     constant CLK_PERIOD         : time := 20 ns;
     constant CLK_EN_PERIOD      : time := 100 ns;
     
-    -- Test variables
-    signal test_passed          : boolean := true;
-    signal test_number          : natural := 0;
+    -- Test variables (declared as variables, not signals)
+    -- Note: test_passed and test_number are used as variables in the process
     
 begin
     
@@ -89,6 +88,8 @@ begin
     -- ============================================================================
     test_process: process
         variable l : line;
+        variable test_passed : boolean := true;
+        variable test_number : natural := 0;
     begin
         -- Initialize test
         write(l, string'("=== Stoplight Core TestBench Started ==="));
