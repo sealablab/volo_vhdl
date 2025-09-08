@@ -1,0 +1,25 @@
+I'm working on the VOLO VHDL project and need to generate a stoplight module from requirements using our proven base module as boilerplate. 
+
+IMPORTANT: Please read the top-level AGENTS.md and .cursor/rules.mdc files first to understand the project context and coding standards.
+
+Current Status:
+- We have a working base module (volo_base/core/base_module_core.vhd) with proven state machine, status register, and validation
+- We have enhanced packages (volo_common_pkg, etc.) that work with the base module
+- We need to create a stoplight module by customizing the base module for traffic light functionality
+
+What I need to do:
+1. Create a stoplight interface requirements document
+2. Use AI to generate a customized stoplight_core.vhd from the base module
+3. Test that the generated module compiles and works
+4. Create a testbench to validate the traffic light functionality
+
+Key files to reference:
+- AGENTS.md and .cursor/rules.mdc (project standards and context)
+- ai-workflow/STOPLIGHT-MODULE-ROADMAP.md (our detailed plan)
+- ai-workflow/modules/volo_base/core/base_module_core.vhd (our proven foundation)
+- ai-workflow/modules/volo_base/tb/core/base_module_core_tb.vhd (our testbench)
+
+The base module has states: RESET_STATE → READY_STATE → IDLE_STATE → FAULT_STATE
+The stoplight should have states: RED_STATE → YELLOW_STATE → GREEN_STATE → FAULT_STATE
+
+Help me start with creating the stoplight interface requirements document that will enable AI generation of the customized module.
