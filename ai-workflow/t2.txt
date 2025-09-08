@@ -1,0 +1,5 @@
+  1. Setup: ./setup-experiment-branches.sh
+  2. Choose approach: ./start-detailed-approach.sh or ./start-condensed-approach.sh
+  3. Implement: Follow the chosen plan and track progress
+  4. Switch: Complete the other approach
+  5. Compare: ./compare-results.sh and fill in results
