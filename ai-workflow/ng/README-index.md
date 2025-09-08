@@ -8,10 +8,13 @@ This directory contains curated knowledge bases for two distinct domains:
 - **README-ghdl-testbench-tips-ng.md**  
   GHDL testbench tips and best practices (variables, logging, toolchain quirks, testbench patterns).
 
+- **README-layered-testbench-ng.md**  
+  Layered testbench architecture standard (4-layer testing approach, interface-focused testing, maintainable testbenches).
+
 Both follow the same format:
 - Machine‑friendly core sections (Problem/Cause/Solution/Pattern/Tags)
 - Human commentary inside `<!-- … -->` blocks
 - A manual **Quick Index** at the top
 - A footer sandbox (`------- New Tips here-------`) where agents may append new candidate tips
 
-Use these two files together: **synthesizable rules for DUTs**, **testbench rules for simulations**.
+Use these three files together: **synthesizable rules for DUTs**, **testbench rules for simulations**, **layered architecture for comprehensive testing**.

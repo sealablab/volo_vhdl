@@ -11,9 +11,17 @@
 | Error/Clue (optional) | Category | Tip ID | Title |
 |------------------------|----------|--------|-------|
 | `variable parameter must be a variable` | VS | VS-01 | Procedure parameters must be variables |
+| `variable parameter must be a variable` | VS | VS-03 | Procedure parameter issues and alternatives |
 | `string length does not match` | DT | DT-01 | String/width alignment |
+| `string length does not match` | DT | DT-04 | String concatenation and bit width issues |
 | `writeline` usage unclear | LOG | LOG-02 | TextIO write/writeline patterns |
+| unclear test organization | LOG | LOG-04 | Test structure and organization |
 | `--std=08` required | GHDL | GHDL-01 | Use VHDL‑2008 consistently |
+| `architecture is obsoleted` | GHDL | GHDL-04 | Compilation order dependencies |
+| flaky tests | TB | TB-05 | Clock and timing management |
+| incomplete reset testing | TB | TB-06 | Reset and initialization testing |
+| incomplete state testing | TB | TB-07 | State machine and output testing |
+| infinite simulation loops | TB | TB-08 | Infinite simulation loops and termination |
 | (add more rows as new tips are added) |  |  |  |
 
 ---
@@ -262,3 +270,224 @@ Use the template below 'PROC-XX'
 **Tags**: #candidate #unreviewed
 
 ------- New Tips here-------
+
+### VS-03: Procedure parameter issues and alternatives
+**Problem**: `error: variable parameter must be a variable` when calling procedures from processes.  
+**Cause**: Passing signals to procedure formals defined as variables, or using procedures unnecessarily.  
+**Solution**: Use local variables for procedure parameters, or avoid procedures entirely with direct test reporting.  
+**Pattern**:
+```vhdl
+-- Option 1: Use local variables
+process
+    variable local_test_number : natural := 0;
+begin
+    report_test("Test name", test_passed, local_test_number);
+end process;
+
+-- Option 2: Avoid procedures entirely (recommended)
+process
+    variable test_number : natural := 0;
+begin
+    test_number := test_number + 1;
+    if test_passed then
+        write(l, string'("Test " & integer'image(test_number) & ": Test name - PASSED"));
+    else
+        write(l, string'("Test " & integer'image(test_number) & ": Test name - FAILED"));
+    end if;
+    writeline(output, l);
+end process;
+```
+**Tags**: #variables #procedures #ghdl-error #test-reporting
+<!-- See README-ghdl-testbench-tips.md for detailed examples and alternatives -->
+
+### DT-04: String concatenation and bit width issues
+**Problem**: `error: string length does not match` or bit width mismatches.  
+**Cause**: Implicit size assumptions or incorrect bit slice assignments.  
+**Solution**: Match exact widths and use explicit bit assignments.  
+**Pattern**:
+```vhdl
+-- Correct bit width matching
+status_reg(6 downto 3) <= "0000";  -- 4 bits assigned to 4-bit slice
+status_reg(7) <= enabled_reg;       -- single bit assignment
+status_reg(2 downto 0) <= wave_select_reg;  -- 3 bits assigned to 3-bit slice
+
+-- Alternative: individual bit assignments
+status_reg(7) <= enabled_reg;
+status_reg(6 downto 3) <= "0000";
+status_reg(2 downto 0) <= wave_select_reg;
+```
+**Tags**: #widths #slices #bit-assignment #string-format
+
+### LOG-04: Test structure and organization
+**Problem**: Unclear test organization and inconsistent reporting.  
+**Cause**: Ad-hoc test structure without clear patterns.  
+**Solution**: Use structured test process with clear reporting and proper termination.  
+**Pattern**:
+```vhdl
+library STD.ENV.all;  -- For stop() function
+
+test_process : process
+    variable l : line;
+    variable test_passed : boolean;
+    variable test_number : natural := 0;
+begin
+    -- Test initialization
+    write(l, string'("=== TestBench Started ==="));
+    writeline(output, l);
+    
+    -- Individual tests with clear reporting
+    test_passed := (actual_result = expected_result);
+    test_number := test_number + 1;
+    if test_passed then
+        write(l, string'("Test " & integer'image(test_number) & ": Description - PASSED"));
+    else
+        write(l, string'("Test " & integer'image(test_number) & ": Description - FAILED"));
+    end if;
+    writeline(output, l);
+    
+    -- Final results
+    if all_tests_passed then
+        write(l, string'("ALL TESTS PASSED"));
+    else
+        write(l, string'("TEST FAILED"));
+    end if;
+    writeline(output, l);
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    
+    stop(0); -- Clean termination (recommended)
+end process;
+```
+**Tags**: #test-structure #reporting #termination #organization
+
+### GHDL-04: Compilation order dependencies
+**Problem**: `error: architecture "test" of "entity" is obsoleted by entity "other_entity"`.  
+**Cause**: Recompiling entities that other files depend on without proper order.  
+**Solution**: Always recompile in dependency order: packages → entities → testbenches.  
+**Pattern**:
+```bash
+# 1. Compile dependencies first
+ghdl -a --std=08 modules/dependency/package.vhd
+
+# 2. Compile entities
+ghdl -a --std=08 modules/module/core/entity.vhd
+
+# 3. Compile testbenches
+ghdl -a --std=08 modules/module/tb/core/entity_tb.vhd
+
+# 4. Elaborate
+ghdl -e --std=08 entity_tb
+
+# 5. Run
+ghdl -r --std=08 entity_tb
+```
+**Tags**: #compile-order #dependencies #packages #entities #tb
+
+### TB-05: Clock and timing management
+**Problem**: Flaky tests due to inconsistent clock generation and timing.  
+**Cause**: Ad-hoc clock generation without proper timing discipline.  
+**Solution**: Use canonical clock generation and proper timing management.  
+**Pattern**:
+```vhdl
+-- Clock generation
+clk_process : process
+begin
+    clk <= '0';
+    wait for CLK_PERIOD/2;
+    clk <= '1';
+    wait for CLK_PERIOD/2;
+end process;
+
+-- Clock enable simulation
+clk_en_process : process
+begin
+    clk_en <= '0';
+    wait for CLK_PERIOD * 3;  -- Low period
+    clk_en <= '1';
+    wait for CLK_PERIOD;      -- High period
+end process;
+
+-- Proper timing in tests
+wait until rising_edge(clk);
+stim <= next_stimulus;  -- deterministic sequence
+wait for CLK_PERIOD;
+```
+**Tags**: #clock #timing #clock-enable #determinism
+
+### TB-06: Reset and initialization testing
+**Problem**: Incomplete reset testing and initialization issues.  
+**Cause**: Insufficient reset timing or missing initialization checks.  
+**Solution**: Use proper reset timing and comprehensive initialization testing.  
+**Pattern**:
+```vhdl
+-- Apply reset
+rst <= '1';
+wait for CLK_PERIOD * 2;  -- Ensure reset is held long enough
+rst <= '0';
+wait for CLK_PERIOD;      -- Wait for reset to propagate
+
+-- Test reset behavior
+test_passed := (output = expected_reset_value) and (status = expected_status);
+
+-- Initialize all signals
+signal test_signal : std_logic_vector(15 downto 0) := (others => '0');
+signal test_enable : std_logic := '0';
+```
+**Tags**: #reset #initialization #timing #testing
+
+### TB-07: State machine and output testing
+**Problem**: Incomplete state machine testing and output verification.  
+**Cause**: Missing state change verification and output comparison.  
+**Solution**: Test state changes and compare expected vs actual outputs.  
+**Pattern**:
+```vhdl
+-- Wait for clock enable
+wait until clk_en = '1';
+prev_output := current_output;
+wait for CLK_PERIOD;
+wait until clk_en = '1';
+wait for CLK_PERIOD;
+
+-- Check for expected change
+test_passed := (current_output /= prev_output) and (current_output = expected_value);
+
+-- Expected vs actual comparison
+test_passed := (actual_value = expected_value);
+if not test_passed then
+    write(l, string'("Expected: " & to_hstring(expected_value)));
+    write(l, string'("Actual: " & to_hstring(actual_value)));
+    writeline(output, l);
+end if;
+```
+**Tags**: #state-machine #output-testing #comparison #verification
+
+### TB-08: Infinite simulation loops and termination
+**Problem**: Testbench runs indefinitely without completing.  
+**Cause**: Using `wait;` statement or missing proper termination.  
+**Solution**: Use `std.env.stop()` for clean termination or `assert false` as alternative.  
+**Pattern**:
+```vhdl
+library STD.ENV.all;  -- Add this to library declarations
+
+test_process : process
+begin
+    -- ... tests ...
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    stop(0); -- Clean termination with exit code 0
+end process;
+
+-- Alternative: Use assert false
+test_process : process
+begin
+    -- ... tests ...
+    
+    write(l, string'("SIMULATION DONE"));
+    writeline(output, l);
+    assert false report "Simulation completed" severity failure;
+end process;
+```
+**Tags**: #termination #simulation-loops #stop #assert-false
+<!-- See README-ghdl-testbench-tips.md for detailed examples and when to use each approach -->
