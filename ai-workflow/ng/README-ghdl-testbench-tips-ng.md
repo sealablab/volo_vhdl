@@ -491,3 +491,158 @@ end process;
 ```
 **Tags**: #termination #simulation-loops #stop #assert-false
 <!-- See README-ghdl-testbench-tips.md for detailed examples and when to use each approach -->
+
+### DT-05: Type conversion errors with std_logic_vector and signed/unsigned
+**Problem**: `error: can't match type conversion with type array type "STD_ULOGIC_VECTOR"` or similar type conversion errors.  
+**Cause**: Incorrect type conversion between std_logic_vector, signed, and unsigned types.  
+**Solution**: Use explicit type conversions with proper intermediate steps.  
+**Pattern**:
+```vhdl
+-- Correct type conversion sequence
+signal test_slv : std_logic_vector(15 downto 0);
+variable test_digital : signed(15 downto 0);
+
+-- Wrong: test_digital := signed(test_slv);
+-- Correct: 
+test_digital := signed(unsigned(test_slv));
+
+-- For std_logic_vector to signed conversion
+test_digital := signed(unsigned(test_slv));
+-- For signed to std_logic_vector conversion  
+test_slv := std_logic_vector(test_digital);
+```
+**Tags**: #type-conversion #std-logic-vector #signed #unsigned #ghdl-error
+
+### GHDL-05: Package dependency resolution in testbenches
+**Problem**: `error: unit "package_name" not found in library "WORK"` when compiling testbenches.  
+**Cause**: Missing package dependencies or incorrect compilation order in Makefiles.  
+**Solution**: Ensure all required packages are compiled before testbenches, including cross-module dependencies.  
+**Pattern**:
+```makefile
+# Correct compilation order in Makefile
+compile-datadef-testbenches: compile-datadef
+	@echo "Compiling volo_common_tb_pkg..."
+	@$(GHDL_ANALYZE) $(PROJECT_ROOT)/ai-workflow/modules/volo_common/volo_common_tb_pkg.vhd
+	@echo "Compiling testbench..."
+	@$(GHDL_ANALYZE) tb/datadef/package_tb.vhd
+```
+```vhdl
+-- In testbench, import all required packages
+library WORK;
+use WORK.volo_common_tb_pkg.ALL;   -- For testbench utilities
+use WORK.Moku_Voltage_pkg_PH9.ALL; -- For voltage functions
+use WORK.Probe_Config_pkg_PH9.ALL; -- For probe configuration types
+use WORK.Package_Under_Test.ALL;   -- Package being tested
+```
+**Tags**: #package-dependencies #compilation-order #makefile #testbench #ghdl-error
+
+### VS-04: Variable shadowing in testbench processes
+**Problem**: `warning: declaration of "variable_name" hides signal "variable_name"` in testbench processes.  
+**Cause**: Using the same name for both a signal and a variable in the same scope.  
+**Solution**: Use distinct names for signals and variables, or avoid signals when not needed.  
+**Pattern**:
+```vhdl
+architecture test of package_tb is
+    -- Test result tracking (signal for overall status)
+    signal all_tests_passed_overall : boolean := true;
+    
+begin
+    test_process : process
+        variable test_number : natural := 0;
+        variable test_passed : boolean;
+        variable all_tests_passed : boolean := true; -- Local variable, different name
+        variable l : line;
+    begin
+        -- Use local variable for procedure calls
+        report_test("Test name", test_passed, test_number, all_tests_passed);
+        
+        -- Update signal if needed
+        all_tests_passed_overall <= all_tests_passed;
+    end process;
+end architecture test;
+```
+**Tags**: #variable-shadowing #signals #variables #ghdl-warning #testbench
+
+### TB-09: Package testbench architecture patterns
+**Problem**: Unclear how to structure testbenches for VHDL packages vs entities.  
+**Cause**: Package testbenches have different requirements than entity testbenches.  
+**Solution**: Use adapted 4-layer architecture specifically designed for package testing.  
+**Pattern**:
+```vhdl
+-- Package testbench structure
+test_process : process
+    variable test_number : natural := 0;
+    variable test_passed : boolean;
+    variable all_tests_passed : boolean := true;
+    variable l : line;
+begin
+    -- Layer 1: Interface Testing (Function Signatures)
+    write(l, string'("--- Layer 1: Interface Testing ---"));
+    writeline(output, l);
+    -- Test function parameter validation, return types, package initialization
+    
+    -- Layer 2: Validation Testing (Error Handling)  
+    write(l, string'("--- Layer 2: Validation Testing ---"));
+    writeline(output, l);
+    -- Test invalid input handling, boundary conditions, error conditions
+    
+    -- Layer 3: Functional Testing (Core Behavior)
+    write(l, string'("--- Layer 3: Functional Testing ---"));
+    writeline(output, l);
+    -- Test core functionality, mathematical correctness, function integration
+    
+    -- Layer 4: Configuration Testing (Constants and Types)
+    write(l, string'("--- Layer 4: Configuration Testing ---"));
+    writeline(output, l);
+    -- Test constant values, type definitions, configuration variations
+    
+    -- Package Integration Testing
+    write(l, string'("--- Package Integration Testing ---"));
+    writeline(output, l);
+    -- Test cross-package function calls, dependencies, initialization
+    
+    print_test_completion(all_tests_passed);
+    assert false report "Simulation completed successfully" severity failure;
+end process;
+```
+**Tags**: #package-testbench #test-architecture #layered-testing #vhdl-packages
+
+### DT-06: Record field access in package testbenches
+**Problem**: `error: no element "field_name" in record type "record_type"` when accessing record fields.  
+**Cause**: Incorrect field names or missing package imports for record type definitions.  
+**Solution**: Verify field names match the record definition and import the correct package.  
+**Pattern**:
+```vhdl
+-- Check the actual record definition
+type t_percent_lut_record is record
+    data_array : t_percent_lut_data;  -- Correct field name
+    -- NOT: lut_data : t_percent_lut_data;  -- Wrong field name
+end record;
+
+-- In testbench, use correct field name
+test_lut_record := create_percent_lut_record(test_lut_data);
+test_passed := (test_lut_record.data_array'length = PERCENT_LUT_SIZE);
+-- NOT: test_passed := (test_lut_record.lut_data'length = PERCENT_LUT_SIZE);
+```
+**Tags**: #record-fields #package-testbench #field-names #ghdl-error
+
+### GHDL-06: Elaboration warnings for function calls in constants
+**Problem**: `warning: function "function_name" is called before elaborated of its body` during compilation.  
+**Cause**: Using function calls in constant declarations within package declarations.  
+**Solution**: This is a GHDL elaboration warning, not an error. The code will work correctly.  
+**Pattern**:
+```vhdl
+-- This generates elaboration warnings but works correctly
+package MyPackage is
+    constant DEFAULT_LUT : t_lut_data := generate_linear_lut(0.0, 5.0);
+    constant DEFAULT_RECORD : t_lut_record := create_lut_record(DEFAULT_LUT);
+end package MyPackage;
+
+-- The warnings can be ignored as they don't affect functionality
+-- Alternative: Move to package body if warnings are problematic
+package body MyPackage is
+    constant DEFAULT_LUT : t_lut_data := generate_linear_lut(0.0, 5.0);
+    constant DEFAULT_RECORD : t_lut_record := create_lut_record(DEFAULT_LUT);
+end package body MyPackage;
+```
+**Tags**: #elaboration-warnings #function-calls #constants #ghdl-warning #packages

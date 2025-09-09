@@ -28,10 +28,17 @@ CORE_MODULES := \
 TOP_MODULES := \
 	probe_hero9_top
 
-# Testbenches (to be implemented)
+# Testbenches
 TESTBENCHES := \
 	probe_hero9_core_tb \
 	probe_hero9_top_tb
+
+# Datadef testbenches
+DATADEF_TESTBENCHES := \
+	Moku_Voltage_pkg_PH9_tb \
+	Probe_Config_pkg_PH9_tb \
+	PercentLut_pkg_PH9_tb \
+	Global_Probe_Table_pkg_PH9_tb
 
 # Module-specific targets (only available when in the probe_hero9 directory)
 ifeq ($(MODULE_NAME),probe_hero9)
@@ -63,11 +70,69 @@ compile-top: compile-core
 	@echo "Note: Top modules not yet implemented for ProbeHero9"
 	@echo "=== Top Modules Compilation Complete ==="
 
+# Datadef testbenches compilation
+compile-datadef-testbenches: compile-datadef
+	@echo "=== Compiling Datadef Testbenches ==="
+	@echo "Compiling volo_common_tb_pkg..."
+	@$(GHDL_ANALYZE) $(PROJECT_ROOT)/ai-workflow/modules/volo_common/volo_common_tb_pkg.vhd
+	@echo "Compiling Moku_Voltage_pkg_PH9_tb..."
+	@$(GHDL_ANALYZE) tb/datadef/Moku_Voltage_pkg_PH9_tb.vhd
+	@echo "Compiling Probe_Config_pkg_PH9_tb..."
+	@$(GHDL_ANALYZE) tb/datadef/Probe_Config_pkg_PH9_tb.vhd
+	@echo "Compiling PercentLut_pkg_PH9_tb..."
+	@$(GHDL_ANALYZE) tb/datadef/PercentLut_pkg_PH9_tb.vhd
+	@echo "Compiling Global_Probe_Table_pkg_PH9_tb..."
+	@$(GHDL_ANALYZE) tb/datadef/Global_Probe_Table_pkg_PH9_tb.vhd
+	@echo "=== Datadef Testbenches Compilation Complete ==="
+
 # Testbenches compilation (placeholder for future implementation)
-compile-testbenches: compile-top
-	@echo "=== Compiling Testbenches ==="
-	@echo "Note: Testbenches not yet implemented for ProbeHero9"
-	@echo "=== Testbenches Compilation Complete ==="
+compile-testbenches: compile-top compile-datadef-testbenches
+	@echo "=== Compiling All Testbenches ==="
+	@echo "Datadef testbenches compiled successfully"
+	@echo "Note: Core and top testbenches not yet implemented for ProbeHero9"
+	@echo "=== All Testbenches Compilation Complete ==="
+
+# Datadef test targets
+test-datadef: compile-datadef-testbenches
+	@echo "=== Running Datadef Testbenches ==="
+	@echo "Running Moku_Voltage_pkg_PH9_tb..."
+	@$(GHDL_ELABORATE) Moku_Voltage_pkg_PH9_tb
+	@$(GHDL_RUN) Moku_Voltage_pkg_PH9_tb
+	@echo "Running Probe_Config_pkg_PH9_tb..."
+	@$(GHDL_ELABORATE) Probe_Config_pkg_PH9_tb
+	@$(GHDL_RUN) Probe_Config_pkg_PH9_tb
+	@echo "Running PercentLut_pkg_PH9_tb..."
+	@$(GHDL_ELABORATE) PercentLut_pkg_PH9_tb
+	@$(GHDL_RUN) PercentLut_pkg_PH9_tb
+	@echo "Running Global_Probe_Table_pkg_PH9_tb..."
+	@$(GHDL_ELABORATE) Global_Probe_Table_pkg_PH9_tb
+	@$(GHDL_RUN) Global_Probe_Table_pkg_PH9_tb
+	@echo "=== Datadef Tests Complete ==="
+
+# Individual datadef test targets
+test-Moku_Voltage_pkg_PH9_tb: compile-datadef-testbenches
+	@echo "=== Running Moku_Voltage_pkg_PH9_tb ==="
+	@$(GHDL_ELABORATE) Moku_Voltage_pkg_PH9_tb
+	@$(GHDL_RUN) Moku_Voltage_pkg_PH9_tb
+	@echo "=== Test Completed ==="
+
+test-Probe_Config_pkg_PH9_tb: compile-datadef-testbenches
+	@echo "=== Running Probe_Config_pkg_PH9_tb ==="
+	@$(GHDL_ELABORATE) Probe_Config_pkg_PH9_tb
+	@$(GHDL_RUN) Probe_Config_pkg_PH9_tb
+	@echo "=== Test Completed ==="
+
+test-PercentLut_pkg_PH9_tb: compile-datadef-testbenches
+	@echo "=== Running PercentLut_pkg_PH9_tb ==="
+	@$(GHDL_ELABORATE) PercentLut_pkg_PH9_tb
+	@$(GHDL_RUN) PercentLut_pkg_PH9_tb
+	@echo "=== Test Completed ==="
+
+test-Global_Probe_Table_pkg_PH9_tb: compile-datadef-testbenches
+	@echo "=== Running Global_Probe_Table_pkg_PH9_tb ==="
+	@$(GHDL_ELABORATE) Global_Probe_Table_pkg_PH9_tb
+	@$(GHDL_RUN) Global_Probe_Table_pkg_PH9_tb
+	@echo "=== Test Completed ==="
 
 # Individual test targets for specific testbenches (placeholder)
 test-core: compile-testbenches
@@ -91,10 +156,10 @@ test-probe_hero9_top_tb: compile-testbenches
 	@echo "Note: probe_hero9_top_tb not yet implemented"
 	@echo "=== Test Completed ==="
 
-# Quick test (compile datadef packages only for now)
-quick-test: compile-datadef
-	@echo "=== Running Quick Test (datadef packages only) ==="
-	@echo "All PH9 datadef packages compiled successfully"
+# Quick test (compile and run datadef testbenches)
+quick-test: test-datadef
+	@echo "=== Running Quick Test (datadef testbenches) ==="
+	@echo "All PH9 datadef testbenches completed successfully"
 	@echo "=== Quick Test Completed ==="
 
 # Enhanced validation test (datadef packages validation)
@@ -109,12 +174,20 @@ validation-test: compile-datadef
 
 # Show available testbenches
 list-tests:
-	@echo "Available testbenches (to be implemented):"
+	@echo "Available testbenches:"
+	@echo "Datadef testbenches (implemented):"
+	@echo "  - Moku_Voltage_pkg_PH9_tb (voltage conversion testing)"
+	@echo "  - Probe_Config_pkg_PH9_tb (probe configuration testing)"
+	@echo "  - PercentLut_pkg_PH9_tb (lookup table testing)"
+	@echo "  - Global_Probe_Table_pkg_PH9_tb (global probe table testing)"
+	@echo ""
+	@echo "Module testbenches (to be implemented):"
 	@echo "  - probe_hero9_core_tb (basic core functionality)"
 	@echo "  - probe_hero9_top_tb (top integration)"
 	@echo ""
-	@echo "Currently available:"
-	@echo "  - make quick-test (compile datadef packages)"
+	@echo "Available targets:"
+	@echo "  - make test-datadef (run all datadef testbenches)"
+	@echo "  - make quick-test (compile and run datadef testbenches)"
 	@echo "  - make validation-test (validate datadef packages)"
 
 # Show enhanced datadef packages
@@ -156,16 +229,22 @@ clean-enhanced: clean-local
 show-module-targets:
 	@echo "ProbeHero9 Module-Specific Targets:"
 	@echo "  make compile-datadef           - Compile enhanced datadef packages only"
+	@echo "  make compile-datadef-testbenches - Compile datadef testbenches"
 	@echo "  make compile-core              - Compile core modules (placeholder)"
 	@echo "  make compile-top               - Compile top modules (placeholder)"
-	@echo "  make compile-testbenches       - Compile all testbenches (placeholder)"
+	@echo "  make compile-testbenches       - Compile all testbenches"
 	@echo "  make compile-enhanced          - Full enhanced compilation with progress"
 	@echo ""
+	@echo "  make test-datadef              - Run all datadef testbenches"
+	@echo "  make test-Moku_Voltage_pkg_PH9_tb - Run voltage package testbench"
+	@echo "  make test-Probe_Config_pkg_PH9_tb - Run probe config testbench"
+	@echo "  make test-PercentLut_pkg_PH9_tb - Run percent LUT testbench"
+	@echo "  make test-Global_Probe_Table_pkg_PH9_tb - Run global probe table testbench"
 	@echo "  make test-core                 - Run all core testbenches (placeholder)"
 	@echo "  make test-top                  - Run all top testbenches (placeholder)"
 	@echo "  make test-probe_hero9_core_tb  - Run specific core testbench (placeholder)"
 	@echo "  make test-probe_hero9_top_tb   - Run specific top testbench (placeholder)"
-	@echo "  make quick-test                - Compile and validate datadef packages"
+	@echo "  make quick-test                - Compile and run datadef testbenches"
 	@echo "  make validation-test           - Run comprehensive datadef validation"
 	@echo ""
 	@echo "  make list-tests                - Show available testbenches"
@@ -205,7 +284,8 @@ compile: compile-enhanced
 # Override the default test target to run datadef validation
 test: validate-datadef
 
-.PHONY: compile-datadef compile-core compile-top compile-testbenches test-core test-top
-.PHONY: test-probe_hero9_core_tb test-probe_hero9_top_tb
+.PHONY: compile-datadef compile-datadef-testbenches compile-core compile-top compile-testbenches
+.PHONY: test-datadef test-Moku_Voltage_pkg_PH9_tb test-Probe_Config_pkg_PH9_tb test-PercentLut_pkg_PH9_tb test-Global_Probe_Table_pkg_PH9_tb
+.PHONY: test-core test-top test-probe_hero9_core_tb test-probe_hero9_top_tb
 .PHONY: quick-test validation-test list-tests list-datadef list-structure compile-enhanced clean-enhanced
 .PHONY: show-ph9-features validate-datadef
