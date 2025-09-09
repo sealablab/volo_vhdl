@@ -23,18 +23,6 @@ All parameters include units for clarity and future metadata:
 - **Logical Units**: `index` (table indices), `bits` (status register)
 - **Signal Units**: `signal` (control and clock signals)
 
-### ProbeHero9 Enhancements
-**Key improvements over ProbeHero7:**
-- **Enhanced Error Handling**: Improved validation and recovery mechanisms
-- **Better Integration**: Enhanced platform integration and status reporting
-- **Extended Safety**: Additional safety checks and fault detection
-- **Improved Reliability**: Better state management and error recovery
-- **Enhanced Packages**: Uses enhanced datadef packages with better validation
-
-<!-- 
-  TIP: Keep this concise but descriptive. Think about what someone would need to know 
-  to understand if this module is relevant to their needs.
--->
 
 ## 🔗 Dependencies
 
@@ -90,7 +78,7 @@ All parameters include units for clarity and future metadata:
 - **Type**: std_logic_vector
 - **Width**: 7 bits
 - **Units**: index (LUT table index)
-- **Purpose**: Index into PercentLut for intensity scaling (0-127 range)
+- **Purpose**: Index into PercentLut for intensity lookup
 - **Validation**: Must be valid PercentLut index (use PercentLut validation functions)
 - **Default**: 5 (5% intensity)
 
@@ -244,20 +232,7 @@ This interface definition should enable generation of:
 - [ ] Core entity block with enhanced error handling
 - [ ] Core testbench to validate inputs and error conditions
 - [ ] Common/ module_constants_pkg.vhd with ProbeHero9-specific constants
-- [ ] Enhanced state machine with improved error recovery
-- [ ] Comprehensive test coverage for all error conditions
 
-### Next Phase
-<!-- 
-  TIP: What comes after interface definition?
-  This helps maintain workflow continuity.
--->
-- [ ] Analyze ProbeHero8 implementation for enhancement opportunities
-- [ ] Define specific ProbeHero9 enhancements and improvements
-- [ ] Core VHDL entity block with enhanced features
-- [ ] Internal logic design (enhanced state machine implementation)
-- [ ] Detailed implementation (timing, edge cases, error handling)
-- [ ] Comprehensive testbench development (validation testing, error scenarios)
 
 ## 🔍 Questions for Clarification
 
@@ -275,10 +250,10 @@ This interface definition should enable generation of:
   TIP: Link to related documents, standards, or examples.
   This helps maintain documentation consistency.
 -->
-- **Source Requirements**: `ai-workflow/examples/ProbeHero7/PH7-interface-reqs-r2.md`
-- **Enhanced Packages**: `modules/probe_hero9/datadef/` (ProbeHero8 enhanced versions)
-- **ProbeHero8 Implementation**: `modules/probe_hero8/` (reference implementation)
+- **Source Requirements**: `modules/probe_hero9/requirements/interface/PH9-interface-reqs-v1.md`
+- **Enhanced Packages**: `modules/probe_hero9/datadef/` (ProbeHero9 enhanced versions)
+- **ProbeHero8 Implementation**: `modules/probe_hero8/` (previous implementation)
 - **VOLO Standards**: `ai-workflow/ng/` (development guidelines)
 - **ProbeHero9 Development**: `modules/probe_hero9/development/` (development process)
 
-<!-- End of requirements refined from PH7-interface-reqs.md -->
+<!-- End of requirements refined from PH8-interface-reqs-v.md -->
