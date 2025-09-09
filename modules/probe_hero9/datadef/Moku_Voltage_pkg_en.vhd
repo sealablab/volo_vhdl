@@ -25,7 +25,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-package Moku_Voltage_pkg_en is
+package Moku_Voltage_pkg_en_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
@@ -119,13 +119,13 @@ package Moku_Voltage_pkg_en is
     constant DEFAULT_DIGITAL_MAX : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0) := (others => '1');
     constant DEFAULT_DIGITAL_MID : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0) := x"8000";
 
-end package Moku_Voltage_pkg_en;
+end package Moku_Voltage_pkg_en_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body Moku_Voltage_pkg_en is
+package body Moku_Voltage_pkg_en_PH9 is
 
     -- =========================================================================
     -- Voltage Conversion Function Implementations
@@ -284,4 +284,4 @@ package body Moku_Voltage_pkg_en is
         return clamp_voltage_safe(scaled_voltage);
     end function;
 
-end package body Moku_Voltage_pkg_en;
+end package body Moku_Voltage_pkg_en_PH9;

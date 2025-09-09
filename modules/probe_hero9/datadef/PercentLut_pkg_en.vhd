@@ -25,9 +25,9 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use work.Moku_Voltage_pkg_en.ALL;
+use work.Moku_Voltage_pkg_en_PH9.ALL;
 
-package PercentLut_pkg_en is
+package PercentLut_pkg_en_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
@@ -133,13 +133,13 @@ package PercentLut_pkg_en is
     -- Safe default voltage value (Units: volts)
     constant DEFAULT_SAFE_VOLTAGE : std_logic_vector(PERCENT_DATA_WIDTH-1 downto 0) := (others => '0');
 
-end package PercentLut_pkg_en;
+end package PercentLut_pkg_en_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body PercentLut_pkg_en is
+package body PercentLut_pkg_en_PH9 is
 
     -- =========================================================================
     -- Validation Function Implementations
@@ -314,4 +314,4 @@ package body PercentLut_pkg_en is
         return count;
     end function;
 
-end package body PercentLut_pkg_en;
+end package body PercentLut_pkg_en_PH9;

@@ -11,11 +11,11 @@
 ## 🎯 Module Overview
 **ProbeHero9 is a VHDL module designed to drive various SCA and FI probes with enhanced capabilities beyond ProbeHero7. Conceptually it is similar to a simple signal generator with improved safety, reliability, and integration features. It is intended to drive two analog outputs in response to a simple `trigger_in` signal.  
 
-Characteristics about the specific probe's are stored in `Global_Probe_Table` and are encapsulated in the `Probe_Config_pkg_en.vhd` (enhanced version)
+Characteristics about the specific probe's are stored in `Global_Probe_Table` and are encapsulated in the `Probe_Config_pkg_en_PH9.vhd` (enhanced version)
 
-The module will utilize the `PercentLut_pkg_en.vhd` file to interface with a probe-specific intensity look-up table. 
+The module will utilize the `PercentLut_pkg_en_PH9.vhd` file to interface with a probe-specific intensity look-up table. 
 
-The module also utilizes the `Moku_Voltage_pkg_en.vhd` file for manipulating voltages in a platform specific and safe manner.
+The module also utilizes the `Moku_Voltage_pkg_en_PH9.vhd` file for manipulating voltages in a platform specific and safe manner.
 
 ### Units Convention
 All parameters include units for clarity and future metadata:
@@ -44,10 +44,10 @@ All parameters include units for clarity and future metadata:
   Start with the most fundamental ones.
 -->
 - **Note**: All dependencies are enhanced VOLO datadef packages (copied from ProbeHero8)
--  **Probe_Config_pkg_en.vhd** - Enhanced probe configuration data types and constants - **Units**: package (VHDL package)
--  **Global_Probe_Table_pkg_en.vhd** - Enhanced global probe definitions and validation - **Units**: package (VHDL package)
--  **Moku_Voltage_pkg_en.vhd** - Enhanced voltage conversion utilities for MCC platform - **Units**: package (VHDL package)
--  **PercentLut_pkg_en.vhd** - Enhanced percentage-based lookup table utilities - **Units**: package (VHDL package)
+-  **Probe_Config_pkg_en_PH9.vhd** - Enhanced probe configuration data types and constants - **Units**: package (VHDL package)
+-  **Global_Probe_Table_pkg_en_PH9.vhd** - Enhanced global probe definitions and validation - **Units**: package (VHDL package)
+-  **Moku_Voltage_pkg_en_PH9.vhd** - Enhanced voltage conversion utilities for MCC platform - **Units**: package (VHDL package)
+-  **PercentLut_pkg_en_PH9.vhd** - Enhanced percentage-based lookup table utilities - **Units**: package (VHDL package)
 
 ## 🎛️ Control Interface
 

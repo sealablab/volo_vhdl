@@ -25,9 +25,9 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use work.Probe_Config_pkg_en.ALL;
+use work.Probe_Config_pkg_en_PH9.ALL;
 
-package Global_Probe_Table_pkg_en is
+package Global_Probe_Table_pkg_en_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
@@ -148,13 +148,13 @@ package Global_Probe_Table_pkg_en is
         )
     );
 
-end package Global_Probe_Table_pkg_en;
+end package Global_Probe_Table_pkg_en_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body Global_Probe_Table_pkg_en is
+package body Global_Probe_Table_pkg_en_PH9 is
 
     -- =========================================================================
     -- Validation Function Implementations
@@ -272,4 +272,4 @@ package body Global_Probe_Table_pkg_en is
         return report_line;
     end function;
 
-end package body Global_Probe_Table_pkg_en;
+end package body Global_Probe_Table_pkg_en_PH9;

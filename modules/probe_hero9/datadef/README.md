@@ -7,10 +7,10 @@ This directory contains data definition packages for ProbeHero9, based on ProbeH
 
 | Package | Source | Purpose | Status |
 |---------|--------|---------|--------|
-| `Probe_Config_pkg_en.vhd` | ProbeHero8 | Probe configuration data types and constants | ✅ Copied |
-| `Global_Probe_Table_pkg_en.vhd` | ProbeHero8 | Global probe definitions and validation | ✅ Copied |
-| `Moku_Voltage_pkg_en.vhd` | ProbeHero8 | Voltage conversion utilities for MCC platform | ✅ Copied |
-| `PercentLut_pkg_en.vhd` | ProbeHero8 | Percentage-based lookup table utilities | ✅ Copied |
+| `Probe_Config_pkg_en_PH9.vhd` | ProbeHero8 | Probe configuration data types and constants | ✅ Renamed |
+| `Global_Probe_Table_pkg_en_PH9.vhd` | ProbeHero8 | Global probe definitions and validation | ✅ Renamed |
+| `Moku_Voltage_pkg_en_PH9.vhd` | ProbeHero8 | Voltage conversion utilities for MCC platform | ✅ Renamed |
+| `PercentLut_pkg_en_PH9.vhd` | ProbeHero8 | Percentage-based lookup table utilities | ✅ Renamed |
 
 ## 🔄 Relationship to ProbeHero8
 

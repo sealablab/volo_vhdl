@@ -26,7 +26,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-package Probe_Config_pkg_en is
+package Probe_Config_pkg_en_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
@@ -128,13 +128,13 @@ package Probe_Config_pkg_en is
         3 => DEFAULT_PROBE_CONFIG
     );
 
-end package Probe_Config_pkg_en;
+end package Probe_Config_pkg_en_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body Probe_Config_pkg_en is
+package body Probe_Config_pkg_en_PH9 is
 
     -- =========================================================================
     -- Validation Function Implementations
@@ -220,4 +220,4 @@ package body Probe_Config_pkg_en is
         return (index < SYSTEM_MAX_PROBES);
     end function;
 
-end package body Probe_Config_pkg_en;
+end package body Probe_Config_pkg_en_PH9;
