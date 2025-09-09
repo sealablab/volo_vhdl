@@ -121,14 +121,8 @@ package PercentLut_pkg_PH9 is
     function get_valid_lut_count(lut_data : t_percent_lut_data) return natural;
     
     -- =========================================================================
-    -- Default Lookup Table Constants
+    -- Default Lookup Table Constants (moved to package body to avoid elaboration issues)
     -- =========================================================================
-    
-    -- Default linear lookup table (Units: array)
-    constant DEFAULT_LINEAR_PERCENT_LUT : t_percent_lut_data := generate_linear_percent_lut(0.0, 5.0);
-    
-    -- Default lookup table record (Units: record)
-    constant DEFAULT_PERCENT_LUT_RECORD : t_percent_lut_record := create_percent_lut_record(DEFAULT_LINEAR_PERCENT_LUT);
     
     -- Safe default voltage value (Units: volts)
     constant DEFAULT_SAFE_VOLTAGE : std_logic_vector(PERCENT_DATA_WIDTH-1 downto 0) := (others => '0');
@@ -313,5 +307,15 @@ package body PercentLut_pkg_PH9 is
         end loop;
         return count;
     end function;
+
+    -- =========================================================================
+    -- Default Lookup Table Constants
+    -- =========================================================================
+    
+    -- Default linear lookup table (Units: array)
+    constant DEFAULT_LINEAR_PERCENT_LUT : t_percent_lut_data := generate_linear_percent_lut(0.0, 5.0);
+    
+    -- Default lookup table record (Units: record)
+    constant DEFAULT_PERCENT_LUT_RECORD : t_percent_lut_record := create_percent_lut_record(DEFAULT_LINEAR_PERCENT_LUT);
 
 end package body PercentLut_pkg_PH9;

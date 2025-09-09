@@ -259,10 +259,10 @@ package body Moku_Voltage_pkg_PH9 is
     end function;
     
     function offset_voltage(voltage : real; offset : real) return real is
-        variable offset_voltage : real;
+        variable result_voltage : real;
     begin
-        offset_voltage := voltage + offset;
-        return clamp_voltage_safe(offset_voltage);
+        result_voltage := voltage + offset;
+        return clamp_voltage_safe(result_voltage);
     end function;
     
     -- =========================================================================
