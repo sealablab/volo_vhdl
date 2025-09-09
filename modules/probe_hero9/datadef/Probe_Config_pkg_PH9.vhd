@@ -10,8 +10,11 @@
 -- =============================================================================
 -- 
 -- This enhanced package provides probe configuration data types and validation
--- functions for ProbeHero8. It includes comprehensive validation, error handling,
+-- functions for ProbeHero9. It includes comprehensive validation, error handling,
 -- and unit hinting for improved type safety and testbench validation.
+-- 
+-- DEPENDENCIES:
+-- - Moku_Voltage_pkg_en_PH9: For voltage data width and voltage-related constants
 --
 -- UNIT CONVENTIONS:
 -- - voltage values: volts (voltage output levels)
@@ -25,13 +28,14 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use work.Moku_Voltage_pkg_PH9.ALL;
 
-package Probe_Config_pkg_en_PH9 is
+package Probe_Config_pkg_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
     -- =========================================================================
-    constant SYSTEM_VOLTAGE_WIDTH : natural := 16;  -- Units: bits (voltage data width)
+    -- Note: SYSTEM_VOLTAGE_WIDTH now uses VOLTAGE_DATA_WIDTH from Moku_Voltage_pkg_en_PH9
     constant SYSTEM_DURATION_WIDTH : natural := 16; -- Units: bits (duration data width)
     constant SYSTEM_INTENSITY_WIDTH : natural := 7; -- Units: bits (intensity index width)
     constant SYSTEM_MAX_PROBES : natural := 4;      -- Units: count (maximum probe configurations)
@@ -45,9 +49,9 @@ package Probe_Config_pkg_en_PH9 is
         probe_name : string(1 to 16);                    -- Units: string (probe identifier)
         
         -- Voltage configuration (Units: volts)
-        probe_trigger_voltage : std_logic_vector(SYSTEM_VOLTAGE_WIDTH-1 downto 0);  -- Units: volts
-        probe_intensity_min   : std_logic_vector(SYSTEM_VOLTAGE_WIDTH-1 downto 0);  -- Units: volts
-        probe_intensity_max   : std_logic_vector(SYSTEM_VOLTAGE_WIDTH-1 downto 0);  -- Units: volts
+        probe_trigger_voltage : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0);  -- Units: volts
+        probe_intensity_min   : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0);  -- Units: volts
+        probe_intensity_max   : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0);  -- Units: volts
         
         -- Timing configuration (Units: clks)
         fire_duration_min     : unsigned(SYSTEM_DURATION_WIDTH-1 downto 0);         -- Units: clks
@@ -76,6 +80,7 @@ package Probe_Config_pkg_en_PH9 is
     
     -- Units: input: voltage (volts), min_voltage (volts), max_voltage (volts) -> output: boolean
     -- Purpose: Validates that a voltage is within safe operating range
+    -- Note: Now uses is_voltage_in_range_safe from Moku_Voltage_pkg_en_PH9
     function is_voltage_in_range(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return boolean;
     
     -- Units: input: duration (clks), min_duration (clks), max_duration (clks) -> output: boolean
@@ -84,6 +89,7 @@ package Probe_Config_pkg_en_PH9 is
     
     -- Units: input: voltage (volts), min_voltage (volts), max_voltage (volts) -> output: voltage (volts)
     -- Purpose: Clamps voltage to safe operating range
+    -- Note: Now uses clamp_voltage_safe from Moku_Voltage_pkg_en_PH9
     function clamp_voltage(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return std_logic_vector;
     
     -- Units: input: duration (clks), min_duration (clks), max_duration (clks) -> output: duration (clks)
@@ -128,13 +134,13 @@ package Probe_Config_pkg_en_PH9 is
         3 => DEFAULT_PROBE_CONFIG
     );
 
-end package Probe_Config_pkg_en_PH9;
+end package Probe_Config_pkg_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body Probe_Config_pkg_en_PH9 is
+package body Probe_Config_pkg_PH9 is
 
     -- =========================================================================
     -- Validation Function Implementations
@@ -168,7 +174,8 @@ package body Probe_Config_pkg_en_PH9 is
     
     function is_voltage_in_range(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return boolean is
     begin
-        return (unsigned(voltage) >= unsigned(min_voltage)) and (unsigned(voltage) <= unsigned(max_voltage));
+        -- Delegate to Moku_Voltage_pkg_en_PH9 function
+        return is_voltage_in_range_safe(voltage, min_voltage, max_voltage);
     end function;
     
     function is_duration_in_range(duration : unsigned; min_duration, max_duration : unsigned) return boolean is
@@ -177,16 +184,9 @@ package body Probe_Config_pkg_en_PH9 is
     end function;
     
     function clamp_voltage(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return std_logic_vector is
-        variable clamped_voltage : std_logic_vector(voltage'range);
     begin
-        if unsigned(voltage) < unsigned(min_voltage) then
-            clamped_voltage := min_voltage;
-        elsif unsigned(voltage) > unsigned(max_voltage) then
-            clamped_voltage := max_voltage;
-        else
-            clamped_voltage := voltage;
-        end if;
-        return clamped_voltage;
+        -- Delegate to Moku_Voltage_pkg_en_PH9 function
+        return clamp_voltage_safe(voltage, min_voltage, max_voltage);
     end function;
     
     function clamp_duration(duration : unsigned; min_duration, max_duration : unsigned) return unsigned is
@@ -220,4 +220,4 @@ package body Probe_Config_pkg_en_PH9 is
         return (index < SYSTEM_MAX_PROBES);
     end function;
 
-end package body Probe_Config_pkg_en_PH9;
+end package body Probe_Config_pkg_PH9;

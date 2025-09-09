@@ -25,7 +25,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-package Moku_Voltage_pkg_en_PH9 is
+package Moku_Voltage_pkg_PH9 is
 
     -- =========================================================================
     -- System Constants with Unit Documentation
@@ -106,6 +106,35 @@ package Moku_Voltage_pkg_en_PH9 is
     function apply_percentage_voltage(voltage : real; percentage : real) return real;
     
     -- =========================================================================
+    -- SLV Voltage Functions with Unit Documentation
+    -- =========================================================================
+    -- These functions work directly with std_logic_vector for hardware interfaces
+    
+    -- Units: input: voltage (slv), min_voltage (slv), max_voltage (slv) -> output: boolean (validity)
+    -- Purpose: Validates that a voltage SLV is within specified range
+    function is_voltage_in_range_safe(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return boolean;
+    
+    -- Units: input: voltage (slv), min_voltage (slv), max_voltage (slv) -> output: voltage (slv)
+    -- Purpose: Clamps voltage SLV to specified range
+    function clamp_voltage_safe(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return std_logic_vector;
+    
+    -- Units: input: voltage1 (slv), voltage2 (slv) -> output: voltage (slv)
+    -- Purpose: Safe addition of two voltage SLVs with clamping to valid range
+    function add_voltages_safe(voltage1, voltage2 : std_logic_vector) return std_logic_vector;
+    
+    -- Units: input: voltage1 (slv), voltage2 (slv) -> output: voltage (slv)
+    -- Purpose: Safe subtraction of two voltage SLVs with clamping to valid range
+    function subtract_voltages_safe(voltage1, voltage2 : std_logic_vector) return std_logic_vector;
+    
+    -- Units: input: voltage (slv), scale_factor (ratio) -> output: voltage (slv)
+    -- Purpose: Scales voltage SLV by a factor with safety clamping
+    function scale_voltage_safe(voltage : std_logic_vector; scale_factor : real) return std_logic_vector;
+    
+    -- Units: input: voltage (slv), offset (slv) -> output: voltage (slv)
+    -- Purpose: Adds offset to voltage SLV with safety clamping
+    function offset_voltage_safe(voltage, offset : std_logic_vector) return std_logic_vector;
+    
+    -- =========================================================================
     -- Default Voltage Constants
     -- =========================================================================
     
@@ -119,13 +148,13 @@ package Moku_Voltage_pkg_en_PH9 is
     constant DEFAULT_DIGITAL_MAX : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0) := (others => '1');
     constant DEFAULT_DIGITAL_MID : std_logic_vector(VOLTAGE_DATA_WIDTH-1 downto 0) := x"8000";
 
-end package Moku_Voltage_pkg_en_PH9;
+end package Moku_Voltage_pkg_PH9;
 
 -- =============================================================================
 -- Package Body Implementation
 -- =============================================================================
 
-package body Moku_Voltage_pkg_en_PH9 is
+package body Moku_Voltage_pkg_PH9 is
 
     -- =========================================================================
     -- Voltage Conversion Function Implementations
@@ -283,5 +312,70 @@ package body Moku_Voltage_pkg_en_PH9 is
         scaled_voltage := voltage * (percentage / 100.0);
         return clamp_voltage_safe(scaled_voltage);
     end function;
+    
+    -- =========================================================================
+    -- SLV Voltage Function Implementations
+    -- =========================================================================
+    
+    function is_voltage_in_range_safe(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return boolean is
+    begin
+        return (unsigned(voltage) >= unsigned(min_voltage)) and (unsigned(voltage) <= unsigned(max_voltage));
+    end function;
+    
+    function clamp_voltage_safe(voltage : std_logic_vector; min_voltage, max_voltage : std_logic_vector) return std_logic_vector is
+        variable clamped_voltage : std_logic_vector(voltage'range);
+    begin
+        if unsigned(voltage) < unsigned(min_voltage) then
+            clamped_voltage := min_voltage;
+        elsif unsigned(voltage) > unsigned(max_voltage) then
+            clamped_voltage := max_voltage;
+        else
+            clamped_voltage := voltage;
+        end if;
+        return clamped_voltage;
+    end function;
+    
+    function add_voltages_safe(voltage1, voltage2 : std_logic_vector) return std_logic_vector is
+        variable sum_voltage : std_logic_vector(voltage1'range);
+        variable voltage1_real, voltage2_real, sum_real : real;
+    begin
+        -- Convert to real, add, convert back
+        voltage1_real := digital_to_voltage(voltage1);
+        voltage2_real := digital_to_voltage(voltage2);
+        sum_real := add_voltages_safe(voltage1_real, voltage2_real);
+        return voltage_to_digital(sum_real);
+    end function;
+    
+    function subtract_voltages_safe(voltage1, voltage2 : std_logic_vector) return std_logic_vector is
+        variable diff_voltage : std_logic_vector(voltage1'range);
+        variable voltage1_real, voltage2_real, diff_real : real;
+    begin
+        -- Convert to real, subtract, convert back
+        voltage1_real := digital_to_voltage(voltage1);
+        voltage2_real := digital_to_voltage(voltage2);
+        diff_real := subtract_voltages_safe(voltage1_real, voltage2_real);
+        return voltage_to_digital(diff_real);
+    end function;
+    
+    function scale_voltage_safe(voltage : std_logic_vector; scale_factor : real) return std_logic_vector is
+        variable scaled_voltage : std_logic_vector(voltage'range);
+        variable voltage_real, scaled_real : real;
+    begin
+        -- Convert to real, scale, convert back
+        voltage_real := digital_to_voltage(voltage);
+        scaled_real := scale_voltage(voltage_real, scale_factor);
+        return voltage_to_digital(scaled_real);
+    end function;
+    
+    function offset_voltage_safe(voltage, offset : std_logic_vector) return std_logic_vector is
+        variable result_voltage : std_logic_vector(voltage'range);
+        variable voltage_real, offset_real, result_real : real;
+    begin
+        -- Convert to real, add offset, convert back
+        voltage_real := digital_to_voltage(voltage);
+        offset_real := digital_to_voltage(offset);
+        result_real := offset_voltage(voltage_real, offset_real);
+        return voltage_to_digital(result_real);
+    end function;
 
-end package body Moku_Voltage_pkg_en_PH9;
+end package body Moku_Voltage_pkg_PH9;
