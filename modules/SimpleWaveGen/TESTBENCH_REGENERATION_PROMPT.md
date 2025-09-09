@@ -146,7 +146,7 @@ ghdl -r --std=08 <testbench_name>
 
 ## Reference Files
 - **AGENTS.md**: Project coding standards and guidelines
-- **README-ghdl-testbench-tips.md**: GHDL-specific testing best practices
+- **ai-workflow/ng/README-ghdl-testbench-tips-ng.md**: GHDL-specific testing best practices
 - **Current implementation files**: For understanding the refactored structure
 
 

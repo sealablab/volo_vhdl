@@ -14,7 +14,7 @@
    - `modules/probe_driver/tb/datadef/Moku_Voltage_pkg_en_tb.vhd`
 
 2. **Documentation Updated**:
-   - `README-ghdl-testbench-tips.md` - Added new VHDL tips and package testing practices
+   - `ai-workflow/ng/README-ghdl-testbench-tips-ng.md` - Added new VHDL tips and package testing practices
 
 3. **Git Status**:
    - All changes committed and pushed to `ai-workflow-datadefs` branch
@@ -50,7 +50,7 @@ git log --oneline -5
 - `jc-RESTART-HERE.md` - Original restart document
 - `modules/probe_driver/datadef/Moku_Voltage_pkg_en.vhd` - Enhanced package
 - `modules/probe_driver/tb/datadef/Moku_Voltage_pkg_en_tb.vhd` - Testbench
-- `README-ghdl-testbench-tips.md` - Updated documentation
+- `ai-workflow/ng/README-ghdl-testbench-tips-ng.md` - Updated documentation
 
 ---
 **Status**: Ready to continue with next datadef package enhancement

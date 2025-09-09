@@ -114,9 +114,9 @@ Each prompt can be customized for:
 ## 📖 **Essential Reading**
 
 Before using AI prompts, review these key documents:
-- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
-- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns
-- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench best practices
+- **@ai-workflow/ai-workflow/ng/README-RESET-ng.md** - Control signal behavior and priorities
+- **@ai-workflow/ai-workflow/ng/README-synth-vhdl-tips-ng.md** - Direct instantiation patterns
+- **@ai-workflow/ai-workflow/ng/README-ghdl-testbench-tips-ng.md** - Testbench best practices
 
 ## 🤝 **Getting Help**
 

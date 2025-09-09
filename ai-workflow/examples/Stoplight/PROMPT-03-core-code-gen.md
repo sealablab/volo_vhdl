@@ -9,9 +9,9 @@
 - **@rules.mdc** - Repository-specific coding rules and workflow guidelines
 
 **HIGHLY RECOMMENDED - Reference these for best practices:**
-- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns and examples
-- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench development best practices
-- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
+- **@ai-workflow/ai-workflow/ng/README-synth-vhdl-tips-ng.md** - Direct instantiation patterns and examples
+- **@ai-workflow/ai-workflow/ng/README-ghdl-testbench-tips-ng.md** - Testbench development best practices
+- **@ai-workflow/ai-workflow/ng/README-RESET-ng.md** - Control signal behavior and priorities
 
 
 ## Code Generation Requirements

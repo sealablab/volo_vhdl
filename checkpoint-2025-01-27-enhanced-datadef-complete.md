@@ -22,7 +22,7 @@
 - **`PercentLut_pkg_en_tb.vhd`** - 35 comprehensive tests
 
 ### 3. Documentation Enhanced
-- **`README-ghdl-testbench-tips.md`** - Added 15 new tips for VHDL testbench development
+- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - Added 15 new tips for VHDL testbench development
 
 ### 4. Git Status
 - **Tagged**: `enhanced-datadef-packages-complete`
@@ -113,7 +113,7 @@ git tag --list | grep enhanced
 - `modules/probe_driver/tb/datadef/PercentLut_pkg_en_tb.vhd`
 
 ### Documentation
-- `README-ghdl-testbench-tips.md` - Enhanced with 15 new tips
+- `ai-workflow/ng/README-ghdl-testbench-tips-ng.md` - Enhanced with 15 new tips
 - `checkpoint-2025-01-27-enhanced-datadef-complete.md` - This checkpoint
 
 ## Success Metrics

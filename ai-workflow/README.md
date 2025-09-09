@@ -83,9 +83,10 @@ The workflow is designed to be:
 
 - **@AGENTS.md** - Core VHDL coding standards
 - **@rules.mdc** - Repository-specific rules
-- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns
-- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench best practices
-- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
+- **@ai-workflow/ng/README-CORE-STATE-MACHINE-STANDARD-ng.md** - Core state machine standard
+- **@ai-workflow/ng/README-synth-vhdl-tips-ng.md** - Direct instantiation patterns
+- **@ai-workflow/ng/README-ghdl-testbench-tips-ng.md** - Testbench best practices
+- **@ai-workflow/ng/README-RESET-ng.md** - Control signal behavior and priorities
 
 ## 🤝 **Contributing**
 

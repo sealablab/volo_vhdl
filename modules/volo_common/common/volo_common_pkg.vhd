@@ -21,6 +21,22 @@ package volo_common_pkg is
     constant STATUS_VALID_BIT      : natural := 1;
     constant STATUS_IDLE_BIT       : natural := 0;
     
+    -- ============================================================================
+    -- STANDARD STATE MACHINE STATES
+    -- ============================================================================
+    -- Standard state machine states for all VOLO modules (2-bit encoding for Verilog compatibility)
+    constant STATE_RESET : std_logic_vector(1 downto 0) := "00";  -- Units: state (reset/initialization)
+    constant STATE_READY : std_logic_vector(1 downto 0) := "01";  -- Units: state (parameters validated, ready)
+    constant STATE_IDLE  : std_logic_vector(1 downto 0) := "10";  -- Units: state (user implementation pickup point)
+    constant STATE_FAULT : std_logic_vector(1 downto 0) := "11";  -- Units: state (validation failure)
+    
+    -- ============================================================================
+    -- GLOBAL OUTPUT CONSTANTS
+    -- ============================================================================
+    -- Global output constants for consistent behavior across all modules
+    constant GLOBAL_VOLTAGE_ZERO : signed(15 downto 0) := x"0000";  -- Units: volts (0V output)
+    constant GLOBAL_SAFE_OUTPUT : signed(15 downto 0) := x"0000";   -- Units: volts (safe state output)
+    
 
     
     -- ============================================================================

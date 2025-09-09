@@ -12,8 +12,8 @@
 - **@ai-workflow/ng/README-layered-testbench-ng.md** - 4-layer testbench architecture
 
 **HIGHLY RECOMMENDED - Reference these for best practices:**
-- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns and examples
-- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
+- **@ai-workflow/ai-workflow/ng/README-synth-vhdl-tips-ng.md** - Direct instantiation patterns and examples
+- **@ai-workflow/ai-workflow/ng/README-RESET-ng.md** - Control signal behavior and priorities
 
 ## Execution Mode Detection
 

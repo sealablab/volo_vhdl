@@ -9,9 +9,10 @@
 - **@rules.mdc** - Repository-specific coding rules and workflow guidelines
 
 **HIGHLY RECOMMENDED - Reference these for best practices:**
-- **@ai-workflow/README-direct-instantiation.md** - Direct instantiation patterns and examples
-- **@ai-workflow/README-ghdl-testbench-tips.md** - Testbench development best practices
-- **@ai-workflow/README-RESET.md** - Control signal behavior and priorities
+- **@ai-workflow/ng/README-CORE-STATE-MACHINE-STANDARD-ng.md** - Core state machine standard and implementation
+- **@ai-workflow/ng/README-synth-vhdl-tips-ng.md** - Direct instantiation patterns and examples
+- **@ai-workflow/ng/README-ghdl-testbench-tips-ng.md** - Testbench development best practices
+- **@ai-workflow/ng/README-RESET-ng.md** - Control signal behavior and priorities
 
 ## Execution Mode Detection
 
@@ -110,8 +111,11 @@
 ### 2. Core Entity Block (`core/[module_name]_core.vhd`)
 - Entity declaration with all ports
 - Generics if specified
-- Status register implementation
-- Simple reset handler with input parameter validation
+- **Core state machine implementation (RESET → READY → IDLE → FAULT)**
+- **Reset handler with input parameter validation**
+- **User implementation pickup point at IDLE state**
+- **Global output constants usage (no assumptions about output timing)**
+- **Use core_state_machine_template.vhd as starting point**
 
 
 ### 4. Core Testbench (`tb/core/[module_name]_core_tb.vhd`)
@@ -136,12 +140,39 @@
 - **Missing units for parameters**
 - Unclear status register behavior
 
+## Core State Machine Requirements
+
+**MANDATORY - All core entities must implement this standard state machine:**
+
+### Required States (from volo_common_pkg)
+- **STATE_RESET**: Parameter validation and initialization
+- **STATE_READY**: Parameters validated, configuration loaded, ready for operation
+- **STATE_IDLE**: User implementation pickup point (where user logic begins)
+- **STATE_FAULT**: Validation failure state (only reset can exit)
+
+### State Transitions
+- **RESET → READY**: All input parameters validate successfully
+- **READY → IDLE**: Enable signal asserted (user-defined trigger)
+- **Any → FAULT**: Any parameter validation failure
+- **FAULT → RESET**: Reset signal assertion only
+
+### User Implementation Points
+- **IDLE State**: User-specific state machine begins here
+- **Output Control**: User controls when outputs are active
+- **Timer Logic**: User responsibility for timing control
+- **Custom States**: User can add states beyond IDLE
+
+### Output Behavior
+- **Default State**: All outputs use `GLOBAL_VOLTAGE_ZERO` when not in IDLE
+- **No Assumptions**: Core makes no assumptions about output timing or control logic
+- **User Control**: User logic determines when outputs are active
+
 ## Critical Requirements
 
 - **VHDL-2008 with Verilog Portability**: No VHDL-only features, use std_logic_vector for states
 - **Signal Naming**: Use proper prefixes (`ctrl_*`, `cfg_*`, `stat_*`) as specified
-- **Constants Usage**: Import and use constants from the constants package
-- **State Machine**: Use std_logic_vector encoding with named constants from package
+- **Constants Usage**: Import and use constants from volo_common_pkg and constants package
+- **State Machine**: Use volo_common_pkg state constants (STATE_RESET, STATE_READY, etc.)
 - **Synchronous Design**: All processes use `rising_edge(clk)` with proper reset
 - **Status Register**: Implement status register exactly as specified in requirements
 - **Validation**: Include all input/output validation logic mentioned

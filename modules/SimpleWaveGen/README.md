@@ -160,5 +160,5 @@ The module implements proper safety-critical parameter validation as required by
 
 ## References
 - SimpleWaveGen-reqs.md: Detailed requirements specification
-- README-ghdl-testbench-tips.md: GHDL testbench development tips
+- ai-workflow/ng/README-ghdl-testbench-tips-ng.md: GHDL testbench development tips
 - Volo VHDL Project Guidelines: Overall project coding standards

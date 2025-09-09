@@ -128,26 +128,46 @@
 - **Invalid input**: [What happens when input validation fails]
 - **Output constraint violation**: [What happens when output constraints can't be met]
 
-## 🔄 State Machine Requirements
+## 🔄 Core State Machine Requirements
 
-### States
+### Required Core States (from volo_common_pkg)
 <!-- 
-  TIP: If your module has states, define them here.
-  Use std_logic_vector encoding for Verilog compatibility.
-  Consider using constants for state names.
+  TIP: All VOLO modules must implement this standard state machine.
+  These states are defined in volo_common_pkg and provide consistent behavior.
 -->
-- **IDLE_STATE**: [Description of idle behavior]
-- **ACTIVE_STATE**: [Description of active behavior]
-- **ERROR_STATE**: [Description of error handling]
+- **STATE_RESET**: Parameter validation and initialization
+- **STATE_READY**: Parameters validated, configuration loaded, ready for operation
+- **STATE_IDLE**: User implementation pickup point (where your specific logic begins)
+- **STATE_FAULT**: Validation failure state (only reset can exit)
 
-### State Transitions
+### Core State Transitions
 <!-- 
-  TIP: Define what triggers state changes.
-  Be specific about conditions and timing.
+  TIP: These transitions are handled automatically by the core.
+  You only need to define what triggers the READY → IDLE transition.
 -->
-- **IDLE → ACTIVE**: [Trigger condition]
-- **ACTIVE → IDLE**: [Trigger condition]
-- **Any → ERROR**: [Error conditions]
+- **RESET → READY**: All input parameters validate successfully (automatic)
+- **READY → IDLE**: [Your trigger condition - e.g., enable signal, start command]
+- **Any → FAULT**: Any parameter validation failure (automatic)
+- **FAULT → RESET**: Reset signal assertion only (automatic)
+
+### User Implementation Points
+<!-- 
+  TIP: Define what happens in the IDLE state and beyond.
+  This is where your module-specific logic begins.
+-->
+- **IDLE State Logic**: [What should happen when in IDLE state?]
+- **Output Control**: [When should outputs be active?]
+- **Timer Management**: [What timing control is needed?]
+- **Custom States**: [Any additional states beyond IDLE?]
+
+### Output Behavior Requirements
+<!-- 
+  TIP: Define when outputs should be active vs. safe state.
+  Core uses GLOBAL_VOLTAGE_ZERO for safe state.
+-->
+- **Default State**: All outputs use GLOBAL_VOLTAGE_ZERO when not active
+- **Active Conditions**: [When should each output be active?]
+- **User Control**: [How does user logic control outputs?]
 
 ## 📝 Implementation Notes
 
