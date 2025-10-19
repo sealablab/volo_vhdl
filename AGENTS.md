@@ -1,23 +1,25 @@
-# Volo VHDL Project - Agent Guidelines
+# AGENTS.md
+
+This file provides guidance to agents when working with code in this repository.
 
 ## Essential Resources (Source of Truth)
 - **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
 - **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns  
 - **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
 
-## Quick Start Checklist
-1. **Read the referenced files** - They contain all the detailed guidance
-2. **Follow the patterns** - Use the Pattern snippets as canonical forms
-3. **Use layered testbenches** - 4-layer architecture is mandatory
-4. **Control priority**: `reset > clock_enable > enable` (STD-02)
-5. **Direct instantiation** - Required for top layer files
+## Build/Test Commands
+- **Compile module**: `cd modules/<module_name> && make`
+- **Run all tests**: `cd modules/<module_name> && make test`
+- **Run single test**: `cd modules/<module_name> && make test-<testbench_name>`
+  - Example: `make test-probe_driver_interface`
+- **GHDL flags**: Always use `--std=08` for VHDL-2008 compatibility
 
-## Core Rules (Summary)
+## Core Rules
 - **VHDL-2008 with Verilog portability** - Avoid VHDL-only features
 - **Direct instantiation** - Required for `top/` layer files
 - **Layered testbenches** - Interface → Validation → Functional → Generic
 - **Signal prefixes**: `ctrl_*`, `cfg_*`, `stat_*`
-- **GHDL**: Always use `--std=08`
+- **Control priority**: `reset > clock_enable > enable` (STD-02)
 
 ## Module Structure
 ```
@@ -38,18 +40,9 @@ modules/module_name/
 - **Naming**: `<name>_tb.vhd` with entity `<name>_tb`
 - **Output**: Print `'ALL TESTS PASSED'` or `'TEST FAILED'` + `'SIMULATION DONE'`
 - **Architecture**: Use 4-layer approach (see referenced file)
+- **Termination**: Use `std.env.stop(0)` or `assert false report "Simulation completed" severity failure`
 
 ## New Tips Protocol
 - **Append only** below `------- New Tips here-------` in referenced files
 - **Use schema**: Problem/Cause/Solution/Pattern/Tags
 - **Don't modify** main bodies of referenced files
-
-## Questions for Clarification
-When working on this project, consider asking:
-1. What are the target frequency and timing requirements?
-2. What are the interface requirements with other modules?
-3. What are the reset requirements (synchronous vs asynchronous)?
-4. Are there specific area or resource constraints?
-
----
-**For detailed guidance, see the referenced files above. This document is intentionally short to avoid duplication.**
