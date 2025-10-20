@@ -1,6 +1,6 @@
 ---
 title: "Volo VHDL Project Rules"
-version: "1.0"
+version: "2.0"
 type: "workspace_rules"
 applies_to: "all_files"
 priority: "high"
@@ -30,67 +30,135 @@ priority: "high"
 
 # Volo VHDL Project - Agent Guidelines
 
-## Overview
-This document provides guidelines for AI agents working with the Volo VHDL project. The project follows strict VHDL-2008 coding standards designed for **Verilog portability**.
+## 🎯 Essential Resources (Source of Truth)
+- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
+- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns  
+- **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
+- **`AGENTS.md`** - Quick reference and build commands
 
-## Core Principles
+## 🚀 Quick Start Commands
+- **Compile module**: `cd modules/<module_name> && make`
+- **Run all tests**: `cd modules/<module_name> && make test`
+- **Run single test**: `cd modules/<module_name> && make test-<testbench_name>`
+- **GHDL flags**: Always use `--std=08` for VHDL-2008 compatibility
+
+## 🏗️ Core Architecture Rules
 
 ### VHDL-2008 with Verilog Portability
-- **Target**: VHDL-2008 that can be easily converted to Verilog
-- **Avoid**: VHDL-only features that don't translate well to Verilog
+- **Target**: VHDL-2008 that converts cleanly to Verilog
+- **Avoid**: VHDL-only features (records in ports, enums, subtypes)
+- **Use**: `std_logic_vector` state encoding, explicit bit widths
 
-### Allowed Features
-- `std_logic` and `std_logic_vector` types
-- `unsigned` and `signed` from `numeric_std` package
-- Generics and generate statements
-- Synchronous processes with `rising_edge(clk)`
-- Synchronous reset mechanisms
-- Explicit bit widths for all vectors
+### Tiered Rule System
+- **Tier 1 (RTL)**: `common/`, `core/`, `top/` - Strict Verilog portability
+- **Tier 2 (DataDef)**: `datadef/` - Relaxed for data structures (records allowed)
+- **Tier 3 (Testbench)**: `tb/` - Full VHDL-2008 features
 
-### Forbidden Features
-- Records in port declarations (except in datadef packages)
-- Subtype range constraints
-- Enumeration types in RTL code
-- Shared variables
-- `wait` statements in RTL
-- `after` delays
-- Resolved custom types
-- Physical types
-- File I/O operations
+### Signal Naming & Control Priority
+- **Prefixes**: `ctrl_*` (control), `cfg_*` (config), `stat_*` (status)
+- **Priority**: `reset > clock_enable > enable` (STD-02)
+- **Standard signals**: `clk`, `n_reset`, `clk_en`, `enable`
 
-## Port Naming Conventions
+### Direct Instantiation (MANDATORY for Top Layer)
+```vhdl
+-- ✅ REQUIRED in top/ layer files
+U1: entity WORK.module_name port map (...);
 
-### Signal Prefixes
-- **`ctrl_*`**: Control signals (enable, reset, etc.)
-- **`cfg_*`**: Configuration parameters
-- **`stat_*`**: Status and monitoring signals
+-- ❌ FORBIDDEN in top/ layer
+-- component module_name is ... end component;
+```
 
-### Port Structure
-- Use flat ports (no records)
-- Avoid complex type hierarchies
-- Keep interfaces simple and Verilog-compatible
+## 🧪 Testbench Requirements
 
-## Standard Control Signal Implementation
+### 4-Layer Architecture (Mandatory)
+1. **Interface Testing** - Test WHAT, not HOW
+2. **Validation Testing** - Parameter validation & error handling  
+3. **Functional Testing** - Core behavior verification
+4. **Generic Testing** - Edge cases & configurations
 
-### Signal Definitions
+### Required Output
+```vhdl
+report "ALL TESTS PASSED" severity note;  -- Success
+report "TEST FAILED" severity error;       -- Failure  
+report "SIMULATION DONE" severity note;      -- Always
+```
+
+## 📁 Module Structure
+```
+modules/module_name/
+├── common/     # Shared utilities (Tier 1)
+├── datadef/    # Data structures (Tier 2) 
+├── core/       # Pure logic (Tier 1)
+├── top/        # Integration (Tier 1, direct instantiation)
+└── tb/         # Testbenches by layer (Tier 3)
+    ├── common/     # Package tests
+    ├── datadef/    # Datadef tests  
+    ├── core/       # Core tests
+    └── top/        # Integration tests
+```
+
+## 🤖 AI Agent Guidelines
+
+### Working with Structured Tips
+- **Reference**: Use ng/ files as primary source for patterns
+- **Append only**: Add new tips below `------- New Tips here-------`
+- **Schema**: Problem/Cause/Solution/Pattern/Tags
+- **Don't reorganize**: Never modify main bodies of ng/ files
+
+### Build Verification
+- Always test with `make` and `make test` after changes
+- Verify GHDL compilation with `--std=08`
+- Check for linting errors before committing
+
+## 🔧 Platform Context
+- **Target**: Moku FPGA devices
+- **Simulation**: GHDL with VHDL-2008
+- **Deployment**: MCC (Moku Custom Core) bitstream
+- **Reference**: SimpleWaveGen module (successfully deployed)
+
+## Context-Specific Rules
+- **Architecture decisions**: See `.roo/rules-architect/AGENTS.md`
+- **Coding patterns**: See `.roo/rules-code/AGENTS.md`  
+- **Debugging help**: See `.roo/rules-debug/AGENTS.md`
+- **Documentation**: See `.roo/rules-ask/AGENTS.md`
+
+## AI Workflow Integration
+- Use `ai-workflow/prompts/` for guided development
+- Follow structured tip schema in ng/ files
+- Reference Serena memories for project context
+- Use Roo context rules for specialized tasks
+
+## Quality Assurance
+- All modules must pass 4-layer testbench architecture
+- Direct instantiation verification for top layer
+- Verilog portability check before deployment
+- Standards compliance via structured tips
+
+---
+
+## Detailed Implementation Rules
+
+### Standard Control Signal Implementation
+
+#### Signal Definitions
 All VOLO modules must implement these four standard control signals:
 - **`clk`**: Primary clock input (`std_logic`)
 - **`reset`**: Active-low reset (`std_logic`, typically `n_reset` or `reset_n`)
 - **`enable`**: Functional enable (`std_logic`)
 - **`clk_en`**: Clock enable (`std_logic`)
 
-### Signal Priorities
+#### Signal Priorities
 1. **Reset** - Highest priority, forces safe state regardless of other signals
 2. **Clock Enable** - Second priority, freezes sequential logic when low
 3. **Functional Enable** - Lowest priority, gates functional work
 
-### Implementation Requirements
+#### Implementation Requirements
 - **Reset Behavior**: All outputs go to safe defaults, all registers cleared
 - **Clock Enable**: When `clk_en='0'`, sequential logic holds state (no updates)
 - **Functional Enable**: When `enable='0'`, DUT is idle/holding, outputs parked
 - **Safe State**: All outputs must have defined safe values when not operating
 
-### Truth Table
+#### Truth Table
 | Reset | clk_en | enable | DUT Behavior                          |
 |-------|--------|--------|----------------------------------------|
 | 1     | X      | X      | **Reset dominates** → safe defaults    |
@@ -98,78 +166,19 @@ All VOLO modules must implement these four standard control signals:
 | 0     | 1      | 0      | **Idle/hold** → state stable, outputs parked |
 | 0     | 1      | 1      | **Normal operation** → advance state, process data |
 
-### Naming Conventions
-- **Clock**: Always `clk` (not configurable)
-- **Reset**: `n_reset` or `reset_n` (active low, synchronous)
-- **Enable**: `enable` (functional enable)
-- **Clock Enable**: `clk_en` (clock gating control)
+### Status Register Implementation Standards
 
-## Status Register Implementation Standards
-
-### Default Behavior for All VOLO Modules
+#### Default Behavior for All VOLO Modules
 - **Update Timing**: All status bits updated synchronously on rising edge of clock
 - **Fault Bits**: FAULT and ALARM bits are sticky (cleared only on reset)
 - **State Bits**: Operational status bits reflect current state
 - **Reset Behavior**: All bits cleared on reset
 - **Bit 7-6 Convention**: FAULT (bit 7) and ALARM (bit 6) reserved for error conditions
 
-### Status Bit Categories
+#### Status Bit Categories
 - **Sticky Bits**: FAULT, ALARM, FIRED - persist until reset
 - **State Bits**: COOL, FIRING, ARMED - reflect current operational state
 - **Reserved Bits**: Bits 5-4 typically reserved for future use
-
-### Implementation Requirements
-- **Synchronous Updates**: All status bit changes must occur on rising edge of clock
-- **Reset Clearing**: All status bits must be cleared when reset is asserted
-- **Sticky Behavior**: Fault and alarm bits must remain set until reset
-- **State Reflection**: Operational status bits must accurately reflect current module state
-
-## Module Architecture
-
-### Directory Structure
-All VHDL modules must follow this standardized structure:
-```
-modules/
-├── module_name/
-│   ├── datadef/    # Data structure definitions (Tier 2 rules)
-│   ├── common/     # RTL utility packages (Tier 1 rules)
-│   ├── core/       # Main algorithmic/logic implementation (Tier 1 rules)
-│   ├── top/        # Top-level integration (Tier 1 rules, optional)
-│   └── tb/         # Testbenches (Tier 3 rules)
-```
-
-## Direct Instantiation Requirements
-
-### **Mandatory for Top Layer**
-All files in the `top/` directory (both RTL and testbenches) **MUST** use direct instantiation for internal module connections.
-
-### **Direct Instantiation Pattern**
-```vhdl
--- ✅ Correct: Direct instantiation (required for top layer)
-U1: entity WORK.module_name
-    port map (
-        clk => clk,
-        rst => rst,
-        data_in => data_in,
-        data_out => data_out
-    );
-
--- ❌ Forbidden in top layer: Component declaration + instantiation
--- component module_name is ... end component;
--- U1: module_name port map (...);
-```
-
-### **When to Use Direct Instantiation**
-- **REQUIRED**: All top-level integration files (`modules/**/top/*.vhd`)
-- **REQUIRED**: All top-level testbenches (`modules/**/tb/top/*.vhd`)
-- **RECOMMENDED**: Core layer testbenches (`modules/**/tb/core/*.vhd`)
-- **OPTIONAL**: Core layer RTL files (can use either approach)
-
-### **Benefits for Top Layer**
-- **Dependency Clarity**: Clear compilation order requirements
-- **Error Detection**: Port mismatches caught at analysis time
-- **Code Consistency**: Uniform instantiation pattern across top-level files
-- **Maintainability**: Easier to track module dependencies
 
 ### Layer Responsibilities
 
@@ -225,7 +234,7 @@ U1: entity WORK.module_name
 
 **Direct Instantiation Requirement**: All internal module connections in top layer files MUST use direct instantiation (`entity WORK.module_name`) rather than component declarations.
 
-## FSM Implementation
+### FSM Implementation
 - Use `std_logic_vector` for state encoding
 - Define state constants (avoid enumeration types)
 - Example:
@@ -234,36 +243,36 @@ U1: entity WORK.module_name
   constant ACTIVE_STATE: std_logic_vector(1 downto 0) := "01";
   ```
 
-## Counters and Timers
+### Counters and Timers
 - Prefer `unsigned` vectors with explicit widths
 - Avoid generic ranges or complex constraints
 - Example: `signal counter : unsigned(7 downto 0);`
 
-## Code Style and Comments
+### Code Style and Comments
 
-### Block Structure
+#### Block Structure
 - Clearly mark the end of `if`/`elsif`/`case` blocks
 - Use consistent indentation
 - Add meaningful comments for complex logic
 
-### Process Structure
+#### Process Structure
 - Use synchronous processes with `rising_edge(clk)`
 - Implement proper reset handling
 - Keep processes focused and readable
 
-## Testbench Requirements (`modules/**/tb/*.vhd`)
+### Testbench Requirements (`modules/**/tb/*.vhd`)
 
-### Allowed Features
+#### Allowed Features
 - VHDL-2008 features are permitted
 - `wait` statements are allowed
 - Use deterministic stimuli
 
-### Required Output
+#### Required Output
 - **Success**: Print `'ALL TESTS PASSED'`
 - **Failure**: Print `'TEST FAILED'`
 - **Completion**: Always print `'SIMULATION DONE'`
 
-### **Direct Instantiation in Testbenches**
+#### **Direct Instantiation in Testbenches**
 - **Top Layer Testbenches**: MUST use direct instantiation for all module instantiations
 - **Core Layer Testbenches**: RECOMMENDED to use direct instantiation for consistency
 - **Datadef/Common Testbenches**: Can use either approach (no requirement)
@@ -282,22 +291,22 @@ begin
 end architecture;
 ```
 
-## Template Guidelines (`templates/**`)
+### Template Guidelines (`templates/**`)
 - Keep templates minimal
 - Ensure Verilog portability
 - Follow all global coding rules
 - Provide clear examples of proper usage
 
-## Best Practices
+### Best Practices
 
-### Signal Declaration
+#### Signal Declaration
 ```vhdl
 signal data_bus : std_logic_vector(31 downto 0);
 signal counter  : unsigned(15 downto 0);
 signal state    : std_logic_vector(2 downto 0);
 ```
 
-### Process Structure
+#### Process Structure
 ```vhdl
 process(clk, rst_n)
 begin
@@ -309,7 +318,7 @@ begin
 end process;
 ```
 
-### Generic Usage
+#### Generic Usage
 ```vhdl
 generic (
     DATA_WIDTH : integer := 32;
@@ -317,7 +326,7 @@ generic (
 );
 ```
 
-## Verification Checklist
+### Verification Checklist
 Before submitting code, ensure:
 - [ ] No VHDL-only features used (except records in datadef packages)
 - [ ] All ports use flat signal types (except datadef packages)
@@ -329,30 +338,30 @@ Before submitting code, ensure:
 - [ ] Testbench prints required messages
 - [ ] **Top layer files use direct instantiation for all module connections**
 
-## Structured Rule System Reference
+### Structured Rule System Reference
 
-### Enhanced AI-Assisted Development Rules
+#### Enhanced AI-Assisted Development Rules
 For detailed, structured guidance on common VHDL development patterns and GHDL testbench issues, refer to the enhanced rule system:
 
 - **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Structured synthesizable VHDL tips with Problem/Cause/Solution patterns
 - **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - Structured GHDL testbench development tips
 - **`ai-workflow/ng/README-index.md`** - Index and overview of the structured rule system
 
-### Key Features of the Structured Rule System
+#### Key Features of the Structured Rule System
 - **Machine-friendly format**: Problem/Cause/Solution/Pattern structure for AI agents
 - **Quick Index**: Error message lookup for rapid problem resolution
 - **Canonical patterns**: Exact code snippets for common scenarios
 - **Cross-references**: Links to detailed documentation in HTML comments
 - **Agent contributions**: Built-in mechanism for AI agents to contribute new tips
 
-### Integration with Existing Rules
+#### Integration with Existing Rules
 The structured rule system complements these workspace rules by providing:
 - **Implementation details** for the architectural patterns defined here
 - **Common pitfalls** and their solutions
 - **GHDL-specific guidance** for testbench development
 - **Verilog portability patterns** for synthesizable code
 
-## Questions for Clarification
+### Questions for Clarification
 When working on this project, consider asking:
 1. What is the target frequency and timing requirements?
 2. Are there specific power constraints or clock gating requirements?
@@ -484,3 +493,6 @@ rules:
     optional_dirs: ["datadef", "top", "tb"]
     structure_validation: true
 ```
+
+---
+*For detailed patterns and troubleshooting, see the ng/ structured tip files.*
