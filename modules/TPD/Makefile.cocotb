@@ -1,0 +1,46 @@
+# Makefile for cocotb simulation of EMFI_FSM
+# Uses GHDL as the simulator
+
+# Simulator selection
+SIM ?= ghdl
+
+# VHDL standard
+VHDL_STANDARD = 08
+
+# VHDL source files
+VHDL_SOURCES = core/emfi-fsm.vhd
+
+# Top-level entity
+TOPLEVEL = emfi_fsm
+
+# Python test module (without .py extension)
+MODULE = emfi_fsm_test_002
+
+# GHDL-specific settings
+GHDL_ARGS = --std=$(VHDL_STANDARD)
+
+# Optional: Enable waveform generation
+WAVES ?= 0
+ifeq ($(WAVES),1)
+    SIM_ARGS += --wave=emfi_fsm.ghw
+endif
+
+# Include cocotb's Makefile
+include $(shell cocotb-config --makefiles)/Makefile.sim
+
+# Help target
+.PHONY: help
+help:
+	@echo "Cocotb Makefile for EMFI_FSM"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make              - Run all tests"
+	@echo "  make WAVES=1      - Run tests and generate waveform (emfi_fsm.ghw)"
+	@echo "  make clean        - Clean build artifacts"
+	@echo "  make help         - Show this help message"
+	@echo ""
+	@echo "Variables:"
+	@echo "  SIM=$(SIM)"
+	@echo "  TOPLEVEL=$(TOPLEVEL)"
+	@echo "  MODULE=$(MODULE)"
+	@echo "  VHDL_STANDARD=$(VHDL_STANDARD)"

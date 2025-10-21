@@ -55,6 +55,13 @@ Under the current implementation this state is unreachable - but will be used in
 
 
 
+# emfi-fsm testbench
+Create a simple coco-tb based test bench that:
+
+## emfi-fsm-test-002
+Reset(delay_cnt_in=2, firing_cnt_in=2,cooldown_cnt_in=2)
+After reset observe that the state_out hits all of the expected states. When the module reaches the 'DONE' state the test has passed
+
 
 
 
