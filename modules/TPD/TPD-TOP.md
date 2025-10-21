@@ -1,19 +1,17 @@
 # TPD-TOP
 
 # TPD: Trivial Probe Driver
-the **Trivial Probe Driver** works around the lack of moku.get_regs (aka 'StatusRegister') support with a clever work-around.
-
-We will utilize the built-in Oscilloscope instrument to stream information back to the FI-Orchestrator.  This has the (most) robust support for streaming data in real time over the network. 
 
 
-
+## TPD-MOKU-TOP-REGS
+The TP
 #### CRO : (31 - 24)
 
-| bit   | type | descr                |
-| ----- | ---- | -------------------- |
-| 31    | -    | gDisable             |
-| 20-28 | -    | Reserved             |
-| 27-24 | -    | Reserved (`clk-dev`) |
+| bit   | type | descr                           |
+| ----- | ---- | ------------------------------- |
+| 31    | -    | gDisable                        |
+| 20-28 | -    | Reserved                        |
+| 27-24 | -    | Reserved (`clk-div`) future use |
 
 
 #### CRO : (23 - 16)

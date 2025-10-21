@@ -1,5 +1,8 @@
 # TPD-TOP
 
+### Michela response
+
+
 **Trivial Probe Driver** (aka `timed probe driver`)
 
 The goal of __Trivial Probe Driver__ is to serve as a temporary on-ramp until the moku `get_control_register` API is officially implemented.
@@ -20,4 +23,4 @@ b) the timeout_timer has expired without any observable delta.
 
 Again. the primary motivator for this model is to __work__ around the lack of a moku read control register api.
 
-
+x
