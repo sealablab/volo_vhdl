@@ -1,6 +1,6 @@
 # TPD Module - MCC Deployment Guide
 
-## Critical: CustomWrapper Naming Restriction
+## Critical: CustomWrapper Architecture Pattern
 
 ⚠️ **MCC does NOT allow VHDL files to define `entity CustomWrapper`** ⚠️
 
@@ -9,17 +9,24 @@ MCC's build script (lines 76-79) explicitly checks for and **rejects** any VHDL 
 entity CustomWrapper is
 ```
 
-This is by design - MCC reserves the `CustomWrapper` entity name for its template system.
+This is by design - MCC provides the CustomWrapper **entity declaration** automatically.
 
-### Solution
+### Solution: Architecture-Only Pattern
 
-Our TPD top-level module is named **`TPD_Top`** (not CustomWrapper):
-- File: `TPD_Top.vhd`
-- Entity: `entity TPD_Top is`
+MCC expects users to upload:
+1. Core module files with their own entities (e.g., `TPD_Top.vhd`)
+2. A `Top.vhd` file defining an **architecture** for CustomWrapper (NOT an entity!)
 
-You must either:
-1. Edit MCC's CustomWrapper template to instantiate `TPD_Top`, OR
-2. Use the provided `CustomWrapper_Body_Template.vhd` as a reference
+**Top.vhd pattern:**
+```vhdl
+architecture rtl of CustomWrapper is
+begin
+    U_TPD: entity WORK.TPD_Top
+        port map (...);
+end architecture rtl;
+```
+
+This is similar to the DCSequencer example in MCC documentation.
 
 ---
 
@@ -58,13 +65,15 @@ The TPD module requires these files (already prepared in `mcc_deploy/`):
 
 ```
 mcc_deploy/
-├── TPD_Top.vhd                        (Top-level Moku integration)
-├── emfi_fsm.vhd                       (Core FSM)
-├── tpd_med.vhd                        (Wrapper with sticky status)
-└── CustomWrapper_Body_Template.vhd    (Reference template for MCC)
+├── Top.vhd          (CustomWrapper architecture - instantiates TPD_Top)
+├── TPD_Top.vhd      (Top-level Moku integration)
+├── emfi_fsm.vhd     (Core FSM)
+└── tpd_med.vhd      (Wrapper with sticky status)
 ```
 
-**IMPORTANT**: Do NOT upload a file named `CustomWrapper.vhd`! MCC will reject it.
+**IMPORTANT**:
+- Do NOT upload a file defining `entity CustomWrapper`! MCC will reject it.
+- The `Top.vhd` file only defines the architecture body for CustomWrapper.
 
 ### 2. MCC Upload Process
 
@@ -74,23 +83,19 @@ mcc_deploy/
 
 2. Click "Upload Source Files" or "Deploy Custom Instrument"
 
-3. Upload these 3 files from `mcc_deploy/`:
-   - `TPD_Top.vhd`
-   - `emfi_fsm.vhd`
-   - `tpd_med.vhd`
+3. Upload all 4 files from `mcc_deploy/`:
+   - `Top.vhd` (CustomWrapper architecture)
+   - `TPD_Top.vhd` (Core integration)
+   - `emfi_fsm.vhd` (FSM logic)
+   - `tpd_med.vhd` (Wrapper with status)
 
-4. **Edit the CustomWrapper template** in MCC:
-   - Find the CustomWrapper architecture editor in MCC
-   - Replace the body with instantiation of `TPD_Top`
-   - Use `CustomWrapper_Body_Template.vhd` as reference
-   - The template should instantiate: `entity WORK.TPD_Top`
-
-5. Configure outputs:
+4. Configure I/O mapping (if not auto-detected):
    - Output A: Trigger output
    - Output B: Intensity output
    - Output C: Status register
+   - Input A: External trigger (bit 0)
 
-6. Click "Compile" or "Deploy"
+5. Click "Compile" or "Deploy"
 
 **Via Command Line (if using MCC API):**
 
@@ -99,11 +104,9 @@ mcc_deploy/
 cd mcc_deploy
 
 # Upload files (adjust command to your MCC tool)
-moku-deploy upload TPD_Top.vhd emfi_fsm.vhd tpd_med.vhd \
+moku-deploy upload Top.vhd TPD_Top.vhd emfi_fsm.vhd tpd_med.vhd \
   --device YOUR_MOKU_ID \
   --instrument-name "TPD-EMFI-Driver"
-
-# Then manually edit CustomWrapper template through web interface
 ```
 
 ### 3. Verify Correct Files Are Used
@@ -112,20 +115,27 @@ After upload, check the synthesis log for:
 
 ✅ **Correct indicators:**
 ```
-INFO: synthesizing module 'CustomWrapper' [.../lib/CustomWrapper.vhd]
+INFO: synthesizing module 'CustomWrapper' [.../src/Top.vhd]
 INFO: synthesizing module 'TPD_Top' [.../src/TPD_Top.vhd]
-INFO: synthesizing module 'tpd_med'
-INFO: synthesizing module 'emfi_fsm'
+INFO: synthesizing module 'tpd_med' [.../src/tpd_med.vhd]
+INFO: synthesizing module 'emfi_fsm' [.../src/emfi_fsm.vhd]
 ```
 
-❌ **Wrong indicators (old module or missing TPD_Top):**
+Note: All 4 modules should be synthesized in this order.
+
+❌ **Wrong indicators (compilation errors):**
+```
+ERROR: [DRC INBB-3] Black Box Instances: Cell ... of type 'CustomWrapper'
+has undefined contents and is considered a black box
+```
+This indicates `Top.vhd` was not uploaded or not recognized.
+
+❌ **Wrong indicators (old module still active):**
 ```
 INFO: synthesizing module 'probe_driver'
 INFO: synthesizing module 'clk_divider'
-# OR
-INFO: synthesizing module 'CustomWrapper'
-# (but no TPD_Top being instantiated)
 ```
+This indicates old files need to be cleared from MCC workspace.
 
 ---
 
@@ -238,24 +248,32 @@ print(f"Status flags: {status_bits}")
 
 ## Troubleshooting
 
-### Issue: Still seeing ProbeDriver warnings
+### Issue: Black box error for CustomWrapper
 
-**Solution**: Clear MCC cache and re-upload
+**Error**:
+```
+ERROR: [DRC INBB-3] Black Box Instances: Cell ... of type 'CustomWrapper'
+has undefined contents and is considered a black box
+```
+
+**Solution**: `Top.vhd` was not uploaded or recognized
+1. Verify `Top.vhd` is in the uploaded files list
+2. Check that `Top.vhd` contains `architecture rtl of CustomWrapper is`
+3. Re-upload all 4 files together
+
+### Issue: Still seeing old ProbeDriver module
+
+**Solution**: Clear MCC workspace and re-upload
 1. Delete all source files from MCC web interface
-2. Upload only the 3 TPD files
+2. Upload all 4 TPD files fresh
 3. Force re-compile
 
-### Issue: "Entity CustomWrapper already defined"
+### Issue: Synthesis fails with "entity TPD_Top not found"
 
-**Solution**: MCC is finding both old and new CustomWrapper
-1. Remove any existing CustomWrapper.vhd from uploads
-2. Upload fresh copy from `mcc_deploy/CustomWrapper.vhd`
-
-### Issue: Synthesis fails with "entity tpd_med not found"
-
-**Solution**: Files uploaded in wrong order
-1. Ensure all 3 files are uploaded together
+**Solution**: Files not uploaded together or compilation order issue
+1. Ensure all 4 files are uploaded in the same session
 2. MCC should auto-detect dependencies
+3. Check synthesis log for which files are being read
 
 ### Issue: Outputs always zero
 
@@ -276,10 +294,10 @@ md5sum *.vhd
 ```
 
 Expected files:
+- `Top.vhd` (~1800 bytes) - CustomWrapper architecture
 - `TPD_Top.vhd` (~7475 bytes) - Top-level integration
-- `emfi_fsm.vhd` (5650 bytes) - Core FSM
-- `tpd_med.vhd` (6151 bytes) - Wrapper module
-- `CustomWrapper_Body_Template.vhd` (~4382 bytes) - Template reference
+- `emfi_fsm.vhd` (~5650 bytes) - Core FSM
+- `tpd_med.vhd` (~6151 bytes) - Wrapper module
 
 ---
 

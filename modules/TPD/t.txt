@@ -1,0 +1,74 @@
+⏺ Excellent! All tests pass! 🎉                                                                                                          18:46:02 [46/769]
+
+  Summary: Complete TPD Module with Reusable CocoTB Tests
+
+  Files Created
+
+  VHDL Modules
+
+  1. core/emfi-fsm.vhd - Pure FSM state machine
+    - States: RESET → READY → DELAY → FIRING → COOLING → DONE
+    - 8-bit counters for delay, firing, cooldown
+    - Clean separation of state logic
+  2. core/tpd-med.vhd - Wrapper module
+    - Instantiates emfi-fsm
+    - Implements sticky status register
+    - Controls output levels (trigger_out, intensity_out)
+
+  CocoTB Test Infrastructure
+
+  3. cocotb_utils.py - Shared utilities module ✨
+    - State constants reused across all tests
+    - Helper functions: get_state_name(), decode_status_register(), format_status_register()
+    - Status bit position constants
+    - Reusable for future TPD tests!
+  4. emfi_fsm_test_002.py - FSM-only test
+    - Tests basic state machine
+    - Uses shared utilities from cocotb_utils
+  5. tpd_med_test_001.py - Wrapper test (comprehensive)
+    - Tests FSM state transitions
+    - Tests sticky status bits (READY, DELAY, FIRING, DONE)
+    - Tests COOLING is NOT sticky ✓
+    - Tests output levels during FIRING
+    - Tests outputs are zero outside FIRING
+    - Uses shared utilities from cocotb_utils
+  6. Makefile.cocotb - Updated build system
+    - Supports both FSM and wrapper tests
+    - Easy test selection via comments
+    - Waveform generation support
+
+Code Reuse Benefits
+
+  The cocotb_utils.py module provides:
+  - Consistent state definitions across all tests
+  - Helper functions reduce test code duplication
+  - Easy maintenance - update constants in one place
+  - Future-proof - import into new TPD tests as needed
+
+  Running Tests
+
+  # Test the wrapper (current default)
+  make -f Makefile.cocotb
+
+  # Test with waveforms
+  make -f Makefile.cocotb WAVES=1
+
+  # To test FSM only: Edit Makefile.cocotb:
+  #   TOPLEVEL=emfi_fsm
+  #   MODULE=emfi_fsm_test_002
+
+  # Clean
+  make -f Makefile.cocotb clean
+
+  Architecture Summary
+
+  tpd-med (wrapper - tested ✓)
+      │
+      ├─> emfi-fsm (FSM - tested ✓)
+      │
+      ├─> Status Register Logic (sticky bits - tested ✓)
+      └─> Output Level Control (tested ✓)
+
+  All modules compile with GHDL --std=08 and follow project standards (Tier 1: strict RTL, Verilog-portable). 
+   TPD module! 🚀
+

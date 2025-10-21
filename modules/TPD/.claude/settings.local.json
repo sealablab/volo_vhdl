@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__list_dir",
+      "Bash(ghdl:*)",
+      "Read(//Users/johnycsh/volo_codes/volo_vhdl/mcc_templates/**)",
+      "Bash(git check-ignore:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
