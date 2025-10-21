@@ -1,15 +1,38 @@
 # TPD Module - MCC Deployment Guide
 
-## Issue Analysis
+## Critical: CustomWrapper Naming Restriction
 
-Your synthesis log shows MCC is using the **old template CustomWrapper** with `ProbeDriver.vhd` instead of the new **TPD module stack**.
+⚠️ **MCC does NOT allow VHDL files to define `entity CustomWrapper`** ⚠️
+
+MCC's build script (lines 76-79) explicitly checks for and **rejects** any VHDL file containing:
+```vhdl
+entity CustomWrapper is
+```
+
+This is by design - MCC reserves the `CustomWrapper` entity name for its template system.
+
+### Solution
+
+Our TPD top-level module is named **`TPD_Top`** (not CustomWrapper):
+- File: `TPD_Top.vhd`
+- Entity: `entity TPD_Top is`
+
+You must either:
+1. Edit MCC's CustomWrapper template to instantiate `TPD_Top`, OR
+2. Use the provided `CustomWrapper_Body_Template.vhd` as a reference
+
+---
+
+## Original Issue Analysis
+
+Your synthesis log showed MCC using the **old template CustomWrapper** with `ProbeDriver.vhd` instead of the new **TPD module stack**.
 
 ### Synthesis Log Issues
 
-1. **Line 160-168**: Wrong CustomWrapper being synthesized
-   - Using: `/lib/CustomWrapper.vhd` (template)
+1. **Line 160-168**: Wrong modules being synthesized
+   - Using: `/lib/CustomWrapper.vhd` (MCC template)
    - Instantiating: `probe_driver` (old module)
-   - **Should use**: `modules/TPD/top/CustomWrapper.vhd` (TPD module)
+   - **Should instantiate**: `TPD_Top` (our TPD module)
 
 2. **Line 166**: Sensitivity list warning in ProbeDriver.vhd
    ```
@@ -31,30 +54,43 @@ Your synthesis log shows MCC is using the **old template CustomWrapper** with `P
 
 ### 1. Upload TPD Files to MCC
 
-The TPD module requires these 3 files (already prepared in `mcc_deploy/`):
+The TPD module requires these files (already prepared in `mcc_deploy/`):
 
 ```
 mcc_deploy/
-├── CustomWrapper.vhd    (Top-level Moku integration)
-├── emfi_fsm.vhd        (Core FSM)
-└── tpd_med.vhd         (Wrapper with sticky status)
+├── TPD_Top.vhd                        (Top-level Moku integration)
+├── emfi_fsm.vhd                       (Core FSM)
+├── tpd_med.vhd                        (Wrapper with sticky status)
+└── CustomWrapper_Body_Template.vhd    (Reference template for MCC)
 ```
+
+**IMPORTANT**: Do NOT upload a file named `CustomWrapper.vhd`! MCC will reject it.
 
 ### 2. MCC Upload Process
 
 **Via Moku Cloud Compile (MCC) Web Interface:**
 
 1. Navigate to your Moku device's custom instrument page
+
 2. Click "Upload Source Files" or "Deploy Custom Instrument"
-3. Upload all 3 files from `mcc_deploy/`:
-   - `CustomWrapper.vhd`
+
+3. Upload these 3 files from `mcc_deploy/`:
+   - `TPD_Top.vhd`
    - `emfi_fsm.vhd`
    - `tpd_med.vhd`
-4. Configure outputs:
+
+4. **Edit the CustomWrapper template** in MCC:
+   - Find the CustomWrapper architecture editor in MCC
+   - Replace the body with instantiation of `TPD_Top`
+   - Use `CustomWrapper_Body_Template.vhd` as reference
+   - The template should instantiate: `entity WORK.TPD_Top`
+
+5. Configure outputs:
    - Output A: Trigger output
    - Output B: Intensity output
    - Output C: Status register
-5. Click "Compile" or "Deploy"
+
+6. Click "Compile" or "Deploy"
 
 **Via Command Line (if using MCC API):**
 
@@ -63,9 +99,11 @@ mcc_deploy/
 cd mcc_deploy
 
 # Upload files (adjust command to your MCC tool)
-moku-deploy upload CustomWrapper.vhd emfi_fsm.vhd tpd_med.vhd \
+moku-deploy upload TPD_Top.vhd emfi_fsm.vhd tpd_med.vhd \
   --device YOUR_MOKU_ID \
   --instrument-name "TPD-EMFI-Driver"
+
+# Then manually edit CustomWrapper template through web interface
 ```
 
 ### 3. Verify Correct Files Are Used
@@ -74,15 +112,19 @@ After upload, check the synthesis log for:
 
 ✅ **Correct indicators:**
 ```
-INFO: synthesizing module 'CustomWrapper'
+INFO: synthesizing module 'CustomWrapper' [.../lib/CustomWrapper.vhd]
+INFO: synthesizing module 'TPD_Top' [.../src/TPD_Top.vhd]
 INFO: synthesizing module 'tpd_med'
 INFO: synthesizing module 'emfi_fsm'
 ```
 
-❌ **Wrong indicators (old module):**
+❌ **Wrong indicators (old module or missing TPD_Top):**
 ```
 INFO: synthesizing module 'probe_driver'
 INFO: synthesizing module 'clk_divider'
+# OR
+INFO: synthesizing module 'CustomWrapper'
+# (but no TPD_Top being instantiated)
 ```
 
 ---
@@ -234,9 +276,10 @@ md5sum *.vhd
 ```
 
 Expected files:
-- `CustomWrapper.vhd` (7349 bytes) - Top-level integration
+- `TPD_Top.vhd` (~7475 bytes) - Top-level integration
 - `emfi_fsm.vhd` (5650 bytes) - Core FSM
 - `tpd_med.vhd` (6151 bytes) - Wrapper module
+- `CustomWrapper_Body_Template.vhd` (~4382 bytes) - Template reference
 
 ---
 
