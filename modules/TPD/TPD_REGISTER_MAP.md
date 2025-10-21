@@ -159,8 +159,8 @@ When `Control0[31] = 1` (gDisable):
 ```
 modules/TPD/
 ├── core/
-│   ├── emfi-fsm.vhd          # Core FSM (RESET→READY→DELAY→FIRING→COOLING→DONE)
-│   └── tpd-med.vhd           # Wrapper with sticky status & output control
+│   ├── emfi_fsm.vhd          # Core FSM (RESET→READY→DELAY→FIRING→COOLING→DONE)
+│   └── tpd_med.vhd           # Wrapper with sticky status & output control
 ├── top/
 │   └── CustomWrapper.vhd     # Moku integration layer
 ├── tb/
@@ -175,8 +175,8 @@ modules/TPD/
 
 ```bash
 # GHDL compilation
-ghdl -a --std=08 core/emfi-fsm.vhd
-ghdl -a --std=08 core/tpd-med.vhd
+ghdl -a --std=08 core/emfi_fsm.vhd
+ghdl -a --std=08 core/tpd_med.vhd
 ghdl -a --std=08 top/CustomWrapper.vhd
 
 # CocoTB testing
