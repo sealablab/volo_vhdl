@@ -7,14 +7,15 @@ SIM ?= ghdl
 # VHDL standard
 VHDL_STANDARD = 08
 
-# VHDL source files
-VHDL_SOURCES = core/emfi-fsm.vhd
+# VHDL source files (compile order matters)
+VHDL_SOURCES = core/emfi-fsm.vhd core/tpd-med.vhd
 
-# Top-level entity
-TOPLEVEL = emfi_fsm
+# Top-level entity (change to emfi_fsm to test FSM only)
+TOPLEVEL = tpd_med
 
 # Python test module (without .py extension)
-MODULE = emfi_fsm_test_002
+# Options: emfi_fsm_test_002 (FSM only) or tpd_med_test_001 (wrapper)
+MODULE = tpd_med_test_001
 
 # GHDL-specific settings
 GHDL_ARGS = --std=$(VHDL_STANDARD)
@@ -31,15 +32,19 @@ include $(shell cocotb-config --makefiles)/Makefile.sim
 # Help target
 .PHONY: help
 help:
-	@echo "Cocotb Makefile for EMFI_FSM"
+	@echo "Cocotb Makefile for TPD Module Tests"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make              - Run all tests"
-	@echo "  make WAVES=1      - Run tests and generate waveform (emfi_fsm.ghw)"
+	@echo "  make              - Run current test (see MODULE below)"
+	@echo "  make WAVES=1      - Run tests and generate waveform"
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make help         - Show this help message"
 	@echo ""
-	@echo "Variables:"
+	@echo "Test Selection (edit Makefile to change):"
+	@echo "  FSM only:  TOPLEVEL=emfi_fsm    MODULE=emfi_fsm_test_002"
+	@echo "  Wrapper:   TOPLEVEL=tpd_med     MODULE=tpd_med_test_001"
+	@echo ""
+	@echo "Current Configuration:"
 	@echo "  SIM=$(SIM)"
 	@echo "  TOPLEVEL=$(TOPLEVEL)"
 	@echo "  MODULE=$(MODULE)"
