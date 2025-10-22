@@ -38,6 +38,7 @@ ifeq ($(TEST_MODULE),clk_divider_core)
     COCOTB_TEST_MODULES = test_clk_divider_core
 endif
 
+
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
 export COCOTB_LOG_LEVEL=INFO

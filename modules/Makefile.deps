@@ -8,7 +8,7 @@ MODULE_DEPS_probe_driver = volo_common
 MODULE_DEPS_SimpleWaveGen = volo_common
 
 # Define the build order (modules will be built in this order)
-MODULE_BUILD_ORDER = probe_driver SimpleWaveGen stoplight
+MODULE_BUILD_ORDER = probe_driver SimpleWaveGen
 
 # Define which modules provide shared libraries
 # These modules will be built first and their objects will be available to dependent modules
