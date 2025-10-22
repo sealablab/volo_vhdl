@@ -199,7 +199,7 @@ end procedure;
 
 **When to Use**: Module needs voltage conversion, data scaling, or complex mathematical operations with validation.
 
-**Example**: `modules/EMFI-Seq/datadef/Moku_Voltage_pkg_en.vhd` (Reference Implementation)
+**Example**: `modules/volo_common/common/Moku_Voltage_pkg.vhd` (Reference Implementation)
 
 **Package Structure**:
 ```vhdl
@@ -208,7 +208,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-package Moku_Voltage_pkg_en is
+package Moku_Voltage_pkg is
     -- System constants with unit documentation
     constant VOLTAGE_DATA_WIDTH : natural := 16;      -- Units: bits
     constant VOLTAGE_REFERENCE  : real := 5.0;        -- Units: volts
@@ -233,7 +233,7 @@ package Moku_Voltage_pkg_en is
     constant DEFAULT_DIGITAL_MID  : std_logic_vector(15 downto 0) := x"8000";
 end package;
 
-package body Moku_Voltage_pkg_en is
+package body Moku_Voltage_pkg is
     -- Linear mapping: -5V → 0x0000, 0V → 0x8000, +5V → 0xFFFF
     function voltage_to_digital(voltage : real) return std_logic_vector is
         variable clamped_voltage : real;
@@ -263,7 +263,7 @@ end package body;
 **Usage in Core Module**:
 ```vhdl
 -- In core/EMFI_Seq_stair.vhd
-use work.Moku_Voltage_pkg_en.all;
+use work.Moku_Voltage_pkg.all;
 
 architecture rtl of onehot_analog_monitor is
     -- Voltage codes computed using package functions (self-documenting)
@@ -293,7 +293,7 @@ end architecture;
 
 **Testbench Pattern** (Tier 3 - Full VHDL-2008):
 ```vhdl
--- In tb/datadef/tb_Moku_Voltage_pkg_en.vhd
+-- In tb/datadef/tb_Moku_Voltage_pkg.vhd
 test_process : process
     variable v_result : real;
     variable d_result : std_logic_vector(15 downto 0);
@@ -342,9 +342,9 @@ Create `datadef/README_PackageName.md` with:
 - Platform-specific code (use platform_interface_pkg pattern)
 
 **Reference Files**:
-- `modules/EMFI-Seq/datadef/Moku_Voltage_pkg_en.vhd` - Implementation
-- `modules/EMFI-Seq/datadef/README_Moku_Voltage_pkg_en.md` - Documentation
-- `modules/EMFI-Seq/tb/datadef/tb_Moku_Voltage_pkg_en.vhd` - Tests (42/43 passing)
+- `modules/volo_common/common/Moku_Voltage_pkg.vhd` - Implementation
+- `modules/volo_common/Moku-Voltage-LUTS.md` - Documentation
+- `modules/EMFI-Seq/tb/core/tb_EMFI_Seq_stair.vhd` - Tests (17/17 passing)
 - `modules/EMFI-Seq/core/EMFI_Seq_stair.vhd` - Usage example
 
 **Discovered**: 2025-01-21, EMFI-Seq voltage package development
@@ -459,13 +459,64 @@ probe_driver_DEPS := volo_common
 - Voltage conversion package pattern (datadef layer)
 - Multi-core integration (FSM + analog monitor)
 - Compile-time constant computation
-- Comprehensive package testing (59/60 tests passing)
+- Comprehensive package testing (17/17 tests passing)
 - Self-documenting voltage codes
 - Pattern 1 (Simple Direct Mapping) MCC integration
 
 **Key Files**:
-- `datadef/Moku_Voltage_pkg_en.vhd` - Conversion package with validation
-- `datadef/README_Moku_Voltage_pkg_en.md` - Complete package documentation
+- `datadef/Moku_Voltage_pkg.vhd` - Conversion package with validation
+- `datadef/README_Moku_Voltage_pkg.md` - Complete package documentation
 - `core/EMFI_Seq_stair.vhd` - Usage of voltage package
-- `tb/datadef/tb_Moku_Voltage_pkg_en.vhd` - Package tests
+- `tb/datadef/tb_Moku_Voltage_pkg.vhd` - Package tests
 - `tb/core/tb_EMFI_Seq_stair.vhd` - Core module tests
+
+### 9. Intensity/Percentage LUT Pattern (Module-Specific)
+
+**Location**: Module-specific datadef layer (e.g., `probe_driver/datadef/PercentLut_pkg.vhd`)
+
+**When to Use**: Module needs intensity/brightness/percentage mapping (0-100%) to voltage values.
+
+**Package Structure** (Record-based with CRC validation):
+```vhdl
+-- In datadef/PercentLut_pkg.vhd
+package PercentLut_pkg is
+    constant SYSTEM_PERCENT_LUT_SIZE : natural := 101; -- Indices 0-100
+    
+    -- Array type for LUT data
+    type percent_lut_data_array_t is array (0 to 100) of 
+        std_logic_vector(15 downto 0);
+    
+    -- Record for encapsulation with validation
+    type percent_lut_record_t is record
+        data_array : percent_lut_data_array_t;
+        crc        : std_logic_vector(15 downto 0);
+        valid      : std_logic;
+        size       : std_logic_vector(6 downto 0);
+    end record;
+    
+    -- CRC validation functions
+    function calculate_percent_lut_crc(lut_data : percent_lut_data_array_t) 
+        return std_logic_vector;
+    function validate_percent_lut_record(lut_rec : percent_lut_record_t) 
+        return boolean;
+    
+    -- Safe lookup with bounds checking
+    function get_percentlut_value_safe(lut_rec : percent_lut_record_t; 
+                                       index : natural) 
+        return std_logic_vector;
+end package;
+```
+
+**Key Differences from Voltage Package**:
+- **Module-specific**: Not moved to volo_common (only used by probe_driver modules)
+- **Record-based**: Better type safety and encapsulation
+- **CRC validation**: Data integrity checking
+- **LUT storage**: Full lookup table (101 entries)
+
+**Reference Implementation**:
+- Canonical: `modules/probe_driver/datadef/PercentLut_pkg.vhd`
+- Documentation: `modules/probe_driver/datadef/PercentLut_Analysis.md`
+- Testbench: `modules/probe_driver/tb/datadef/PercentLut_pkg_tb.vhd`
+
+**Consolidation** (2025-10-21): Removed 10 duplicate enhanced (`_en`) versions
+
