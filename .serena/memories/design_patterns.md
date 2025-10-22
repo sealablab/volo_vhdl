@@ -105,6 +105,22 @@ begin
 end process;
 ```
 
+**Control Signal Priority**: `reset > clock_enable > enable`
+
+**Truth Table**:
+| n_reset | clk_en | enable | Behavior                                    | State Updates | Outputs              |
+|---------|--------|--------|---------------------------------------------|---------------|----------------------|
+| 0       | X      | X      | **RESET** (highest priority)                | All cleared   | Safe defaults        |
+| 1       | 0      | X      | **FROZEN** (clk_en dominates)               | Held          | Held (no change)     |
+| 1       | 1      | 0      | **IDLE** (enabled but not operating)        | Held/parked   | Parked/safe values   |
+| 1       | 1      | 1      | **ACTIVE** (normal operation)               | Advancing     | Functional outputs   |
+
+**Implementation Notes**:
+- **Reset (n_reset=0)**: Asynchronous or synchronous, forces all outputs to safe defaults
+- **Clock Enable (clk_en=0)**: Freezes all sequential logic, no state updates occur
+- **Functional Enable (enable=0)**: Module is idle but clocked, outputs go to parked/safe values
+- **All Active**: Normal state machine progression and data processing
+
 ### 4. FSM State Encoding Pattern
 Use `std_logic_vector` with constants instead of enums:
 
@@ -161,6 +177,61 @@ begin
     end if;
 end process;
 ```
+
+### 5a. Status Register Bit Conventions
+
+**Standard Bit Assignments** (All VOLO modules):
+```vhdl
+-- Status Register Layout (8-bit typical)
+-- Bit 7: FAULT  (sticky, cleared only on reset)
+-- Bit 6: ALARM  (sticky, cleared only on reset)
+-- Bit 5-4: Reserved for future error conditions
+-- Bit 3-0: Module-specific status bits (state, flags, etc.)
+
+constant STATUS_FAULT_BIT  : natural := 7;  -- Critical error (sticky)
+constant STATUS_ALARM_BIT  : natural := 6;  -- Warning condition (sticky)
+constant STATUS_READY_BIT  : natural := 0;  -- Module ready (state)
+constant STATUS_ACTIVE_BIT : natural := 1;  -- Module active (state)
+```
+
+**Sticky Bit Behavior**:
+- **Set**: Any time fault/alarm condition detected
+- **Clear**: Only on reset (n_reset = '0')
+- **Accumulation**: Multiple faults can set same bit (OR behavior)
+- **Priority**: FAULT > ALARM for overlapping conditions
+
+**State Bit Behavior**:
+- **Update**: Every clock cycle (synchronous)
+- **Clear**: On reset or when condition no longer true
+- **Reflect**: Current operational state
+
+**Example Implementation**:
+```vhdl
+process(clk, n_reset)
+begin
+    if n_reset = '0' then
+        status_reg <= (others => '0');
+    elsif rising_edge(clk) then
+        -- Sticky bits: only set, never cleared
+        if critical_error = '1' then
+            status_reg(STATUS_FAULT_BIT) <= '1';
+        end if;
+        if warning_condition = '1' then
+            status_reg(STATUS_ALARM_BIT) <= '1';
+        end if;
+
+        -- State bits: reflect current state
+        status_reg(STATUS_READY_BIT) <= is_ready;
+        status_reg(STATUS_ACTIVE_BIT) <= is_active;
+    end if;
+end process;
+```
+
+**Rationale**:
+- **Fault detection**: Capture transient errors that might be missed
+- **Debugging**: Sticky bits provide history of problems
+- **Validation**: Status register testable without precise timing
+- **Standardization**: Consistent across all modules
 
 ### 6. Testbench 4-Layer Architecture
 Structure testbenches in four distinct layers:

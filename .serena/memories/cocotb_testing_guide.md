@@ -7,6 +7,10 @@
 
 CocotB (Coroutine Co-simulation TestBench) is a Python-based testing framework for HDL designs. We use it with GHDL as the simulator backend.
 
+**Replaces**: Legacy GHDL testbenches and 4-layer VHDL architecture
+
+⚠️ **DEPRECATED**: The previous 4-layer GHDL testbench architecture (Interface/Validation/Functional/Generic) is no longer used. CocotB provides better organization through Python's natural test structure with `@cocotb.test()` decorators and clear test function names.
+
 ## Why CocotB?
 
 ✅ **Advantages over GHDL testbenches:**
