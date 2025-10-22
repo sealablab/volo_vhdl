@@ -38,6 +38,14 @@ ifeq ($(TEST_MODULE),clk_divider_core)
     COCOTB_TEST_MODULES = test_clk_divider_core
 endif
 
+# moku_voltage_pkg test
+ifeq ($(TEST_MODULE),moku_voltage_pkg)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   moku_voltage_pkg_tb_wrapper.vhd
+    TOPLEVEL = moku_voltage_pkg_tb_wrapper
+    COCOTB_TEST_MODULES = test_moku_voltage_pkg
+endif
+
 # moku_pct_pkg test
 ifeq ($(TEST_MODULE),moku_pct_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
@@ -56,13 +64,34 @@ export COCOTB_LOG_LEVEL=INFO
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 # Custom targets
-.PHONY: help list-tests clean-all waves
+.PHONY: help list-tests test-all clean-all waves
+
+# Run all tests sequentially
+test-all:
+	@echo "======================================================================="
+	@echo "Running ALL CocotB Tests"
+	@echo "======================================================================="
+	@echo ""
+	@$(MAKE) TEST_MODULE=clk_divider_core
+	@echo ""
+	@echo "======================================================================="
+	@echo ""
+	@$(MAKE) TEST_MODULE=moku_voltage_pkg
+	@echo ""
+	@echo "======================================================================="
+	@echo ""
+	@$(MAKE) TEST_MODULE=moku_pct_pkg
+	@echo ""
+	@echo "======================================================================="
+	@echo "All tests complete!"
+	@echo "======================================================================="
 
 help:
 	@echo "Volo VHDL CocotB Test Suite"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make                         - Run tests for default module ($(TEST_MODULE))"
+	@echo "  make test-all                - Run ALL test modules sequentially"
 	@echo "  make TEST_MODULE=<name>      - Run tests for specific module"
 	@echo "  make list-tests              - List available test modules"
 	@echo "  make clean                   - Clean test artifacts"
@@ -70,6 +99,7 @@ help:
 	@echo ""
 	@echo "Available modules:"
 	@echo "  - clk_divider_core     (volo_common/core)"
+	@echo "  - moku_voltage_pkg     (volo_common/common)"
 	@echo "  - moku_pct_pkg         (volo_common/common)"
 	@echo ""
 	@echo "Environment variables:"
@@ -80,8 +110,9 @@ help:
 
 list-tests:
 	@echo "Available CocotB test modules:"
-	@echo "  - test_clk_divider_core.py"
-	@echo "  - test_moku_pct_pkg.py"
+	@echo "  - test_clk_divider_core.py    (7 tests)"
+	@echo "  - test_moku_voltage_pkg.py    (3 tests)"
+	@echo "  - test_moku_pct_pkg.py        (9 tests)"
 	@echo ""
 	@echo "To add more tests, create test_<module>.py and update this Makefile"
 
