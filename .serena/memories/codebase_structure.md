@@ -4,24 +4,26 @@
 ```
 volo_vhdl/
 ├── .cursor/              # Cursor/AI agent configuration
-│   └── rules.mdc        # Complete coding standards (Source of Truth)
-├── .serena/             # Serena MCP configuration
+│   └── rules.mdc        # Points to Serena memories (Source of Truth)
+├── .serena/             # Serena MCP configuration and memories
 ├── CLAUDE.md            # Claude Code guidance (Source of Truth)
 ├── AGENTS.md            # Agent guidelines and build commands (Source of Truth)
 ├── README.md            # Project documentation
-├── ai-workflow/         # AI-powered development workflow
-│   ├── ng/             # Next-generation tips and patterns
-│   ├── prompts/        # AI prompts for different phases
-│   ├── templates/      # Input form templates
-│   └── examples/       # Complete workflow examples
 ├── modules/             # VHDL modules (main development area)
 │   ├── Makefile        # Central build system
 │   ├── Makefile.deps   # Module dependency definitions
 │   ├── Makefile.shared # Shared Makefile rules
 │   └── [modules...]    # Individual module directories
+├── tests/               # CocotB testing framework (NEW standard)
+│   ├── Makefile        # CocotB test build system
+│   ├── conftest.py     # Shared test utilities
+│   └── test_*.py       # Individual test modules
 ├── mcc_templates/       # MCC (Moku Custom Core) templates
 ├── templates/           # Reusable VHDL templates
-└── static/              # Static assets (bitstream archives, etc.)
+├── static/              # Static assets (bitstream archives, etc.)
+└── archive/             # Archived legacy documentation
+    ├── ai-workflow-legacy-2025-10-22/  # Legacy AI workflow (archived)
+    └── ghdl_testbenches/               # Legacy GHDL tests (deprecated)
 ```
 
 ## Module Directory Structure (Mandatory)
@@ -33,14 +35,16 @@ modules/<module_name>/
 ├── datadef/             # Data structures, LUTs, records (Tier 2: relaxed rules)
 ├── core/                # Pure algorithmic logic (Tier 1: strict RTL)
 ├── top/                 # Platform integration (Tier 1: strict RTL, optional)
-├── tb/                  # Testbenches (Tier 3: full VHDL-2008)
-│   ├── common/         # Tests for common packages
-│   ├── datadef/        # Tests for datadef packages
-│   ├── core/           # Tests for core modules
-│   └── top/            # Integration tests for top-level
+├── tb/                  # Testbenches (Tier 3: full VHDL-2008, deprecated)
+│   ├── common/         # Tests for common packages (use CocotB instead)
+│   ├── datadef/        # Tests for datadef packages (use CocotB instead)
+│   ├── core/           # Tests for core modules (use CocotB instead)
+│   └── top/            # Integration tests for top-level (use CocotB instead)
 ├── Makefile             # Module-specific build rules
 └── README.md            # Module documentation
 ```
+
+**Note**: The `tb/` directory structure is legacy. All new tests should use CocotB framework in the `tests/` directory.
 
 ## Existing Modules
 
@@ -48,8 +52,8 @@ modules/<module_name>/
 - **volo_common**: Common utilities shared across all modules
   - `common/volo_common_pkg.vhd` - General utility package
   - `common/Moku_Voltage_pkg.vhd` - Voltage conversion utilities (datadef pattern)
+  - `common/Moku_Pct_pkg.vhd` - Type-safe percentage-to-voltage conversion (NEW)
   - `core/clk_divider_core.vhd` - Clock divider with generic MAX_DIV, enable control, and linear division mapping (0=÷1, 1=÷2, etc.)
-  - `tb/core/clk_divider_core_tb.vhd` - Clock divider testbench
 
 ### Application Modules
 - **SimpleWaveGen**: Complete reference implementation (deployed to hardware)
@@ -86,15 +90,34 @@ modules/<module_name>/
 - **REQUIRED**: Direct instantiation pattern for all module connections
 - Do NOT include CustomWrapper entity body in module files
 
-### Testbench Layer (`tb/*.vhd`) - Tier 3
+### Testbench Layer - CocotB (NEW Standard)
+- **Location**: `tests/` directory (project root level)
+- **Framework**: Python-based with async/await syntax
+- **Test files**: `test_<module_name>.py`
+- **Shared utilities**: `conftest.py`
+- **Examples**: `test_clk_divider_core.py`, `test_moku_pct_pkg.py`
+
+### Legacy Testbench Layer (`tb/*.vhd`) - Tier 3 (Deprecated)
+- **Status**: Being phased out - DO NOT CREATE NEW GHDL TESTBENCHES
 - Full VHDL-2008 features allowed
-- 4-layer testing architecture: Interface → Validation → Functional → Generic
-- Testbenches organized by tested layer
+- Archived to `archive/ghdl_testbenches/`
+- Use CocotB framework in `tests/` for all new tests
 
 ## Essential Documentation Files (Source of Truth)
-1. **`.cursor/rules.mdc`** - Complete coding standards and architecture rules
+1. **`.cursor/rules.mdc`** - Points to Serena memories (authoritative)
 2. **`CLAUDE.md`** - Claude Code guidance
 3. **`AGENTS.md`** - Concise agent guidelines and build commands
-4. **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
-5. **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns
-6. **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
+4. **`tests/README.md`** - CocotB testing framework guide
+5. **`tests/conftest.py`** - Shared CocotB test utilities
+
+**Serena Memories** (accessed via `.cursor/rules.mdc`):
+- `coding_standards.md` - VHDL rules and tiered system
+- `design_patterns.md` - Common patterns and implementations
+- `cocotb_testing_guide.md` - Testing framework
+- `ghdl_patterns_and_solutions.md` - Build and test patterns
+- `tech_stack.md` - Tools and platform info
+
+## Archived Legacy Documentation
+- **`archive/ai-workflow-legacy-2025-10-22/`** - Legacy AI workflow documentation (no longer maintained)
+  - Status: Archived 2025-10-22, replaced by Serena-first architecture
+  - See `archive/ai-workflow-legacy-2025-10-22/README-ARCHIVAL.md` for details

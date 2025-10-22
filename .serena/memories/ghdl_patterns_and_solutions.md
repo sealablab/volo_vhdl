@@ -3,11 +3,13 @@
 This memory consolidates all GHDL compilation patterns, testbench best practices, and design patterns discovered during the Volo VHDL project development.
 
 **Sources Integrated:**
-- `ai-workflow/README-ghdl-testbench-tips.md` (560 lines, comprehensive testbench patterns)
-- `ai-workflow/README-direct-instantiation.md` (297 lines, direct instantiation guide)
 - Real-world errors from EMFI-Seq voltage package development (2025-01-21)
+- Moku_Pct_pkg CocotB migration patterns (2025-10-22)
+- Legacy GHDL testbench patterns (archived 2025-01-22, 2025-10-22)
 
-**Last Updated:** 2025-01-21
+**Last Updated:** 2025-10-22
+
+**Note**: GHDL testbenches are deprecated. Use CocotB framework in `tests/` directory for all new tests. See `cocotb_testing_guide.md` memory for current testing standards.
 
 ---
 
@@ -15,7 +17,7 @@ This memory consolidates all GHDL compilation patterns, testbench best practices
 1. [Compilation Settings](#compilation-settings)
 2. [Common Compilation Errors](#common-compilation-errors)
 3. [Direct Instantiation Patterns](#direct-instantiation-patterns)
-4. [Testbench Design Patterns](#testbench-design-patterns)
+4. [Legacy Testbench Patterns](#legacy-testbench-patterns) (Deprecated - Use CocotB)
 5. [Debugging Techniques](#debugging-techniques)
 6. [Success Patterns](#success-patterns)
 
@@ -49,7 +51,7 @@ ghdl -a --std=08 core/EMFI_Seq_stair.vhd
 # 3. Top-level modules
 ghdl -a --std=08 top/EMFI_Seq.vhd
 
-# 4. Testbenches
+# 4. Testbenches (use CocotB instead for new tests)
 ghdl -a --std=08 tb/core/tb_EMFI_Seq_stair.vhd
 
 # 5. Elaborate and run
@@ -98,161 +100,7 @@ end function;
 
 ---
 
-### Error 2: Shared Variables Must Be Protected Types (VHDL-2008)
-
-**GHDL Message:**
-```
-error: type of a shared variable must be a protected type
-    shared variable test_count : natural := 0;
-                    ^
-note: (you can use -frelaxed to turn this error into a warning)
-```
-
-**Problem:** VHDL-2008 requires shared variables to be protected types to prevent race conditions.
-
-**Code That Triggers It:**
-```vhdl
--- At architecture level (outside process)
-shared variable test_count : natural := 0;
-shared variable pass_count : natural := 0;
-
--- Helper procedure trying to access them
-procedure check_test(...) is
-begin
-    test_count := test_count + 1;  -- Compile error in VHDL-2008
-    ...
-end procedure;
-```
-
-**Solution A: Use Local Variables in Process (Preferred for Single-Process Testbenches)**
-```vhdl
-test_process : process
-    -- Move variables inside the process
-    variable test_count : natural := 0;
-    variable pass_count : natural := 0;
-    variable fail_count : natural := 0;
-
-    -- Helper procedures must also be inside the process
-    procedure check_test(
-        test_name : string;
-        condition : boolean
-    ) is
-    begin
-        test_count := test_count + 1;
-        if condition then
-            pass_count := pass_count + 1;
-            report "PASS: " & test_name severity note;
-        else
-            fail_count := fail_count + 1;
-            report "FAIL: " & test_name severity error;
-        end if;
-    end procedure;
-begin
-    -- Test code here
-    check_test("My test", some_signal = expected_value);
-    ...
-end process;
-```
-
-**Solution B: Use Signals Instead (For Multi-Process Testbenches)**
-```vhdl
--- At architecture level
-signal test_count : natural := 0;
-signal pass_count : natural := 0;
-
--- Helper procedure with signal parameters
-procedure check_test(
-    signal test_cnt : inout natural;
-    signal pass_cnt : inout natural;
-    signal fail_cnt : inout natural;
-    test_name : string;
-    condition : boolean
-) is
-begin
-    test_cnt <= test_cnt + 1;
-    if condition then
-        pass_cnt <= pass_cnt + 1;
-        ...
-    end if;
-    wait for 0 ns;  -- Allow signal updates
-end procedure;
-```
-
-**Solution C: Define Protected Type (Advanced, Rarely Needed)**
-```vhdl
--- Define protected type (usually in a package)
-type test_counter_type is protected
-    procedure increment;
-    impure function get_count return natural;
-end protected;
-
-type test_counter_type is protected body
-    variable count : natural := 0;
-    
-    procedure increment is
-    begin
-        count := count + 1;
-    end procedure;
-    
-    impure function get_count return natural is
-    begin
-        return count;
-    end function;
-end protected body;
-
--- Usage
-shared variable test_counter : test_counter_type;
-```
-
-**Recommendation:**
-- **Single-process testbenches**: Use Solution A (local variables)
-- **Multi-process testbenches**: Use Solution B (signals)
-- **Complex synchronization needs**: Use Solution C (protected types)
-
-**Why This Changed:** VHDL-93 allowed unprotected shared variables, but this was error-prone. VHDL-2008 enforces thread-safe access patterns.
-
-**Discovered:** EMFI-Seq voltage package testbench, 2025-01-21
-
----
-
-### Error 3: Procedure Parameter Passing Issues
-
-**GHDL Message:**
-```
-error: variable parameter must be a variable
-```
-
-**Problem:** Passing a signal to a procedure that expects a variable parameter.
-
-**Code That Triggers It:**
-```vhdl
-procedure report_test(test_name : string; passed : boolean; test_num : inout natural);
--- Called with signal instead of variable
-report_test("Test name", test_passed, test_number); -- test_number is a signal
-```
-
-**Solution:** Use local variables in processes, not signals for procedure parameters:
-```vhdl
-process
-    variable local_test_number : natural := 0;  -- Use variable, not signal
-begin
-    report_test("Test name", test_passed, local_test_number);
-end process;
-```
-
-**Alternative:** Avoid procedures entirely and use direct test reporting:
-```vhdl
-test_number := test_number + 1;
-if test_passed then
-    report "Test " & integer'image(test_number) & ": Test name - PASSED" severity note;
-else
-    report "Test " & integer'image(test_number) & ": Test name - FAILED" severity error;
-end if;
-```
-
----
-
-### Error 4: String Length Mismatch / Bit Width Issues
+### Error 2: String Length Mismatch / Bit Width Issues
 
 **GHDL Message:**
 ```
@@ -280,7 +128,7 @@ status_reg(2 downto 0) <= wave_select_reg;
 
 ---
 
-### Error 5: Array Bounds and Index Overflow
+### Error 3: Array Bounds and Index Overflow
 
 **GHDL Message:**
 ```
@@ -307,7 +155,7 @@ sine_output <= sine_lut(to_integer(sine_phase));
 
 ---
 
-### Error 6: Compilation Order Dependencies
+### Error 4: Compilation Order Dependencies
 
 **GHDL Message:**
 ```
@@ -320,7 +168,7 @@ error: architecture "test" of "entity" is obsoleted by entity "other_entity"
 
 ---
 
-### Error 7: Metavalue Warnings
+### Error 5: Metavalue Warnings
 
 **GHDL Message:**
 ```
@@ -540,269 +388,15 @@ U1: entity WORK.DCSequencer
 
 ---
 
-## Testbench Design Patterns
+## Legacy Testbench Patterns (Deprecated - Use CocotB)
 
-### Recommended Testbench Structure
+⚠️ **IMPORTANT**: GHDL testbenches are deprecated. Use CocotB framework in `tests/` directory for all new tests.
 
-**Complete Template:**
-```vhdl
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-use STD.ENV.ALL;  -- For stop() function
+See `cocotb_testing_guide.md` memory for current testing standards.
 
-entity tb_my_module is
-end entity tb_my_module;
-
-architecture sim of tb_my_module is
-    -- Clock and timing
-    constant CLK_PERIOD : time := 10 ns;
-    signal clk : std_logic := '0';
-    signal rst : std_logic := '1';
-    
-    -- DUT signals
-    signal data_in : std_logic_vector(15 downto 0) := (others => '0');
-    signal data_out : std_logic_vector(15 downto 0);
-    signal enable : std_logic := '0';
-    
-    -- Helper function for real comparisons
-    constant TOLERANCE : real := 0.01;
-    function real_equal(a, b : real; tol : real := TOLERANCE) return boolean is
-    begin
-        return abs(a - b) < tol;
-    end function;
-
-begin
-
-    -- Clock generation
-    clk_process : process
-    begin
-        clk <= '0';
-        wait for CLK_PERIOD/2;
-        clk <= '1';
-        wait for CLK_PERIOD/2;
-    end process;
-
-    -- DUT instantiation (using direct instantiation)
-    DUT: entity WORK.my_module
-        port map (
-            clk => clk,
-            rst => rst,
-            data_in => data_in,
-            data_out => data_out,
-            enable => enable
-        );
-
-    -- Test process
-    test_process: process
-        variable test_count : natural := 0;
-        variable pass_count : natural := 0;
-        variable fail_count : natural := 0;
-
-        -- Helper procedure for test reporting
-        procedure check_test(
-            test_name : string;
-            condition : boolean
-        ) is
-        begin
-            test_count := test_count + 1;
-            if condition then
-                pass_count := pass_count + 1;
-                report "PASS: " & test_name severity note;
-            else
-                fail_count := fail_count + 1;
-                report "FAIL: " & test_name severity error;
-            end if;
-        end procedure;
-    begin
-        report "========================================" severity note;
-        report "Starting my_module tests" severity note;
-        report "========================================" severity note;
-        
-        -- Apply reset
-        rst <= '1';
-        wait for CLK_PERIOD * 2;
-        rst <= '0';
-        wait for CLK_PERIOD;
-        
-        -- Test 1: Initial state
-        check_test("Reset state", data_out = x"0000");
-        
-        -- Test 2: Enable module
-        enable <= '1';
-        data_in <= x"1234";
-        wait for CLK_PERIOD;
-        check_test("Data propagation", data_out = x"1234");
-        
-        -- ... more tests ...
-        
-        -- Report summary
-        report "========================================" severity note;
-        report "Test Summary:" severity note;
-        report "  Total tests: " & integer'image(test_count) severity note;
-        report "  Passed:      " & integer'image(pass_count) severity note;
-        report "  Failed:      " & integer'image(fail_count) severity note;
-        report "========================================" severity note;
-        
-        if fail_count = 0 then
-            report "ALL TESTS PASSED" severity note;
-        else
-            report "TEST FAILED" severity error;
-        end if;
-        
-        report "SIMULATION DONE" severity note;
-        std.env.stop(0);
-    end process;
-
-end architecture sim;
-```
-
-### Signal vs Variable Best Practices
-
-**Use Signals For:**
-- DUT port connections
-- Inter-process communication
-- Clock and reset signals
-
-**Use Variables For:**
-- Test counters and local computations (inside processes)
-- Temporary calculations
-- Loop counters
-
-**Initialization:**
-```vhdl
--- Signals: Initialize at declaration
-signal test_signal : std_logic_vector(15 downto 0) := (others => '0');
-
--- Variables: Initialize inside process
-variable test_count : natural := 0;
-```
-
-### Testbench Termination Patterns
-
-**Method 1: Clean Stop (Recommended):**
-```vhdl
-library STD.ENV.all;  -- Add to library declarations
-
-test_process : process
-begin
-    -- ... tests ...
-    
-    report "SIMULATION DONE" severity note;
-    std.env.stop(0);  -- Clean termination with exit code 0
-end process;
-```
-
-**Method 2: Assertion Failure (Alternative):**
-```vhdl
-test_process : process
-begin
-    -- ... tests ...
-    
-    report "SIMULATION DONE" severity note;
-    assert false report "Simulation completed" severity failure;
-end process;
-```
-
-**Method 3: Timeout Process (Safety Mechanism):**
-```vhdl
--- Use only if needed for debugging
-timeout_process : process
-begin
-    wait for 10 ms;  -- Maximum simulation time
-    report "ERROR: Simulation timeout - forcing termination" severity error;
-    std.env.stop(1);  -- Exit with error code
-end process;
-```
-
-**When to Avoid Complex Timeout Logic:**
-- Simple testbenches with deterministic test sequences
-- Tests that don't depend on external clock enable signals
-- Most educational and verification testbenches
-
-### Clock and Timing Management
-
-**Clock Generation:**
-```vhdl
-constant CLK_PERIOD : time := 10 ns;
-
-clk_process : process
-begin
-    clk <= '0';
-    wait for CLK_PERIOD/2;
-    clk <= '1';
-    wait for CLK_PERIOD/2;
-end process;
-```
-
-**Clock Enable Simulation:**
-```vhdl
-clk_en_process : process
-begin
-    clk_en <= '0';
-    wait for CLK_PERIOD * 3;  -- Low period
-    clk_en <= '1';
-    wait for CLK_PERIOD;      -- High period
-end process;
-```
-
-**Waiting for Specific Conditions:**
-```vhdl
--- Wait for clock enable
-wait until clk_en = '1';
-wait for CLK_PERIOD;
-
--- Wait for multiple clock cycles
-wait for CLK_PERIOD * 5;
-
--- Wait for rising edge
-wait until rising_edge(clk);
-```
-
-### Reset Testing Pattern
-
-**Proper Reset Sequence:**
-```vhdl
--- Apply reset
-rst <= '1';
-wait for CLK_PERIOD * 2;  -- Ensure reset is held long enough
-rst <= '0';
-wait for CLK_PERIOD;      -- Wait for reset to propagate
-
--- Test reset behavior
-check_test("Reset state", output = expected_reset_value);
-```
-
-### Process Organization Best Practices
-
-**Separate Processes for Different Concerns:**
-```vhdl
--- 1. Parameter validation (combinational)
-parameter_validation : process(cfg_param1, cfg_param2, cfg_param3)
-begin
-    -- Simple validation logic
-end process;
-
--- 2. State machine (clocked)
-state_machine_proc : process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        current_state <= ST_RESET;
-    elsif rising_edge(clk) then
-        current_state <= next_state;
-    end if;
-end process;
-
--- 3. Status register (clocked)
-status_reg_proc : process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        status_reg <= (others => '0');
-    elsif rising_edge(clk) then
-        -- Update status register
-    end if;
-end process;
-```
+**Legacy GHDL testbenches archived to:**
+- `archive/ghdl_testbenches/2025-01-22/` (original archival)
+- `archive/ghdl_testbenches/2025-01-22/ARCHIVE_UPDATE_2025-10-22.md` (additional cleanup)
 
 ---
 
@@ -823,8 +417,6 @@ report "Debug: voltage = " & real'image(voltage_value) severity note;
 
 **Always compare expected vs actual values:**
 ```vhdl
-check_test("Test name", actual_value = expected_value);
-
 -- For better debugging, show both values on failure
 if not (actual_value = expected_value) then
     report "Expected: " & to_hstring(expected_value) severity error;
@@ -832,18 +424,7 @@ if not (actual_value = expected_value) then
 end if;
 ```
 
-### 3. Step-by-Step Testing
-
-**Break complex tests into smaller steps:**
-```vhdl
--- Test 1: Reset behavior
--- Test 2: Basic functionality  
--- Test 3: Edge cases
--- Test 4: Error conditions
--- Test 5: Integration
-```
-
-### 4. Real Number Comparison with Tolerance
+### 3. Real Number Comparison with Tolerance
 
 **Helper function for real comparisons:**
 ```vhdl
@@ -910,18 +491,6 @@ status_reg(30 downto 28) <= (others => '0');
 status_reg(27 downto 24) <= current_state;
 ```
 
-#### 5. Testbench Timing Pattern That Works
-```vhdl
--- Pattern that worked well for state machine testing:
--- 1. Apply reset
--- 2. Wait for clock edge
--- 3. Check initial state
--- 4. Apply inputs
--- 5. Wait for clock edge
--- 6. Check results
--- 7. Repeat for next test
-```
-
 ### Key Success Factors
 
 1. **Explicit Initialization** - All signals properly initialized
@@ -930,25 +499,6 @@ status_reg(27 downto 24) <= current_state;
 4. **Simple Constructs** - Avoid complex VHDL features that cause compilation issues
 5. **Clear Documentation** - Well-commented code with clear intent
 6. **Incremental Testing** - Test one feature at a time
-
----
-
-## Testbench Checklist
-
-Before submitting a testbench, ensure:
-
-- [ ] All signals are properly initialized
-- [ ] Test process ends with `std.env.stop(0)` or `assert false` (not `wait;`)
-- [ ] Uses variables for local computations, signals for DUT connections
-- [ ] Proper reset testing with adequate timing
-- [ ] Clear test reporting with PASSED/FAILED messages
-- [ ] Final "ALL TESTS PASSED" or "TEST FAILED" message
-- [ ] "SIMULATION DONE" message
-- [ ] Compiles with `ghdl --std=08` without errors
-- [ ] Runs to completion without infinite loops
-- [ ] Tests all required functionality and edge cases
-- [ ] Uses direct instantiation for DUT
-- [ ] Follows project coding standards
 
 ---
 
@@ -985,12 +535,18 @@ rm -f work-obj*.cf *_tb *.o *.exe
 
 ---
 
+## Migration to CocotB
+
+For CocotB testing patterns, see:
+- **`cocotb_testing_guide.md`** - CocotB testing framework (current standard)
+- **`tests/README.md`** - CocotB testing guide in project
+- **`tests/conftest.py`** - Shared CocotB test utilities
+- **Examples**: `tests/test_clk_divider_core.py`, `tests/test_moku_pct_pkg.py`
+
+---
+
 ## Related Documentation
 
 - See `coding_standards` memory for general VHDL style guidelines
-- See `ai_workflow_and_system_info` for build system integration
+- See `cocotb_testing_guide` memory for current testing framework
 - See `design_patterns` memory for architectural patterns
-
-**Original Source Files:**
-- `ai-workflow/README-ghdl-testbench-tips.md` (comprehensive testbench patterns)
-- `ai-workflow/README-direct-instantiation.md` (direct instantiation guide)

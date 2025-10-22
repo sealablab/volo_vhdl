@@ -9,11 +9,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Essential Documentation (Source of Truth)
 
 Before making changes, consult these files:
-- **`.cursor/rules.mdc`** - Complete coding standards and architecture rules
+- **`.cursor/rules.mdc`** - Complete coding standards and architecture rules (points to Serena memories)
 - **`AGENTS.md`** - Concise agent guidelines and build commands
-- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
 - **`tests/README.md`** - CocotB testing framework (NEW - preferred for all tests)
 - **`tests/conftest.py`** - Shared CocotB test utilities
+
+**Note**: Coding standards are maintained in Serena memories (accessed via `.cursor/rules.mdc`). Legacy ai-workflow/ documentation has been archived to `archive/ai-workflow-legacy-2025-10-22/`.
 
 ## Fresh Context Window Checklist
 
@@ -271,14 +272,14 @@ async def test_reset_behavior(dut):
 - All VHDL-2008 features allowed
 - Simulation-only code, no portability constraints
 
-## AI Workflow Integration
+## Serena-First Knowledge Architecture
 
-The project includes an AI-assisted development workflow in `ai-workflow/`:
-- **Interface refinement** - AI-guided requirements specification
-- **Code generation** - Automated VHDL generation from requirements
-- **Templates** - Standardized starting points for new modules
+The project uses **Serena MCP** (Model Context Protocol) for AI-assisted development:
+- **Serena memories**: Authoritative coding standards, design patterns, testing guides
+- **Symbolic code access**: Intelligent navigation via `find_symbol`, `find_referencing_symbols`
+- **Single source of truth**: All standards maintained in Serena, not scattered documentation
 
-See `ai-workflow/README.md` for complete workflow documentation.
+Access Serena memories via `.cursor/rules.mdc` or the `mcp__serena__*` tools.
 
 ## Platform Interface Package Pattern
 
@@ -304,15 +305,17 @@ global_enable <= extract_ctrl_global_enable(ctrl0_data);
 status_reg <= assemble_status0_reg(enabled, wave_select);
 ```
 
-## Contributing New Tips
+## Contributing New Patterns
 
-When you discover new patterns or solutions, append them to the appropriate file:
-- **Synthesizable VHDL tips** → `ai-workflow/ng/README-synth-vhdl-tips-ng.md`
-- **GHDL testbench tips** → `ai-workflow/ng/README-ghdl-testbench-tips-ng.md`
+When you discover new patterns or solutions:
+1. **Update Serena memories**: Use `mcp__serena__write_memory` to update relevant memories
+2. **Document in code**: Add comments explaining the pattern
+3. **Update AGENTS.md**: Add build commands or common tasks if applicable
 
-Use the schema: **Problem / Cause / Solution / Pattern / Tags**
-
-Append below the `------- New Tips here-------` marker. Do NOT reorganize the main bodies of these files.
+**Key Serena memories for patterns:**
+- `coding_standards.md` - VHDL rules and conventions
+- `design_patterns.md` - Common implementation patterns
+- `ghdl_patterns_and_solutions.md` - Build and test patterns
 
 ## Key Design Patterns
 
@@ -427,10 +430,10 @@ top/
 2. **Don't use enumeration types in RTL** - Use std_logic_vector with constants
 3. **Don't skip testbench layers** - Follow 4-layer architecture
 4. **Don't test internal state** - Test external behavior only
-5. **Don't modify ng/ tip files** - Only append to footer section
-6. **Don't use records in RTL ports** - Only in datadef packages
-7. **Don't create separate mcc-Top.vhd entity files** - MCC provides CustomWrapper entity
-8. **Don't over-engineer MCC integration** - Start with Pattern 1 (simple direct mapping) unless you need validation
+5. **Don't use records in RTL ports** - Only in datadef packages
+6. **Don't create separate mcc-Top.vhd entity files** - MCC provides CustomWrapper entity
+7. **Don't over-engineer MCC integration** - Start with Pattern 1 (simple direct mapping) unless you need validation
+8. **Don't create new GHDL testbenches** - Use CocotB instead (see `tests/README.md`)
 
 ## Verification Checklist
 

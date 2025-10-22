@@ -14,7 +14,8 @@
       "Bash(make clean:*)",
       "Bash(make TEST_MODULE=clk_divider_core:*)",
       "Bash(git add:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "mcp__serena__check_onboarding_performed"
     ],
     "deny": [],
     "ask": []
