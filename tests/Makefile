@@ -27,19 +27,16 @@ ifeq ($(WAVES),1)
     SIM_ARGS += --wave=dump.ghw
 endif
 
-# Default module (if no MODULE specified)
-MODULE ?= clk_divider_core
+# Default module (if no TEST_MODULE specified)
+TEST_MODULE ?= clk_divider_core
 
 # Source files for each module
 # clk_divider_core test
-ifeq ($(MODULE),clk_divider_core)
+ifeq ($(TEST_MODULE),clk_divider_core)
     VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd
     TOPLEVEL = clk_divider_core
-    MODULE_TEST = test_clk_divider_core
+    COCOTB_TEST_MODULES = test_clk_divider_core
 endif
-
-# Python test module
-TESTCASE ?= $(MODULE_TEST)
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
@@ -55,11 +52,11 @@ help:
 	@echo "Volo VHDL CocotB Test Suite"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make                    - Run tests for default module ($(MODULE))"
-	@echo "  make MODULE=<name>      - Run tests for specific module"
-	@echo "  make list-tests         - List available test modules"
-	@echo "  make clean              - Clean test artifacts"
-	@echo "  make waves              - View waveforms (requires GTKWave)"
+	@echo "  make                         - Run tests for default module ($(TEST_MODULE))"
+	@echo "  make TEST_MODULE=<name>      - Run tests for specific module"
+	@echo "  make list-tests              - List available test modules"
+	@echo "  make clean                   - Clean test artifacts"
+	@echo "  make waves                   - View waveforms (requires GTKWave)"
 	@echo ""
 	@echo "Available modules:"
 	@echo "  - clk_divider_core     (volo_common/core)"
