@@ -38,6 +38,15 @@ ifeq ($(TEST_MODULE),clk_divider_core)
     COCOTB_TEST_MODULES = test_clk_divider_core
 endif
 
+# moku_pct_pkg test
+ifeq ($(TEST_MODULE),moku_pct_pkg)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(VOLO_COMMON)/common/Moku_Pct_pkg.vhd \
+                   moku_pct_pkg_tb_wrapper.vhd
+    TOPLEVEL = moku_pct_pkg_tb_wrapper
+    COCOTB_TEST_MODULES = test_moku_pct_pkg
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
@@ -61,6 +70,7 @@ help:
 	@echo ""
 	@echo "Available modules:"
 	@echo "  - clk_divider_core     (volo_common/core)"
+	@echo "  - moku_pct_pkg         (volo_common/common)"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  WAVES=1                - Enable waveform dump (default)"
@@ -71,6 +81,7 @@ help:
 list-tests:
 	@echo "Available CocotB test modules:"
 	@echo "  - test_clk_divider_core.py"
+	@echo "  - test_moku_pct_pkg.py"
 	@echo ""
 	@echo "To add more tests, create test_<module>.py and update this Makefile"
 
