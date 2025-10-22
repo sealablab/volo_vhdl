@@ -1,6 +1,0 @@
-<testsuites name="results">
-  <testsuite name="all" package="all">
-    <property name="random_seed" value="1761007534" />
-    <testcase name="tpd_med_test_001" classname="tpd_med_test_001" file="/Users/johnycsh/volo_codes/volo_vhdl/modules/TPD/tpd_med_test_001.py" lineno="24" time="0.0014109611511230469" sim_time_ns="250.0" ratio_time="177184.1838458939" />
-  </testsuite>
-</testsuites>
