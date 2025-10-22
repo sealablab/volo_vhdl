@@ -29,11 +29,12 @@ architecture EMFI_Seq of CustomWrapper is
     signal outputc_temp    : std_logic_vector(15 downto 0);
 begin
     EMFI_SEQUENCER: entity WORK.EMFI_Seq
+	-- the `EMFI_Seq` instantiates the fsm / sequencer as well as the analog monitor, which we connect to OutputA below
         port map (
             Clk        => Clk,
             Reset      => Reset,
             Enable     => not Control0(31),
-            ClkEn      => Control0(30),
+            ClkEn      => not Control0(30),
             DelayS1    => unsigned(Control1(6 downto 0)),
             DelayS2    => unsigned(Control2(6 downto 0)),
             DelayS3    => unsigned(Control3(6 downto 0)),
