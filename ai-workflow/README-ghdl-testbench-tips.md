@@ -3,6 +3,8 @@
 ## Overview
 This document provides practical tips and solutions for common issues encountered when developing VHDL testbenches with GHDL, based on real-world experience from the Volo VHDL project.
 
+> **Note**: This content has been integrated into the Serena MCP memory system as `ghdl_patterns_and_solutions` for AI-assisted development. The memory system provides searchable, context-aware access to these patterns. This file is maintained for human reference and historical context.
+
 ## Common Compilation Issues and Solutions
 
 ### 1. Procedure Parameter Passing Issues
