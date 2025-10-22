@@ -17,6 +17,8 @@ tests/*.ghw
 tests/clk_divider_core
 tests/stoplight_core
 tests/e~*.o
+tests/*_tb_wrapper
+tests/*_wrapper
 
 # External examples and submodules
 moku-dev-examples/
@@ -25,3 +27,10 @@ moku-dev-examples/
 static/
 .Claude_Logs/
 *-TODO.txt
+*-todo.txt
+*-todo.txt.md
+
+# Temporary files
+*.txt.md
+typescript
+2025-*.txt
