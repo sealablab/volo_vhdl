@@ -19,7 +19,7 @@ entity CustomWrapper is
         OutputB : out signed(15 downto 0);
         OutputC : out signed(15 downto 0);
         OutputD : out signed(15 downto 0);
-        
+
         -- Control registers
         Control0  : in  std_logic_vector(31 downto 0);
         Control1  : in  std_logic_vector(31 downto 0);
