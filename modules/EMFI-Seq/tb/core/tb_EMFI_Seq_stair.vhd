@@ -11,7 +11,7 @@ use ieee.numeric_std.all;
 use std.env.all;
 
 -- Use voltage package to verify expected codes
-use work.Moku_Voltage_pkg_en.all;
+use work.Moku_Voltage_pkg.all;
 
 entity tb_EMFI_Seq_stair is
 end entity tb_EMFI_Seq_stair;
@@ -23,11 +23,11 @@ architecture sim of tb_EMFI_Seq_stair is
     signal monitor_u16 : unsigned(15 downto 0);
 
     -- Expected voltage codes (from voltage package)
-    constant EXPECTED_V_1_1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));
-    constant EXPECTED_V_1_2 : signed(15 downto 0) := signed(voltage_to_digital(1.2));
-    constant EXPECTED_V_1_3 : signed(15 downto 0) := signed(voltage_to_digital(1.3));
-    constant EXPECTED_V_1_4 : signed(15 downto 0) := signed(voltage_to_digital(1.4));
-    constant EXPECTED_V_0_0 : signed(15 downto 0) := signed(voltage_to_digital(0.0));
+    constant EXPECTED_V_1_1 : signed(15 downto 0) := voltage_to_digital(1.1);
+    constant EXPECTED_V_1_2 : signed(15 downto 0) := voltage_to_digital(1.2);
+    constant EXPECTED_V_1_3 : signed(15 downto 0) := voltage_to_digital(1.3);
+    constant EXPECTED_V_1_4 : signed(15 downto 0) := voltage_to_digital(1.4);
+    constant EXPECTED_V_0_0 : signed(15 downto 0) := voltage_to_digital(0.0);
 
 
 begin

@@ -18,7 +18,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-use work.Moku_Voltage_pkg_en.ALL;
+use work.Moku_Voltage_pkg.ALL;
 
 package PercentLut_pkg_en is
 
