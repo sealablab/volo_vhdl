@@ -23,3 +23,5 @@ moku-dev-examples/
 
 # Large log files and static content
 static/
+.Claude_Logs/
+*-TODO.txt
