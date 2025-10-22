@@ -77,8 +77,18 @@ compile-with-deps:
 	@for module in $(SHARED_MODULES); do \
 		if [ -d "$$module/" ]; then \
 			echo "Building shared module: $$module"; \
-			if [ -n "$$(ls $$module/common/*.vhd 2>/dev/null)" ]; then \
-				$(GHDL_ANALYZE) $$module/common/*.vhd; \
+			if [ -d "$$module/common/" ]; then \
+				if [ -f "$$module/common/Moku_Voltage_pkg.vhd" ]; then \
+					$(GHDL_ANALYZE) $$module/common/Moku_Voltage_pkg.vhd; \
+				fi; \
+				if [ -f "$$module/common/Moku_Pct_pkg.vhd" ]; then \
+					$(GHDL_ANALYZE) $$module/common/Moku_Pct_pkg.vhd; \
+				fi; \
+				for vhdfile in $$module/common/*.vhd; do \
+					if [ "$$vhdfile" != "$$module/common/Moku_Voltage_pkg.vhd" ] && [ "$$vhdfile" != "$$module/common/Moku_Pct_pkg.vhd" ]; then \
+						$(GHDL_ANALYZE) $$vhdfile; \
+					fi; \
+				done; \
 			fi; \
 			if [ -n "$$(ls $$module/datadef/*.vhd 2>/dev/null)" ]; then \
 				$(GHDL_ANALYZE) $$module/datadef/*.vhd; \

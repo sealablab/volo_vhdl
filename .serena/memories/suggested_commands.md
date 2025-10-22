@@ -13,6 +13,7 @@ make list-modules
 
 # Build specific module only
 make compile-single-module MODULE_NAME=SimpleWaveGen
+make compile-single-module MODULE_NAME=EMFI_Seq
 ```
 
 ### Module-Level Build (from `modules/<module_name>/` directory)
@@ -28,6 +29,31 @@ make test-<testbench_name>
 
 # Show help for available targets
 make help
+```
+
+## CocotB Testing Commands (NEW Standard)
+
+### From `tests/` directory
+```bash
+cd tests
+
+# Run specific module tests
+make TEST_MODULE=clk_divider_core
+make TEST_MODULE=moku_pct_pkg
+
+# List available test modules
+make list-tests
+
+# Clean test artifacts
+make clean
+
+# View waveforms (if GTKWave installed)
+make waves
+
+# Environment variables for testing
+WAVES=1 make TEST_MODULE=clk_divider_core      # Enable waveforms (default)
+WAVES=0 make TEST_MODULE=clk_divider_core      # Disable for faster tests
+COCOTB_LOG_LEVEL=DEBUG make TEST_MODULE=...    # Set log level
 ```
 
 ## GHDL Commands (Manual Compilation)
@@ -97,17 +123,25 @@ wc -l <filename>
 
 # Find files by pattern
 find modules/ -name "*_tb.vhd"
+find modules/ -name "*.vhd"
 ```
 
-## Testing Commands
+## Module-Specific Examples
+
+### EMFI-Seq Module
 ```bash
-# From module directory - run all tests
-make test
+cd modules/EMFI-Seq
+make clean && make compile && make test
+```
 
-# Run quick test (main testbench only)
-make quick-test
+### SimpleWaveGen Module
+```bash
+cd modules/SimpleWaveGen
+make clean && make compile && make test
+```
 
-# Run specific testbench
-make test-<testbench_name>
-# Example: make test-probe_driver_interface
+### volo_common (Shared Utilities)
+```bash
+cd modules/volo_common
+make clean && make compile
 ```

@@ -50,20 +50,13 @@ modules/<module_name>/
 
 ### Shared/Common Modules
 - **volo_common**: Common utilities shared across all modules
-  - `common/volo_common_pkg.vhd` - General utility package
-  - `common/Moku_Voltage_pkg.vhd` - Voltage conversion utilities (datadef pattern)
-  - `common/Moku_Pct_pkg.vhd` - Type-safe percentage-to-voltage conversion (NEW)
+  - `common/Moku_Voltage_pkg.vhd` - Voltage conversion utilities (bidirectional: voltage ↔ digital, clamping, validation)
+  - `common/Moku_Pct_pkg.vhd` - Type-safe percentage-to-voltage conversion (multiple range subtypes)
   - `core/clk_divider_core.vhd` - Clock divider with generic MAX_DIV, enable control, and linear division mapping (0=÷1, 1=÷2, etc.)
 
 ### Application Modules
-- **SimpleWaveGen**: Complete reference implementation (deployed to hardware)
-- **probe_driver**: Probe driver functionality
-- **probe_hero8, probe_hero9, probe_hero11**: Probe hero variants
-- **stoplight**: Stoplight module
-- **BPD**: BPD module (in development)
-- **EMFI-Seq**: EMFI sequencer with voltage conversion pattern
-- **4S-OH-Seq**: 4-state one-hot sequencer
-- **TPD, TPD_02**: TPD variants
+- **SimpleWaveGen**: Complete reference implementation (Pattern 2: Platform Interface Package, deployed to hardware)
+- **EMFI-Seq**: EMFI sequencer (Pattern 1: Simple Direct Mapping, voltage conversion pattern, multi-core integration)
 
 ## Layer Responsibilities
 

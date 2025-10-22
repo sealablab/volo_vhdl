@@ -3,14 +3,15 @@
 
 # Define module dependencies
 # Format: MODULE_DEPS_<module_name> = <space-separated list of dependencies>
-# clk_divider is now part of volo_common (no separate module needed)
-MODULE_DEPS_probe_driver = volo_common
+
+# Application modules that depend on volo_common
 MODULE_DEPS_SimpleWaveGen = volo_common
+MODULE_DEPS_EMFI-Seq = volo_common
 
 # Define the build order (modules will be built in this order)
-MODULE_BUILD_ORDER = probe_driver SimpleWaveGen
+MODULE_BUILD_ORDER = SimpleWaveGen EMFI-Seq
 
 # Define which modules provide shared libraries
 # These modules will be built first and their objects will be available to dependent modules
-# volo_common includes: Moku_Voltage_pkg, clk_divider_core
+# volo_common includes: Moku_Voltage_pkg, Moku_Pct_pkg, clk_divider_core
 SHARED_MODULES = volo_common

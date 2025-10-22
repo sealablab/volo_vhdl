@@ -274,7 +274,7 @@ end procedure;
 
 **Package Structure**:
 ```vhdl
--- In datadef/conversion_package.vhd
+-- In common/Moku_Voltage_pkg.vhd (part of volo_common shared module)
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -288,8 +288,8 @@ package Moku_Voltage_pkg is
     constant DIGITAL_MAX        : natural := 65535;   -- Units: count
     
     -- Bidirectional conversion functions
-    function voltage_to_digital(voltage : real) return std_logic_vector;
-    function digital_to_voltage(digital : std_logic_vector) return real;
+    function voltage_to_digital(voltage : real) return signed;
+    function digital_to_voltage(digital : signed(15 downto 0)) return real;
     
     -- Safety and validation functions
     function clamp_voltage_safe(voltage : real) return real;
@@ -305,15 +305,14 @@ package Moku_Voltage_pkg is
 end package;
 
 package body Moku_Voltage_pkg is
-    -- Linear mapping: -5V → 0x0000, 0V → 0x8000, +5V → 0xFFFF
-    function voltage_to_digital(voltage : real) return std_logic_vector is
+    -- Linear mapping: -5V → 0x8000, 0V → 0x0000, +5V → 0x7FFF
+    function voltage_to_digital(voltage : real) return signed is
         variable clamped_voltage : real;
-        variable digital_value : natural;
+        variable digital_value : integer;
     begin
         clamped_voltage := clamp_voltage_safe(voltage);
-        digital_value := natural((clamped_voltage - VOLTAGE_MIN) * 
-                                  real(DIGITAL_MAX) / (VOLTAGE_MAX - VOLTAGE_MIN));
-        return std_logic_vector(to_unsigned(digital_value, VOLTAGE_DATA_WIDTH));
+        digital_value := integer(clamped_voltage * 6553.4);  -- Scale factor
+        return to_signed(digital_value, 16);
     end function;
     
     function clamp_voltage_safe(voltage : real) return real is
@@ -338,11 +337,11 @@ use work.Moku_Voltage_pkg.all;
 
 architecture rtl of onehot_analog_monitor is
     -- Voltage codes computed using package functions (self-documenting)
-    constant CODE_S1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));
-    constant CODE_S2 : signed(15 downto 0) := signed(voltage_to_digital(1.2));
-    constant CODE_S3 : signed(15 downto 0) := signed(voltage_to_digital(1.3));
-    constant CODE_S4 : signed(15 downto 0) := signed(voltage_to_digital(1.4));
-    constant CODE_Z  : signed(15 downto 0) := signed(voltage_to_digital(0.0));
+    constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);
+    constant CODE_S2 : signed(15 downto 0) := voltage_to_digital(1.2);
+    constant CODE_S3 : signed(15 downto 0) := voltage_to_digital(1.3);
+    constant CODE_S4 : signed(15 downto 0) := voltage_to_digital(1.4);
+    constant CODE_Z  : signed(15 downto 0) := voltage_to_digital(0.0);
 begin
     -- Combinational decode using computed constants
     with state_oh select
@@ -362,39 +361,25 @@ end architecture;
 - **Maintainable**: Change voltage range in one place
 - **Safe**: Built-in clamping and validation
 
-**Testbench Pattern** (Tier 3 - Full VHDL-2008):
-```vhdl
--- In tb/datadef/tb_Moku_Voltage_pkg.vhd
-test_process : process
-    variable v_result : real;
-    variable d_result : std_logic_vector(15 downto 0);
+**Testbench Pattern** (CocotB - NEW Standard):
+```python
+# In tests/test_moku_voltage_pkg.py
+import cocotb
+from cocotb.triggers import Timer
+
+@cocotb.test()
+async def test_voltage_conversion(dut):
+    """Test bidirectional voltage conversion"""
+    # Test 1.1V conversion
+    await Timer(1, units='ns')
+    assert dut.CODE_S1.value == 7209, f"Expected 7209 for 1.1V, got {dut.CODE_S1.value}"
     
-    -- Helper for real number comparison with tolerance
-    constant TOLERANCE : real := 0.01;  -- 10mV
-    function real_equal(a, b : real) return boolean is
-    begin
-        return abs(a - b) < TOLERANCE;
-    end function;
-begin
-    -- Test bidirectional conversion
-    d_result := voltage_to_digital(1.1);
-    check_test("1.1V conversion", d_result = x"9C28");
-    
-    v_result := digital_to_voltage(x"9C28");
-    check_test("Reverse conversion", real_equal(v_result, 1.1));
-    
-    -- Test clamping
-    d_result := voltage_to_digital(10.0);  -- Over max
-    check_test("Clamp high", d_result = x"FFFF");
-    
-    -- Test round-trip
-    v_result := digital_to_voltage(voltage_to_digital(2.5));
-    check_test("Round-trip 2.5V", real_equal(v_result, 2.5));
-end process;
+    # Test clamping
+    # ... additional tests
 ```
 
 **Documentation Pattern**:
-Create `datadef/README_PackageName.md` with:
+Create documentation with:
 - Function descriptions and signatures
 - Unit conventions (volts, bits, ratio, etc.)
 - Usage examples from actual code
@@ -415,8 +400,8 @@ Create `datadef/README_PackageName.md` with:
 **Reference Files**:
 - `modules/volo_common/common/Moku_Voltage_pkg.vhd` - Implementation
 - `modules/volo_common/Moku-Voltage-LUTS.md` - Documentation
-- `modules/EMFI-Seq/tb/core/tb_EMFI_Seq_stair.vhd` - Tests (17/17 passing)
 - `modules/EMFI-Seq/core/EMFI_Seq_stair.vhd` - Usage example
+- `tests/test_moku_voltage_pkg.py` - CocotB tests (if available)
 
 **Discovered**: 2025-01-21, EMFI-Seq voltage package development
 
@@ -495,7 +480,7 @@ end entity;
 constant CODE_S1 : signed(15 downto 0) := x"1C29";  -- What voltage is this?
 
 -- CORRECT: Use conversion package or document heavily
-constant CODE_S1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));  -- 1.1V
+constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);  -- 1.1V
 -- Or if hardcoded, add extensive comments explaining the calculation
 ```
 
@@ -504,47 +489,45 @@ Define dependencies in `modules/Makefile.deps`:
 
 ```makefile
 # Module build order (shared modules built first, then application modules)
-MODULE_BUILD_ORDER = probe_driver SimpleWaveGen stoplight
+MODULE_BUILD_ORDER = SimpleWaveGen EMFI_Seq
 
 # Specific module dependencies
-# Note: clk_divider_core is now part of volo_common (no separate module)
 MODULE_DEPS_SimpleWaveGen = volo_common
-MODULE_DEPS_probe_driver = volo_common
+MODULE_DEPS_EMFI_Seq = volo_common
 
 # Shared modules (built first, objects available to dependent modules)
-# volo_common includes: Moku_Voltage_pkg, volo_common_pkg, clk_divider_core
+# volo_common includes: Moku_Voltage_pkg, Moku_Pct_pkg, clk_divider_core
 SHARED_MODULES = volo_common
 ```
 
 ## Reference Implementations
 
-### SimpleWaveGen (Complete Reference)
+### SimpleWaveGen (Complete Reference - Pattern 2)
 **Location**: `modules/SimpleWaveGen/`
 
 **Demonstrates**:
 - Successfully deployed to Moku device
+- Pattern 2: Platform Interface Package (complex register logic)
 - Complete testing at all layers
 - Platform interface package usage
 - Direct instantiation in top layer
 - Proper control signal handling
 
-### EMFI-Seq (Voltage Conversion Reference)
+### EMFI-Seq (Multi-Core Reference - Pattern 1)
 **Location**: `modules/EMFI-Seq/`
 
 **Demonstrates**:
-- Voltage conversion package pattern (datadef layer)
+- Pattern 1: Simple Direct Mapping MCC integration
+- Voltage conversion package pattern (uses volo_common/Moku_Voltage_pkg)
 - Multi-core integration (FSM + analog monitor)
 - Compile-time constant computation
-- Comprehensive package testing (17/17 tests passing)
 - Self-documenting voltage codes
-- Pattern 1 (Simple Direct Mapping) MCC integration
 
 **Key Files**:
-- `datadef/Moku_Voltage_pkg.vhd` - Conversion package with validation
-- `datadef/README_Moku_Voltage_pkg.md` - Complete package documentation
-- `core/EMFI_Seq_stair.vhd` - Usage of voltage package
-- `tb/datadef/tb_Moku_Voltage_pkg.vhd` - Package tests
-- `tb/core/tb_EMFI_Seq_stair.vhd` - Core module tests
+- `core/EMFI_Seq_stair.vhd` - Usage of Moku_Voltage_pkg
+- `core/EMFI_Seq_fsm.vhd` - FSM implementation
+- `top/EMFI_Seq.vhd` - Multi-core integration
+- `top/Top.vhd` - CustomWrapper architecture (Pattern 1)
 
 ### volo_common (Shared Modules Reference)
 **Location**: `modules/volo_common/`
@@ -552,8 +535,8 @@ SHARED_MODULES = volo_common
 **Purpose**: Provides shared utilities and reusable cores for all modules
 
 **Key Components**:
-- **`common/volo_common_pkg.vhd`** - General utility package
 - **`common/Moku_Voltage_pkg.vhd`** - Voltage conversion utilities with bidirectional conversion, clamping, and validation
+- **`common/Moku_Pct_pkg.vhd`** - Type-safe percentage-to-voltage conversion with multiple range subtypes
 - **`core/clk_divider_core.vhd`** - Configurable clock divider core
 
 **Clock Divider Core Features** (`clk_divider_core.vhd`):
@@ -562,7 +545,7 @@ SHARED_MODULES = volo_common
 - **div_sel encoding**: Linear mapping (0=÷1, 1=÷2, 2=÷3, ..., up to MAX_DIV)
 - **Clock enable output**: Generates clock enable pulses (not divided clock - safer for timing)
 - **Status register**: Shows current counter state
-- **Testbench**: `tb/core/clk_divider_core_tb.vhd`
+- **Testbench**: CocotB tests in `tests/test_clk_divider_core.py`
 
 **Usage Example**:
 ```vhdl
@@ -582,54 +565,3 @@ U_CLK_DIV: entity WORK.clk_divider_core
 ```
 
 **Discovered**: 2025-10-21, consolidated from standalone module into volo_common
-
-### 9. Intensity/Percentage LUT Pattern (Module-Specific)
-
-**Location**: Module-specific datadef layer (e.g., `probe_driver/datadef/PercentLut_pkg.vhd`)
-
-**When to Use**: Module needs intensity/brightness/percentage mapping (0-100%) to voltage values.
-
-**Package Structure** (Record-based with CRC validation):
-```vhdl
--- In datadef/PercentLut_pkg.vhd
-package PercentLut_pkg is
-    constant SYSTEM_PERCENT_LUT_SIZE : natural := 101; -- Indices 0-100
-    
-    -- Array type for LUT data
-    type percent_lut_data_array_t is array (0 to 100) of 
-        std_logic_vector(15 downto 0);
-    
-    -- Record for encapsulation with validation
-    type percent_lut_record_t is record
-        data_array : percent_lut_data_array_t;
-        crc        : std_logic_vector(15 downto 0);
-        valid      : std_logic;
-        size       : std_logic_vector(6 downto 0);
-    end record;
-    
-    -- CRC validation functions
-    function calculate_percent_lut_crc(lut_data : percent_lut_data_array_t) 
-        return std_logic_vector;
-    function validate_percent_lut_record(lut_rec : percent_lut_record_t) 
-        return boolean;
-    
-    -- Safe lookup with bounds checking
-    function get_percentlut_value_safe(lut_rec : percent_lut_record_t; 
-                                       index : natural) 
-        return std_logic_vector;
-end package;
-```
-
-**Key Differences from Voltage Package**:
-- **Module-specific**: Not moved to volo_common (only used by probe_driver modules)
-- **Record-based**: Better type safety and encapsulation
-- **CRC validation**: Data integrity checking
-- **LUT storage**: Full lookup table (101 entries)
-
-**Reference Implementation**:
-- Canonical: `modules/probe_driver/datadef/PercentLut_pkg.vhd`
-- Documentation: `modules/probe_driver/datadef/PercentLut_Analysis.md`
-- Testbench: `modules/probe_driver/tb/datadef/PercentLut_pkg_tb.vhd`
-
-**Consolidation** (2025-10-21): Removed 10 duplicate enhanced (`_en`) versions
-
