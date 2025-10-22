@@ -7,6 +7,17 @@ work-obj*.cf
 *.exe
 *.mov
 
+# Python/CocotB artifacts
+__pycache__/
+*.pyc
+*.pyo
+tests/sim_build/
+tests/*.xml
+tests/*.ghw
+tests/clk_divider_core
+tests/stoplight_core
+tests/e~*.o
+
 # External examples and submodules
 moku-dev-examples/
 
