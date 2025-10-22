@@ -40,7 +40,7 @@ use IEEE.NUMERIC_STD.ALL;
 use work.Probe_Config_pkg_en.all;
 
 -- Import PercentLut package for probe-specific intensity LUTs
-use work.PercentLut_pkg_en.all;
+use work.PercentLut_pkg.all;
 
 package Global_Probe_Table_pkg_en is
     

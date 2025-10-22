@@ -16,7 +16,7 @@ use IEEE.STD_LOGIC_TEXTIO.ALL;
 
 -- Import probe_driver packages
 use work.probe_driver_pkg.all;
-use work.PercentLut_pkg_en.all;
+use work.PercentLut_pkg.all;
 use work.Probe_Config_pkg_en.all;
 use work.Moku_Voltage_pkg_en.all;
 

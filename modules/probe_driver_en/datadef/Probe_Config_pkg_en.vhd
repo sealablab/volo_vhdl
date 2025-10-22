@@ -38,7 +38,7 @@ use IEEE.NUMERIC_STD.ALL;
 use work.Moku_Voltage_pkg_en.all;
 
 -- Import PercentLut package for intensity curve LUTs
-use work.PercentLut_pkg_en.all;
+use work.PercentLut_pkg.all;
 
 package Probe_Config_pkg_en is
     
