@@ -14,7 +14,7 @@ use IEEE.Numeric_Std.all;
 
 -- Import probe_driver packages (enhanced versions)
 use work.probe_driver_pkg.all;
-use work.PercentLut_pkg_en.all;
+use work.PercentLut_pkg.all;
 use work.Probe_Config_pkg_en.all;
 use work.Moku_Voltage_pkg_en.all;
 

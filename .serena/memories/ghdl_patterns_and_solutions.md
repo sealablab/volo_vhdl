@@ -41,7 +41,7 @@ ghdl -a --std=08 -frelaxed <file.vhd>  # Turns some errors into warnings
 Always compile in dependency order:
 ```bash
 # 1. Packages (declarations and bodies)
-ghdl -a --std=08 datadef/Moku_Voltage_pkg_en.vhd
+ghdl -a --std=08 datadef/Moku_Voltage_pkg.vhd
 
 # 2. Core entities
 ghdl -a --std=08 core/EMFI_Seq_stair.vhd

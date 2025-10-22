@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/johnycsh/volo_codes/volo_vhdl/modules/**)",
+      "Bash(make compile:*)",
+      "Bash(ghdl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
