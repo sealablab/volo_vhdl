@@ -4,8 +4,8 @@
 -- # Pattern: Matches DCSequencer style (architecture-only file)
 -- #
 -- # Register Map:
--- #   Control0[0]:     Enable (gates sequencer operation)
--- #   Control0[1]:     Clock enable
+-- #   Control0[31]:    Enable (gates sequencer operation)
+-- #   Control0[30]:    Clock enable
 -- #   Control2[6:0]:   State 1 delay (7-bit)
 -- #   Control3[6:0]:   State 2 delay (7-bit)
 -- #   Control4[6:0]:   State 3 delay (7-bit)
