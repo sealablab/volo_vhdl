@@ -26,6 +26,7 @@ architecture EMFI_Seq of CustomWrapper is
     signal status_internal : unsigned(6 downto 0);
     signal state_internal  : std_logic_vector(3 downto 0);
     signal monitor_internal: unsigned(15 downto 0);
+    signal outputc_temp    : std_logic_vector(15 downto 0);
 begin
     EMFI_SEQUENCER: entity WORK.EMFI_Seq
         port map (
@@ -47,6 +48,8 @@ begin
     OutputB <= signed(resize(status_internal, 16));
 
     -- Pack state and monitor into OutputC
-    OutputC <= signed(std_logic_vector(monitor_internal(15 downto 4)) & state_internal);
+    -- Use intermediate signal to avoid concatenation type ambiguity
+    outputc_temp <= std_logic_vector(monitor_internal(15 downto 4)) & state_internal;
+    OutputC <= signed(outputc_temp);
 
 end architecture EMFI_Seq;
