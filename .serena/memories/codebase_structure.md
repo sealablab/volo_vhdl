@@ -43,13 +43,23 @@ modules/<module_name>/
 ```
 
 ## Existing Modules
-- **SimpleWaveGen**: Complete reference implementation (deployed to hardware)
+
+### Shared/Common Modules
 - **volo_common**: Common utilities shared across all modules
-- **clk_divider**: Clock division utility (dependency for other modules)
+  - `common/volo_common_pkg.vhd` - General utility package
+  - `common/Moku_Voltage_pkg.vhd` - Voltage conversion utilities (datadef pattern)
+  - `core/clk_divider_core.vhd` - Clock divider with generic MAX_DIV, enable control, and linear division mapping (0=÷1, 1=÷2, etc.)
+  - `tb/core/clk_divider_core_tb.vhd` - Clock divider testbench
+
+### Application Modules
+- **SimpleWaveGen**: Complete reference implementation (deployed to hardware)
 - **probe_driver**: Probe driver functionality
 - **probe_hero8, probe_hero9, probe_hero11**: Probe hero variants
 - **stoplight**: Stoplight module
 - **BPD**: BPD module (in development)
+- **EMFI-Seq**: EMFI sequencer with voltage conversion pattern
+- **4S-OH-Seq**: 4-state one-hot sequencer
+- **TPD, TPD_02**: TPD variants
 
 ## Layer Responsibilities
 

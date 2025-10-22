@@ -432,12 +432,17 @@ constant CODE_S1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));  -- 1
 Define dependencies in `modules/Makefile.deps`:
 
 ```makefile
-# Module build order (dependencies first)
-MODULE_BUILD_ORDER := volo_common clk_divider SimpleWaveGen probe_driver
+# Module build order (shared modules built first, then application modules)
+MODULE_BUILD_ORDER = probe_driver SimpleWaveGen stoplight
 
 # Specific module dependencies
-SimpleWaveGen_DEPS := volo_common clk_divider
-probe_driver_DEPS := volo_common
+# Note: clk_divider_core is now part of volo_common (no separate module)
+MODULE_DEPS_SimpleWaveGen = volo_common
+MODULE_DEPS_probe_driver = volo_common
+
+# Shared modules (built first, objects available to dependent modules)
+# volo_common includes: Moku_Voltage_pkg, volo_common_pkg, clk_divider_core
+SHARED_MODULES = volo_common
 ```
 
 ## Reference Implementations
@@ -469,6 +474,43 @@ probe_driver_DEPS := volo_common
 - `core/EMFI_Seq_stair.vhd` - Usage of voltage package
 - `tb/datadef/tb_Moku_Voltage_pkg.vhd` - Package tests
 - `tb/core/tb_EMFI_Seq_stair.vhd` - Core module tests
+
+### volo_common (Shared Modules Reference)
+**Location**: `modules/volo_common/`
+
+**Purpose**: Provides shared utilities and reusable cores for all modules
+
+**Key Components**:
+- **`common/volo_common_pkg.vhd`** - General utility package
+- **`common/Moku_Voltage_pkg.vhd`** - Voltage conversion utilities with bidirectional conversion, clamping, and validation
+- **`core/clk_divider_core.vhd`** - Configurable clock divider core
+
+**Clock Divider Core Features** (`clk_divider_core.vhd`):
+- **Generic MAX_DIV**: Configurable maximum division ratio (default 256)
+- **Enable input**: Freeze/unfreeze counting (Priority: reset > enable > functional logic)
+- **div_sel encoding**: Linear mapping (0=÷1, 1=÷2, 2=÷3, ..., up to MAX_DIV)
+- **Clock enable output**: Generates clock enable pulses (not divided clock - safer for timing)
+- **Status register**: Shows current counter state
+- **Testbench**: `tb/core/clk_divider_core_tb.vhd`
+
+**Usage Example**:
+```vhdl
+-- Direct instantiation of clock divider
+U_CLK_DIV: entity WORK.clk_divider_core
+    generic map (
+        MAX_DIV => 256  -- Support division up to 256
+    )
+    port map (
+        clk         => clk,
+        rst_n       => rst_n,
+        enable      => clk_div_enable,      -- Freeze when low
+        div_sel     => div_sel(7 downto 0), -- 0=÷1, 1=÷2, etc.
+        clk_en      => divided_clk_en,      -- Output clock enable
+        stat_reg    => clk_div_status       -- Status/counter value
+    );
+```
+
+**Discovered**: 2025-10-21, consolidated from standalone module into volo_common
 
 ### 9. Intensity/Percentage LUT Pattern (Module-Specific)
 
