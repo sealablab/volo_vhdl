@@ -1,501 +1,133 @@
 ---
 title: "Volo VHDL Project Rules"
-version: "2.0"
+version: "3.0"
 type: "workspace_rules"
 applies_to: "all_files"
 priority: "high"
+last_updated: "2025-10-22"
 ---
 
-# .cursor/rules.mdc
+# Volo VHDL Project Rules
 
-## Usage for Agents
-- Don't reorganize `ai-workflow/ng/README-*-tips-ng.md` files; **append new tips** below `------- New Tips here-------`.
-- Use the schema **Problem / Cause / Solution / Pattern / Tags**. Long human context → HTML comments.
-- TB style: edge-synchronous + CE; post-edge nudge only if documented.
-- Global control priority: `reset > clock_enable > enable`.
+## 📚 Primary Source of Truth: Serena MCP Memory System
 
-## Repo Facts
-- Synth tips: `ai-workflow/ng/README-synth-vhdl-tips-ng.md`
-- TB tips: `ai-workflow/ng/README-ghdl-testbench-tips-ng.md`
-- Both provide a **manual Quick Index**, standard schema, and a footer sandbox.
+All project knowledge, coding standards, design patterns, and guidelines are maintained in the **Serena MCP memory system** located at `.serena/memories/`.
 
-## Fresh Window Checklist
-- Load the two `-ng` files; read "Usage for Agents."
-- Confirm footer-only append rule; never reorganize main bodies.
-- Build sanity: run GHDL with `--std=08`; run module Makefile quick test.
-- Show diffs before changing `.cursor/rules.mdc` or `AGENTS.md`.
-- After success/learning, append a candidate tip at the footer using the schema.
+**Why Serena?**
+- ✅ Version controlled with code (committed in git)
+- ✅ Single source of truth (no duplication/drift)
+- ✅ Accessible to all AI tools via MCP protocol
+- ✅ Easier to maintain and update
+- ✅ Claude Code always checks Serena first
 
 ---
 
-# Volo VHDL Project - Agent Guidelines
+## 🚀 For AI Agents: Fresh Context Window Checklist
 
-## 🎯 Essential Resources (Source of Truth)
-- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
-- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns  
-- **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
-- **`AGENTS.md`** - Quick reference and build commands
+When starting with a fresh context window:
 
-## 🚀 Quick Start Commands
-- **Compile module**: `cd modules/<module_name> && make`
-- **Run all tests**: `cd modules/<module_name> && make test`
-- **Run single test**: `cd modules/<module_name> && make test-<testbench_name>`
-- **GHDL flags**: Always use `--std=08` for VHDL-2008 compatibility
+### 1. Check Serena Onboarding Status
+```
+mcp__serena__check_onboarding_performed
+```
+This will list all available memories. Don't read them all immediately - just be aware of what exists.
 
-## 🏗️ Core Architecture Rules
+### 2. Verify Git State
+- Current branch: `git branch --show-current`
+- Working tree: `git status` (should be clean)
+- Any stashed work: `git stash list`
 
-### VHDL-2008 with Verilog Portability
-- **Target**: VHDL-2008 that converts cleanly to Verilog
-- **Avoid**: VHDL-only features (records in ports, enums, subtypes)
-- **Use**: `std_logic_vector` state encoding, explicit bit widths
+### 3. Understand Current Testing Framework
+- **Standard**: CocotB (Python-based, async/await)
+- **Location**: `tests/` directory
+- **Reference**: `tests/test_clk_divider_core.py` (7 tests passing)
+- **⚠️ DO NOT**: Create new GHDL testbenches (deprecated)
+
+### 4. Essential Serena Memories
+Read these as needed for your task:
+- `cocotb_testing_guide` - Testing framework (NEW standard)
+- `coding_standards` - VHDL rules and tiered system
+- `design_patterns` - Common patterns and implementations
+- `codebase_structure` - Module organization
+- `tech_stack` - Tools and platform info
+
+### 5. Key Documentation Files
+- `CLAUDE.md` - Project overview and quick reference
+- `AGENTS.md` - Build commands and quick start
+- `tests/README.md` - CocotB testing guide
+
+---
+
+## ⚡ Quick Reference (Critical Rules Only)
+
+### Control Signal Priority
+```
+reset > clock_enable > enable
+```
+- **Reset**: Forces safe state (highest priority)
+- **Clock Enable**: Freezes sequential logic when low
+- **Functional Enable**: Gates functional work
 
 ### Tiered Rule System
-- **Tier 1 (RTL)**: `common/`, `core/`, `top/` - Strict Verilog portability
-- **Tier 2 (DataDef)**: `datadef/` - Relaxed for data structures (records allowed)
-- **Tier 3 (Testbench)**: `tb/` - Full VHDL-2008 features
-
-### Signal Naming & Control Priority
-- **Prefixes**: `ctrl_*` (control), `cfg_*` (config), `stat_*` (status)
-- **Priority**: `reset > clock_enable > enable` (STD-02)
-- **Standard signals**: `clk`, `n_reset`, `clk_en`, `enable`
+- **Tier 1** (Strict RTL): `common/`, `core/`, `top/` - Verilog portability required
+- **Tier 2** (Relaxed Data): `datadef/` - Records allowed, document conversion
+- **Tier 3** (Full VHDL-2008): `tb/` - No constraints (testing only)
 
 ### Direct Instantiation (MANDATORY for Top Layer)
 ```vhdl
--- ✅ REQUIRED in top/ layer files
+-- ✅ REQUIRED
 U1: entity WORK.module_name port map (...);
 
--- ❌ FORBIDDEN in top/ layer
--- component module_name is ... end component;
+-- ❌ FORBIDDEN
+component module_name is ... end component;
 ```
 
-## 🧪 Testbench Requirements
+### Signal Naming
+- `ctrl_*` - Control signals
+- `cfg_*` - Configuration parameters
+- `stat_*` - Status and monitoring
 
-### 4-Layer Architecture (Mandatory)
-1. **Interface Testing** - Test WHAT, not HOW
-2. **Validation Testing** - Parameter validation & error handling  
-3. **Functional Testing** - Core behavior verification
-4. **Generic Testing** - Edge cases & configurations
-
-### Required Output
-```vhdl
-report "ALL TESTS PASSED" severity note;  -- Success
-report "TEST FAILED" severity error;       -- Failure  
-report "SIMULATION DONE" severity note;      -- Always
-```
-
-## 📁 Module Structure
-```
-modules/module_name/
-├── common/     # Shared utilities (Tier 1)
-├── datadef/    # Data structures (Tier 2) 
-├── core/       # Pure logic (Tier 1)
-├── top/        # Integration (Tier 1, direct instantiation)
-└── tb/         # Testbenches by layer (Tier 3)
-    ├── common/     # Package tests
-    ├── datadef/    # Datadef tests  
-    ├── core/       # Core tests
-    └── top/        # Integration tests
-```
-
-## 🤖 AI Agent Guidelines
-
-### Working with Structured Tips
-- **Reference**: Use ng/ files as primary source for patterns
-- **Append only**: Add new tips below `------- New Tips here-------`
-- **Schema**: Problem/Cause/Solution/Pattern/Tags
-- **Don't reorganize**: Never modify main bodies of ng/ files
-
-### Build Verification
-- Always test with `make` and `make test` after changes
-- Verify GHDL compilation with `--std=08`
-- Check for linting errors before committing
-
-## 🔧 Platform Context
-- **Target**: Moku FPGA devices
-- **Simulation**: GHDL with VHDL-2008
-- **Deployment**: MCC (Moku Custom Core) bitstream
-- **Reference**: SimpleWaveGen module (successfully deployed)
-
-## Context-Specific Rules
-- **Architecture decisions**: See `.roo/rules-architect/AGENTS.md`
-- **Coding patterns**: See `.roo/rules-code/AGENTS.md`  
-- **Debugging help**: See `.roo/rules-debug/AGENTS.md`
-- **Documentation**: See `.roo/rules-ask/AGENTS.md`
-
-## AI Workflow Integration
-- Use `ai-workflow/prompts/` for guided development
-- Follow structured tip schema in ng/ files
-- Reference Serena memories for project context
-- Use Roo context rules for specialized tasks
-
-## Quality Assurance
-- All modules must pass 4-layer testbench architecture
-- Direct instantiation verification for top layer
-- Verilog portability check before deployment
-- Standards compliance via structured tips
+### Status Register Bits
+- **Bit 7**: FAULT (sticky, cleared only on reset)
+- **Bit 6**: ALARM (sticky, cleared only on reset)
+- **Bits 5-0**: Module-specific (state, flags, etc.)
 
 ---
 
-## Detailed Implementation Rules
+## 🔧 Build Commands
 
-### Standard Control Signal Implementation
-
-#### Signal Definitions
-All VOLO modules must implement these four standard control signals:
-- **`clk`**: Primary clock input (`std_logic`)
-- **`reset`**: Active-low reset (`std_logic`, typically `n_reset` or `reset_n`)
-- **`enable`**: Functional enable (`std_logic`)
-- **`clk_en`**: Clock enable (`std_logic`)
-
-#### Signal Priorities
-1. **Reset** - Highest priority, forces safe state regardless of other signals
-2. **Clock Enable** - Second priority, freezes sequential logic when low
-3. **Functional Enable** - Lowest priority, gates functional work
-
-#### Implementation Requirements
-- **Reset Behavior**: All outputs go to safe defaults, all registers cleared
-- **Clock Enable**: When `clk_en='0'`, sequential logic holds state (no updates)
-- **Functional Enable**: When `enable='0'`, DUT is idle/holding, outputs parked
-- **Safe State**: All outputs must have defined safe values when not operating
-
-#### Truth Table
-| Reset | clk_en | enable | DUT Behavior                          |
-|-------|--------|--------|----------------------------------------|
-| 1     | X      | X      | **Reset dominates** → safe defaults    |
-| 0     | 0      | X      | **Clock frozen** → hold state, no updates |
-| 0     | 1      | 0      | **Idle/hold** → state stable, outputs parked |
-| 0     | 1      | 1      | **Normal operation** → advance state, process data |
-
-### Status Register Implementation Standards
-
-#### Default Behavior for All VOLO Modules
-- **Update Timing**: All status bits updated synchronously on rising edge of clock
-- **Fault Bits**: FAULT and ALARM bits are sticky (cleared only on reset)
-- **State Bits**: Operational status bits reflect current state
-- **Reset Behavior**: All bits cleared on reset
-- **Bit 7-6 Convention**: FAULT (bit 7) and ALARM (bit 6) reserved for error conditions
-
-#### Status Bit Categories
-- **Sticky Bits**: FAULT, ALARM, FIRED - persist until reset
-- **State Bits**: COOL, FIRING, ARMED - reflect current operational state
-- **Reserved Bits**: Bits 5-4 typically reserved for future use
-
-### Layer Responsibilities
-
-#### Data Definition Layer (`modules/**/datadef/*.vhd`) - **NEW**
-- **Purpose**: Define data structures, LUTs, and data validation utilities
-- **Rule Tier**: Tier 2 (Relaxed rules for data definition)
-- **Allowed Features**:
-  - **Record types for data organization and type safety**
-  - Array type definitions for LUTs and data structures
-  - Complex constants and data initialization
-  - Data validation functions (CRC, checksums)
-  - Function overloading for data access utilities
-  - Complex utility functions for data manipulation
-- **Required**:
-  - `cfg_*` prefixes for configuration data constants
-  - Verilog conversion strategy documented in comments
-  - Clear separation from RTL logic (no clocks, state machines)
-  - No clock-dependent operations
-  - **Records must be designed with Verilog conversion in mind**
-- **Verilog Conversion Strategy**:
-  - **Records → SystemVerilog structs or packed parameter arrays**
-  - Array types → parameter arrays or .mem files
-  - Complex functions → separate SystemVerilog modules
-  - Function overloading → renamed functions with distinct names
-
-#### Common Layer (`modules/**/common/*.vhd`)
-- **Purpose**: Define shared types, constants, and utilities used across the module
-- **Responsibilities**:
-  - Configuration parameter validation functions
-  - Utility functions shared across testbenches and modules
-  - Common type definitions and constants
-
-#### Core Layer (`modules/**/core/*.vhd`)
-- **Purpose**: Pure logic implementation
-- **Constraints**:
-  - No register decode logic
-  - No platform-specific code
-  - Consume typed-by-name flat signals
-  - Implement FSMs with `std_logic_vector` state encoding
-  - Use constants for state labels (no enums)
-  - **Create a default status register**
-  - Ideally implement as a state machine
-
-#### Top Layer (`modules/**/top/*.vhd`)
-- **Purpose**: Integrate cores and interface with MCC platform (Moku CustomWrapper)
-- **Standard Pattern** (2 files - see DCSequencer or EMFI-Seq examples):
-  1. **ModuleName.vhd** - Entity + architecture that instantiates core modules
-  2. **Top.vhd** - CustomWrapper architecture only (register mapping)
-- **Responsibilities**:
-  - **ModuleName.vhd**: Use direct instantiation for all core module connections
-  - **Top.vhd**: Map Control/Output ports directly to module entity (simple pattern)
-  - **Important**: MCC provides CustomWrapper entity - do NOT create mcc-Top.vhd
-  - Keep both files clean and minimal
-  - Start with simple direct register mapping unless validation is needed
-  - **Note**: Not all modules will require a 'top' file
-
-**Direct Instantiation Requirement**: All internal module connections MUST use direct instantiation (`entity WORK.module_name`) rather than component declarations.
-
-### FSM Implementation
-- Use `std_logic_vector` for state encoding
-- Define state constants (avoid enumeration types)
-- Example:
-  ```vhdl
-  constant IDLE_STATE  : std_logic_vector(1 downto 0) := "00";
-  constant ACTIVE_STATE: std_logic_vector(1 downto 0) := "01";
-  ```
-
-### Counters and Timers
-- Prefer `unsigned` vectors with explicit widths
-- Avoid generic ranges or complex constraints
-- Example: `signal counter : unsigned(7 downto 0);`
-
-### Code Style and Comments
-
-#### Block Structure
-- Clearly mark the end of `if`/`elsif`/`case` blocks
-- Use consistent indentation
-- Add meaningful comments for complex logic
-
-#### Process Structure
-- Use synchronous processes with `rising_edge(clk)`
-- Implement proper reset handling
-- Keep processes focused and readable
-
-### Testbench Requirements (`modules/**/tb/*.vhd`)
-
-#### Allowed Features
-- VHDL-2008 features are permitted
-- `wait` statements are allowed
-- Use deterministic stimuli
-
-#### Required Output
-- **Success**: Print `'ALL TESTS PASSED'`
-- **Failure**: Print `'TEST FAILED'`
-- **Completion**: Always print `'SIMULATION DONE'`
-
-#### **Direct Instantiation in Testbenches**
-- **Top Layer Testbenches**: MUST use direct instantiation for all module instantiations
-- **Core Layer Testbenches**: RECOMMENDED to use direct instantiation for consistency
-- **Datadef/Common Testbenches**: Can use either approach (no requirement)
-
-**Example Top Layer Testbench:**
-```vhdl
-architecture test of probe_driver_top_tb is
-begin
-    -- ✅ Required: Direct instantiation in top layer testbenches
-    DUT: entity WORK.probe_driver_top
-        port map (
-            clk => clk,
-            rst => rst,
-            -- ... other ports
-        );
-end architecture;
+**From module directory** (`modules/<module_name>/`):
+```bash
+make clean && make          # Build module
+make test                   # Run all tests (if GHDL legacy)
 ```
 
-### Template Guidelines (`templates/**`)
-- Keep templates minimal
-- Ensure Verilog portability
-- Follow all global coding rules
-- Provide clear examples of proper usage
-
-### Best Practices
-
-#### Signal Declaration
-```vhdl
-signal data_bus : std_logic_vector(31 downto 0);
-signal counter  : unsigned(15 downto 0);
-signal state    : std_logic_vector(2 downto 0);
+**CocotB testing** (from `tests/`):
+```bash
+make TEST_MODULE=clk_divider_core    # Run specific test
+make list-tests                      # List available tests
+make clean                           # Clean artifacts
 ```
 
-#### Process Structure
-```vhdl
-process(clk, rst_n)
-begin
-    if rst_n = '0' then
-        -- Reset logic
-    elsif rising_edge(clk) then
-        -- Synchronous logic
-    end if;
-end process;
-```
-
-#### Generic Usage
-```vhdl
-generic (
-    DATA_WIDTH : integer := 32;
-    ADDR_WIDTH : integer := 8
-);
-```
-
-### Verification Checklist
-Before submitting code, ensure:
-- [ ] No VHDL-only features used (except records in datadef packages)
-- [ ] All ports use flat signal types (except datadef packages)
-- [ ] FSMs use vector state encoding
-- [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
-- [ ] Explicit bit widths specified
-- [ ] Synchronous processes with proper reset
-- [ ] Clear block end markers
-- [ ] Testbench prints required messages
-- [ ] **Top layer files use direct instantiation for all module connections**
-
-### Structured Rule System Reference
-
-#### Enhanced AI-Assisted Development Rules
-For detailed, structured guidance on common VHDL development patterns and GHDL testbench issues, refer to the enhanced rule system:
-
-- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Structured synthesizable VHDL tips with Problem/Cause/Solution patterns
-- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - Structured GHDL testbench development tips
-- **`ai-workflow/ng/README-index.md`** - Index and overview of the structured rule system
-
-#### Key Features of the Structured Rule System
-- **Machine-friendly format**: Problem/Cause/Solution/Pattern structure for AI agents
-- **Quick Index**: Error message lookup for rapid problem resolution
-- **Canonical patterns**: Exact code snippets for common scenarios
-- **Cross-references**: Links to detailed documentation in HTML comments
-- **Agent contributions**: Built-in mechanism for AI agents to contribute new tips
-
-#### Integration with Existing Rules
-The structured rule system complements these workspace rules by providing:
-- **Implementation details** for the architectural patterns defined here
-- **Common pitfalls** and their solutions
-- **GHDL-specific guidance** for testbench development
-- **Verilog portability patterns** for synthesizable code
-
-### Questions for Clarification
-When working on this project, consider asking:
-1. What is the target frequency and timing requirements?
-2. Are there specific power constraints or clock gating requirements?
-3. What is the target FPGA/ASIC technology?
-4. Are there specific verification requirements beyond the basic testbench rules?
-5. What are the interface requirements with other modules?
-6. Are there specific naming conventions for internal signals?
-7. What are the reset requirements (synchronous vs asynchronous)?
-8. Are there specific area or resource constraints?
+**GHDL**: Always use `--std=08` flag
 
 ---
 
-## Tiered Rule System
+## 📖 For More Details
 
-The project uses a **three-tier rule system** to balance Verilog portability with practical VHDL development needs:
-
-### **Tier 1: Strict RTL Rules** 
-**Applies to**: `common/`, `core/`, `top/` directories
-
-- **Strict Verilog portability** - All code must convert cleanly to Verilog
-- **Forbidden**: Enumeration types, subtype constraints, complex functions
-- **Required**: std_logic_vector state encoding, explicit bit widths
-- **Purpose**: Synthesizable RTL that ports directly to Verilog
-
-### **Tier 2: Relaxed Data Definition Rules**
-**Applies to**: `datadef/` directories
-
-- **Relaxed rules** for pure data structure definitions
-- **Allowed**: Array types, complex constants, data validation functions
-- **Forbidden**: Clock-dependent operations, state machines, RTL logic
-- **Required**: Verilog conversion strategy documentation, `cfg_*` naming
-- **Purpose**: Data structures and utilities that can be manually converted
-
-### **Tier 3: Full VHDL-2008 Rules**
-**Applies to**: `tb/` directories  
-
-- **Full VHDL-2008 features** allowed
-- **No portability constraints** - simulation-only code
-- **Purpose**: Comprehensive testbenches and verification
-
-### Rule Selection Guidelines
-
-**Use Tier 1** for:
-- All synthesizable RTL modules
-- Interfaces between modules  
-- Platform-specific implementations
-
-**Use Tier 2** for:
-- LUT definitions and data structures
-- Configuration constants and parameters
-- Data validation utilities
-- Pure mathematical functions
-
-**Use Tier 3** for:
-- Testbenches and verification code
-- Simulation-only utilities
-- Debug and analysis functions
+All comprehensive documentation, patterns, examples, and guidelines are in Serena:
+- Run `mcp__serena__list_memories` to see all available memories
+- Run `mcp__serena__read_memory` with memory name to read specific content
+- See `CLAUDE.md` for human-readable project overview
 
 ---
 
-## Rules Application
+## 🔄 Version History
 
-```yaml
-rules:
-  # Tier 1: Strict RTL Rules (common/, core/, top/)
-  tier1_rtl:
-    directories: ["common", "core", "top"]
-    coding_standards: "strict_verilog_portability"
-    forbidden_features:
-      - "enumeration_types"
-      - "subtype_constraints" 
-      - "records_in_ports"
-      - "wait_statements_in_rtl"
-      - "after_delays"
-      - "complex_functions"
-    required_features:
-      - "std_logic_vector_state_encoding"
-      - "explicit_bit_widths"
-      - "synchronous_processes"
-    naming_conventions:
-      signals: ["ctrl_*", "cfg_*", "stat_*"]
-      
-  # Tier 1 Top Layer: Direct Instantiation Rules
-  tier1_top_layer:
-    directories: ["top"]
-    additional_requirements:
-      - "direct_instantiation_mandatory"
-      - "entity_work_module_name_pattern"
-      - "no_component_declarations"
-    instantiation_pattern: "entity WORK.module_name"
-      
-  # Tier 2: Relaxed Data Definition Rules (datadef/)  
-  tier2_datadef:
-    directories: ["datadef"]
-    coding_standards: "relaxed_for_data_structures"
-    allowed_features:
-      - "record_types_for_data_organization"
-      - "array_type_definitions"
-      - "complex_constants"
-      - "data_validation_functions"
-      - "function_overloading"
-      - "complex_utility_functions"
-    forbidden_features:
-      - "clock_dependent_operations"
-      - "state_machines"
-      - "rtl_logic"
-    required_features:
-      - "cfg_prefix_for_constants"
-      - "verilog_conversion_documentation"
-      - "no_synthesizable_logic"
-      - "records_designed_for_verilog_conversion"
-    naming_conventions:
-      constants: ["cfg_*"]
-      
-  # Tier 3: Full VHDL-2008 Rules (tb/)
-  tier3_testbench:
-    directories: ["tb"]
-    coding_standards: "full_vhdl_2008"
-    allowed_features: "all_vhdl_2008_features"
-    forbidden_features: []
-    required_outputs:
-      success: "ALL TESTS PASSED"
-      failure: "TEST FAILED"
-      completion: "SIMULATION DONE"
-      
-  # Global Architecture Rules
-  architecture:
-    required_dirs: ["common", "core"] 
-    optional_dirs: ["datadef", "top", "tb"]
-    structure_validation: true
-```
+- **v3.0** (2025-10-22): Migrated to Serena-first approach, CocotB standard
+- **v2.0** (Previous): Comprehensive inline rules (deprecated)
+- **v1.0** (Original): Initial rule set
 
 ---
-*For detailed patterns and troubleshooting, see the ng/ structured tip files.*
+
+**Note**: This file is intentionally minimal. The full project knowledge base lives in Serena memories, which are version controlled, maintained, and accessible to all AI agents.

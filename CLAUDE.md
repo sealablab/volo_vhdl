@@ -15,6 +15,41 @@ Before making changes, consult these files:
 - **`tests/README.md`** - CocotB testing framework (NEW - preferred for all tests)
 - **`tests/conftest.py`** - Shared CocotB test utilities
 
+## Fresh Context Window Checklist
+
+When starting with a fresh context window:
+
+### 1. Check Serena Onboarding Status
+```
+mcp__serena__check_onboarding_performed
+```
+This will list all available memories. Don't read them all immediately - just be aware of what exists.
+
+### 2. Verify Git State
+- Current branch: `git branch --show-current`
+- Working tree: `git status` (should be clean)
+- Any stashed work: `git stash list`
+
+### 3. Understand Current Testing Framework
+- **Standard**: CocotB (Python-based, async/await)
+- **Location**: `tests/` directory
+- **Reference**: `tests/test_clk_divider_core.py` (7 tests passing)
+- **⚠️ DO NOT**: Create new GHDL testbenches (deprecated)
+
+### 4. Essential Serena Memories
+Read these as needed for your task:
+- `cocotb_testing_guide` - Testing framework (NEW standard)
+- `coding_standards` - VHDL rules and tiered system
+- `design_patterns` - Common patterns and implementations
+- `codebase_structure` - Module organization
+- `tech_stack` - Tools and platform info
+
+### 5. Key Documentation Files
+- `CLAUDE.md` - This file (project overview)
+- `AGENTS.md` - Build commands and quick start
+- `tests/README.md` - CocotB testing guide
+- `.cursor/rules.mdc` - Points to Serena memories (source of truth)
+
 ## Build and Test Commands
 
 ### CocotB Testing (Preferred - New Standard)
