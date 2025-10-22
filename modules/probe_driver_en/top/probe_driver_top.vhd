@@ -72,10 +72,14 @@ begin
     
     -- Direct instantiation of clk_divider_core (required for top layer)
     CLK_DIVIDER: entity work.clk_divider_core
+        generic map (
+            MAX_DIV => 256
+        )
         port map (
             clk => Clk,
             rst_n => not Reset,
-            div_sel => cfg_clk_div_sel,
+            enable => '1',  -- Always enabled (probe_driver has its own enable)
+            div_sel => x"0" & cfg_clk_div_sel,  -- Extend 4-bit to 8-bit
             clk_en => clk_en_internal,
             stat_reg => clk_div_status
         );
