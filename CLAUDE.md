@@ -12,16 +12,30 @@ Before making changes, consult these files:
 - **`.cursor/rules.mdc`** - Complete coding standards and architecture rules
 - **`AGENTS.md`** - Concise agent guidelines and build commands
 - **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
-- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns
-- **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
+- **`tests/README.md`** - CocotB testing framework (NEW - preferred for all tests)
+- **`tests/conftest.py`** - Shared CocotB test utilities
 
 ## Build and Test Commands
+
+### CocotB Testing (Preferred - New Standard)
+```bash
+cd tests/
+make TEST_MODULE=clk_divider_core      # Run specific module tests
+make list-tests                        # List available test modules
+make clean                             # Clean test artifacts
+make waves                             # View waveforms (if GTKWave installed)
+
+# Environment variables
+WAVES=1                    # Enable waveform dump (default)
+WAVES=0                    # Disable waveforms for faster tests
+COCOTB_LOG_LEVEL=DEBUG     # Set log level
+```
 
 ### Central Build System (from `modules/` directory)
 ```bash
 # Build all modules with dependency resolution
 cd modules
-make clean && make compile && make test
+make clean && make compile
 
 # List all available modules
 make list-modules
@@ -30,21 +44,10 @@ make list-modules
 make compile-single-module MODULE_NAME=SimpleWaveGen
 ```
 
-### Module-Level Build (from `modules/<module_name>/` directory)
-```bash
-# Clean, compile, and test a single module
-make clean && make && make test
-
-# Run specific testbench
-make test-<testbench_name>
-
-# Show help for module-specific targets
-make help
-```
-
 ### GHDL Settings
 - **Standard**: Always use `--std=08` for VHDL-2008
-- **Compilation order**: Packages → Core → Top → Testbenches
+- **Usage**: Simulation backend for CocotB (not for direct testbench writing)
+- **Compilation order**: Packages → Core → Top
 - **Work library**: Unified work library shared across modules
 
 ## Module Architecture
@@ -178,54 +181,43 @@ constant DONE_STATE   : std_logic_vector(1 downto 0) := "10";
 signal current_state : std_logic_vector(1 downto 0);
 ```
 
-## Testbench Requirements
+## Testing Requirements
 
-### 4-Layer Testing Architecture (Mandatory)
+### CocotB Tests (Preferred - New Standard)
 
-**Layer 1: Interface Testing**
-- Test WHAT the module does, not HOW
-- Focus on status register bits and external behavior
-- No assumptions about internal state machine
+⚠️ **DO NOT CREATE NEW GHDL TESTBENCHES** - Use CocotB instead
 
-**Layer 2: Validation Testing**
-- Test parameter validation and error handling
-- Invalid inputs should trigger fault/alarm status bits
+**Test Structure:**
+- **Location**: `tests/test_<module_name>.py`
+- **Framework**: Python-based with async/await syntax
+- **Utilities**: Shared helpers in `tests/conftest.py`
+  - `setup_clock()`, `reset_active_low()`, `count_pulses()`, etc.
+- **Example**: See `tests/test_clk_divider_core.py` (complete reference)
 
-**Layer 3: Functional Testing**
-- Test core functionality and behavior
-- Verify main operational features
+**Basic Template:**
+```python
+import cocotb
+from cocotb.triggers import RisingEdge, ClockCycles
+from conftest import setup_clock, reset_active_low
 
-**Layer 4: Generic Parameter Testing**
-- Test different generic configurations
-- Edge cases around parameter values
+@cocotb.test()
+async def test_reset_behavior(dut):
+    """Test 1: Reset Behavior"""
+    dut._log.info("Test 1: Reset Behavior")
 
-### Required Output Format
+    await setup_clock(dut)
+    dut.enable.value = 1
+    await reset_active_low(dut)
 
-All testbenches must print:
-```vhdl
-report "ALL TESTS PASSED" severity note;  -- On success
-report "TEST FAILED" severity error;       -- On failure
-report "SIMULATION DONE" severity note;    -- Always at end
+    assert dut.output.value == 0, "Output should be 0 after reset"
+    dut._log.info("✓ Reset test PASSED")
 ```
 
-### Termination
+### Legacy GHDL Tests (Deprecated)
 
-Use one of these patterns:
-```vhdl
--- Method 1: Clean stop (preferred)
-std.env.stop(0);
-
--- Method 2: Assertion failure
-assert false report "Simulation completed" severity failure;
-```
-
-### Testbench Location
-
-Place testbenches in `tb/` subdirectories matching the tested layer:
-- `tb/common/` - Tests for common packages
-- `tb/datadef/` - Tests for datadef packages
-- `tb/core/` - Tests for core modules
-- `tb/top/` - Integration tests for top-level modules
+⚠️ **Status**: Being phased out - DO NOT CREATE NEW GHDL TESTBENCHES
+- Old documentation archived in `archive/ghdl_testbench_docs_*/`
+- Existing GHDL tests are being migrated to CocotB
 
 ## Tiered Rule System
 

@@ -4,15 +4,24 @@ This file provides guidance to agents when working with code in this repository.
 
 ## Essential Resources (Source of Truth)
 - **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
-- **`ai-workflow/ng/README-ghdl-testbench-tips-ng.md`** - GHDL testbench patterns  
-- **`ai-workflow/ng/README-layered-testbench-ng.md`** - 4-layer testbench architecture
+- **`tests/README.md`** - CocotB testing framework (NEW - preferred for new tests)
+- **`tests/conftest.py`** - Shared CocotB utilities and fixtures
 
 ## Build/Test Commands
-- **Compile module**: `cd modules/<module_name> && make`
-- **Run all tests**: `cd modules/<module_name> && make test`
-- **Run single test**: `cd modules/<module_name> && make test-<testbench_name>`
-  - Example: `make test-probe_driver_interface`
-- **GHDL flags**: Always use `--std=08` for VHDL-2008 compatibility
+
+### CocotB Tests (Preferred - New Standard)
+```bash
+cd tests/
+make TEST_MODULE=clk_divider_core      # Run specific module tests
+make list-tests                        # List available test modules
+make clean                             # Clean test artifacts
+make waves                             # View waveforms (if GTKWave installed)
+```
+
+### Legacy GHDL Tests (Deprecated - Being Phased Out)
+⚠️ **DO NOT CREATE NEW GHDL TESTBENCHES** - Use CocotB instead
+- Legacy tests exist in some modules but are being migrated to CocotB
+- See `archive/` for archived GHDL testbench documentation
 
 ## Core Rules
 - **VHDL-2008 with Verilog portability** - Avoid VHDL-only features
@@ -35,12 +44,17 @@ modules/module_name/
     └── top/        # Integration tests
 ```
 
-## Testbench Requirements
-- **Location**: Match tested layer (`tb/core/`, `tb/top/`, etc.)
-- **Naming**: `<name>_tb.vhd` with entity `<name>_tb`
-- **Output**: Print `'ALL TESTS PASSED'` or `'TEST FAILED'` + `'SIMULATION DONE'`
-- **Architecture**: Use 4-layer approach (see referenced file)
-- **Termination**: Use `std.env.stop(0)` or `assert false report "Simulation completed" severity failure`
+## Testing Requirements
+
+### CocotB Tests (Preferred)
+- **Location**: `tests/test_<module_name>.py`
+- **Framework**: Use CocotB with shared utilities from `conftest.py`
+- **Utilities**: `setup_clock()`, `reset_active_low()`, `count_pulses()`, etc.
+- **Structure**: One test per `@cocotb.test()` decorated async function
+- **Assertions**: Use Python `assert` statements with clear messages
+
+### Legacy GHDL Tests (Deprecated)
+⚠️ **DO NOT CREATE** - These are being phased out in favor of CocotB
 
 ## New Tips Protocol
 - **Append only** below `------- New Tips here-------` in referenced files
