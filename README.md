@@ -1,335 +1,352 @@
 # Volo VHDL Project
 
-Johnny's evolving AI VHDL generation workflow designed for **VHDL-2008 with Verilog portability**.
+**VHDL-2008 development for Moku FPGA devices with AI-powered workflow**
 
-## 🚀 **Working Example: SimpleWaveGen Bitstream**
+This project demonstrates a modern VHDL development approach combining:
+- **Serena MCP** - AI agent knowledge management system
+- **CocotB** - Python-based hardware verification
+- **GHDL** - Open-source VHDL simulator
+- **Standardized architecture** - Consistent module organization
 
-**✅ SUCCESSFULLY DEPLOYED AND TESTED ON MOKU DEVICE!**
+## 🚀 Quick Start
 
-We have a **working, tested bitstream** that demonstrates the complete VHDL development workflow:
+### For AI Agents (Claude Code, Cursor, etc.)
 
-**[📦 Download SimpleWaveGen-001-b.tar (2.0MB)](static/SimpleWaveGen-001-b.tar)**
+**Essential files to read:**
+1. **`CLAUDE.md`** - Project overview and quick reference
+2. **`AGENTS.md`** - Build commands and agent guidelines
+3. **`.cursor/rules.mdc`** - Points to Serena memories (source of truth)
 
-This bitstream generates configurable sine, square, and triangle waveforms with real-time control through the Moku Custom Core interface. See our complete development journey in **[GHDL-to-MCC-example.md](GHDL-to-MCC-example.md)** - from GHDL testing to successful deployment in ~4 hours.
+**Check Serena onboarding status:**
+```bash
+# Use Serena MCP tool to check available memories
+mcp__serena__check_onboarding_performed
+```
 
-**Key Features:**
-- ✅ **Working MCC Integration** - Deployed and tested on Moku device
-- ✅ **VHDL-2008 Compliance** - Following project coding standards  
-- ✅ **Verilog Portability** - Designed for easy conversion
-- ✅ **Complete Testing** - All layers covered with testbenches
-- ✅ **Real Hardware** - Not just simulation - actual working device
+**Available Serena memories** (read as needed):
+- `project_overview.md` - High-level project context
+- `codebase_structure.md` - Directory organization
+- `coding_standards.md` - VHDL rules and tiered system
+- `design_patterns.md` - Common implementation patterns
+- `ghdl_patterns_and_solutions.md` - Build and compilation tips
+- `cocotb_testing_guide.md` - Testing framework (current standard)
+- `tech_stack.md` - Tools and platform information
+- `task_completion_checklist.md` - Workflow checklist
 
-## Project Structure
+### For Humans
+
+**Read the documentation:**
+- `CLAUDE.md` - Project overview and quick start
+- `AGENTS.md` - Build commands and development workflow
+- `tests/README.md` - CocotB testing guide
+
+**Build and test:**
+```bash
+# Run CocotB tests (preferred)
+cd tests/
+make TEST_MODULE=clk_divider_core
+
+# Build all modules
+cd modules/
+make clean && make compile
+```
+
+## 🎯 Working Example: SimpleWaveGen
+
+**✅ Successfully deployed to Moku hardware!**
+
+The `modules/SimpleWaveGen/` directory contains a complete reference implementation:
+- Waveform generation (sine, square, triangle)
+- Platform integration with Moku CustomWrapper
+- Direct instantiation pattern
+- CocotB tests (in development)
+
+Download the working bitstream: `static/SimpleWaveGen-001-b.tar` (2.0MB)
+
+## 📁 Project Structure
 
 ```
 volo_vhdl/
-├─ .cursor/rules.mdc          # Project rules for AI agents
-├─ AGENTS.md                  # Comprehensive agent guidelines
-├─ ai-workflow/               # AI-powered development workflow
-│  ├─ prompts/                # AI prompts for different phases
-│  ├─ templates/              # Input form templates
-│  ├─ examples/               # Complete workflow examples
-│  └─ README.md               # AI workflow guide
-├─ modules/                   # VHDL modules with standardized structure
-│  ├─ README.md              # Module structure documentation
-│  └─ [module_name]/
-│      ├─ datadef/           # Data structure definitions (Tier 2 rules)
-│      ├─ common/            # RTL utility packages (Tier 1 rules)
-│      ├─ core/              # Main algorithmic/logic implementation (Tier 1 rules)
-│      ├─ top/               # Top-level integration (Tier 1 rules, optional)
-│      └─ tb/                # Testbenches (Tier 3 rules)
-├─ templates/                 # Reusable VHDL templates
-│  └─ README.md              # Template guidelines
-└─ docs/                      # Additional documentation
-    ├─ STYLE.md              # Coding style guidelines
-    ├─ REGISTERS.md          # ctrl_/cfg_/stat_ rules + reset semantics
-    └─ WORKFLOW.md           # How to use templates with Cursor
+├── .serena/              # Serena MCP memories (SOURCE OF TRUTH)
+│   └── memories/         # Knowledge base for AI agents
+├── .cursor/              # Cursor AI configuration
+│   └── rules.mdc         # Points to Serena memories
+├── CLAUDE.md             # Claude Code guidance
+├── AGENTS.md             # Agent guidelines and build commands
+├── README.md             # This file
+├── modules/              # VHDL modules (main development area)
+│   ├── volo_common/      # Shared utilities and packages
+│   ├── EMFI-Seq/         # Active module example
+│   ├── SimpleWaveGen/    # Reference implementation (deployed)
+│   ├── Makefile          # Central build system
+│   ├── Makefile.deps     # Module dependencies
+│   └── Makefile.shared   # Shared build rules
+├── tests/                # CocotB testing framework (PREFERRED)
+│   ├── Makefile          # Test build system
+│   ├── conftest.py       # Shared test utilities
+│   ├── test_*.py         # Test modules
+│   └── README.md         # Testing guide
+├── static/               # Deployment artifacts (bitstreams)
+└── archive/              # Legacy documentation (for reference)
 ```
 
-## Quick Start
+## 🏗️ Module Architecture
 
-1. **Read the Rules**: Start with `.cursor/rules.mdc` and `AGENTS.md`
-2. **Use AI Workflow**: Follow the AI-powered development workflow in `ai-workflow/`
-3. **Follow the Structure**: Use the standardized module layout in `modules/`
-4. **Use Templates**: Leverage pre-built templates in `templates/`
-5. **Build and Test**: Use the Makefile in each module directory for compilation and testing
-6. **Maintain Standards**: Follow VHDL-2008 with Verilog portability guidelines
-7. **Direct Instantiation**: Use `entity WORK.module_name` pattern for all top-level files
+Every VHDL module follows this standardized structure:
 
-## Key Features
-
-- **AI-Powered Development**: Complete workflow from requirements to VHDL generation
-- **Verilog Portable**: All VHDL code designed for easy conversion
-- **Tiered Rule System**: Three-tier approach balancing portability with practicality
-- **Standardized Architecture**: Consistent module structure across the project
-- **AI Agent Ready**: Comprehensive guidelines for AI-assisted development
-- **Template Driven**: Reusable templates following project standards
-- **Direct Instantiation**: Mandatory `entity WORK.module_name` pattern for top-level files
-- **Platform Interface Packages**: Standardized register interface design patterns
-- **Automated Build System**: Centralized dependency management and compilation
-
-## Tiered Rule System
-
-The project uses a **three-tier rule system** to balance Verilog portability requirements with practical VHDL development needs:
-
-- **Tier 1 (Strict RTL)**: `common/`, `core/`, `top/` - Strict Verilog portability rules
-- **Tier 2 (Data Definitions)**: `datadef/` - Relaxed rules for LUTs and data structures  
-- **Tier 3 (Testbenches)**: `tb/` - Full VHDL-2008 features allowed
-
-This approach ensures synthesizable RTL maintains full Verilog compatibility while allowing appropriate flexibility for data definitions and verification code. See `.cursor/rules.mdc` for complete details.
-
-## 🚀 **AI-Powered Development Workflow**
-
-The project features a **comprehensive AI workflow** that enables rapid, consistent VHDL development:
-
-### **Workflow Phases**
-1. **Interface Definition**: AI-guided requirements refinement and interface specification
-2. **Code Generation**: Automated VHDL generation from refined requirements (coming soon)
-3. **Validation**: Automated testing and standards compliance checking (coming soon)
-
-### **Key Benefits**
-- **Rapid Development**: Generate VHDL from requirements in minutes, not hours
-- **Consistent Quality**: All code follows VOLO standards automatically
-- **Interactive Refinement**: AI guides you through requirements clarification
-- **Standards Compliance**: Built-in validation ensures Verilog portability
-- **Professional Output**: Clean, maintainable code with proper documentation
-
-### **Getting Started with AI Workflow**
-1. **Copy a Template**: Start with `ai-workflow/templates/requirements/BLANK-requirements-template.md`
-2. **Fill in Requirements**: Describe your module's purpose and interface
-3. **Run AI Prompt**: Use `ai-workflow/prompts/interface-refinement/PROMPT-02--interface refinement.md`
-4. **Iterate and Refine**: Let AI guide you to complete requirements
-5. **Generate Code**: Get VHDL constants, entity, and testbench automatically
-
-### **Complete Examples**
-- **ProbeHero6**: Basic workflow demonstration
-- **ProbeHero7**: Enhanced workflow with units convention
-- **More Coming**: Additional examples for different module types
-
-See **[ai-workflow/README.md](ai-workflow/README.md)** for complete documentation and examples.
-
----
-
-## Platform Interface Package Approach
-
-The project introduces a **standardized platform interface package approach** for register interface design:
-
-### Key Components
-- **Register Field Constants**: Bit position definitions for all register fields
-- **Validation Functions**: Safety-critical parameter validation with fault triggering
-- **Field Extraction**: Functions to extract specific fields from register data
-- **Status Assembly**: Automatic construction of status registers from internal signals
-- **Fault Aggregation**: Centralized fault handling across multiple sources
-
-### Benefits
-- **Consistency**: Standardized approach across all modules
-- **Maintainability**: Centralized register interface logic
-- **Verilog Compatibility**: All functions use standard types
-- **Reusability**: Can be applied to other modules requiring register interfaces
-- **Safety**: Built-in validation prevents invalid configurations
-
-### Example Usage
-```vhdl
--- Import the platform interface package
-use work.platform_interface_pkg.all;
-
--- Validate wave selection (safety-critical)
-if is_wave_select_valid(wave_select) = '0' then
-    fault_out <= '1';  -- Trigger fault for invalid selection
-end if;
-
--- Extract control fields from register data
-global_enable <= extract_ctrl_global_enable(ctrl0_data);
-div_sel <= extract_clk_div_sel(ctrl0_data);
-
--- Assemble status register
-status_reg <= assemble_status0_reg(enabled, wave_select);
+```
+modules/<module_name>/
+├── common/      # Shared utilities (Tier 1: strict RTL)
+├── datadef/     # Data structures, LUTs (Tier 2: relaxed)
+├── core/        # Pure algorithmic logic (Tier 1: strict RTL)
+├── top/         # Platform integration (Tier 1: strict RTL)
+├── tb/          # GHDL testbenches (DEPRECATED - use CocotB)
+├── Makefile     # Module build rules
+└── README.md    # Module documentation
 ```
 
-## Build System
+### Layer Responsibilities
 
-The project features an **automated build system** that automatically detects and builds all modules:
+**Common** (`common/*.vhd`):
+- Configuration constants
+- Platform interface packages
+- Validation functions
 
-### Centralized Build Management
+**Datadef** (`datadef/*.vhd`):
+- LUT definitions
+- Complex data structures
+- Records (with Verilog conversion strategy)
+
+**Core** (`core/*.vhd`):
+- Pure logic implementation
+- FSMs using `std_logic_vector` (no enums)
+- Standard control signals: `clk`, `reset`, `enable`, `clk_en`
+
+**Top** (`top/*.vhd`):
+- Platform integration (Moku CustomWrapper)
+- **REQUIRED**: Direct instantiation (`entity WORK.module_name`)
+- Register mapping
+
+## 🧪 Testing Framework
+
+### CocotB (Current Standard)
+
+**Location**: `tests/` directory
+
+**Run tests:**
 ```bash
-# From modules/ directory - build all modules with dependencies
-cd modules
-make clean && make compile && make test
+cd tests/
+make TEST_MODULE=clk_divider_core      # Run specific module
+make list-tests                        # List available tests
+make clean                             # Clean artifacts
+```
 
-# List all available modules
-make list-modules
+**Example test:** `tests/test_clk_divider_core.py` (7 tests passing)
 
-# Build specific module
+**Reference:** See `tests/README.md` and Serena memory `cocotb_testing_guide.md`
+
+### GHDL Testbenches (Deprecated)
+
+**Status**: Being phased out - DO NOT create new GHDL testbenches
+
+**Migration**: All new tests use CocotB framework
+
+**Archive**: Old GHDL patterns preserved in `ghdl_patterns_and_solutions.md` Serena memory
+
+## 🛠️ Build System
+
+### CocotB Testing
+```bash
+cd tests/
+make TEST_MODULE=clk_divider_core      # Run specific module tests
+WAVES=1 make TEST_MODULE=clk_divider_core  # Enable waveforms
+```
+
+### Central Module Build
+```bash
+cd modules/
+make clean && make compile             # Build all modules
+make list-modules                      # List available modules
 make compile-single-module MODULE_NAME=SimpleWaveGen
 ```
 
-### Module-Level Build
-Each module includes a comprehensive Makefile for GHDL compilation and testing:
-
+### GHDL Commands
 ```bash
-# Navigate to a module directory
-cd modules/probe_driver
-
-# Clean previous builds
-make clean
-
-# Compile all modules and testbenches
-make
-
-# Run all testbenches
-make test
-
-# Run individual testbenches
-make test-probe_driver_interface
-make test-PercentLut_pkg
-make test-Moku_Voltage_pkg
-
-# Quick test (main testbench only)
-make quick-test
-
-# Show available targets
-make help
+# Always use VHDL-2008 standard
+ghdl -a --std=08 --work=work <file.vhd>   # Analyze
+ghdl -e --std=08 --work=work <entity>     # Elaborate
+ghdl -r --std=08 --work=work <entity>     # Run
 ```
 
-The Makefile automatically handles:
-- Dependency-ordered compilation (packages → core → top → testbenches)
-- GHDL VHDL-2008 standard compliance
-- Comprehensive test execution with pass/fail reporting
-- Clean build artifact management
+## 📚 Knowledge Management
 
-## Changelog
+### Serena MCP System
 
-### [Unreleased] - 2025-01-27
-#### Added
-- **SimpleWaveGen Module**: Complete waveform generation module with automated build system integration
-  - **Standardized Architecture**: Follows project directory structure (common, core, top, tb)
-  - **Platform Interface Package**: `platform_interface_pkg.vhd` for register interface management
-  - **Minimal Testbench Strategy**: Core testbench for functionality, top testbench for integration
-  - **Automated Build Integration**: Automatically detected and built by central build system
-  - **VHDL-2008 Compliance**: Full compatibility with GHDL and Verilog portability
-  - **Direct Instantiation**: Uses `entity WORK.module_name` pattern as required
-  - **Comprehensive Makefile**: Dependency management and test execution
+The project uses **Serena MCP** (Model Context Protocol) for knowledge management:
 
-- **Platform Interface Package Approach**: New standardized method for register interface design
-  - **Register Field Management**: Bit position constants and field extraction functions
-  - **Safety-Critical Validation**: Built-in parameter validation with fault triggering
-  - **Status Register Assembly**: Automatic status register construction from internal signals
-  - **Amplitude Scaling**: Integrated amplitude scaling with signed arithmetic
-  - **Fault Aggregation**: Centralized fault handling across multiple sources
-  - **Verilog Compatibility**: All functions use standard types for easy conversion
-  - **Reusable Pattern**: Can be applied to other modules requiring register interfaces
+**Why Serena?**
+- **Single source of truth** - All knowledge in `.serena/memories/`
+- **Agent-friendly** - Structured, searchable memories
+- **Version controlled** - Knowledge evolves with code
+- **Cross-session** - Knowledge persists across AI agent sessions
 
-- **GHDL Testbench Development Guide**: Comprehensive guide for VHDL testbench development with GHDL
-  - Common compilation issues and solutions (procedure parameters, signal vs variable confusion)
-  - Infinite loop prevention using `std.env.stop()` instead of `wait;`
-  - Best practices for testbench design and organization
-  - Debugging techniques and GHDL-specific considerations
-  - Practical examples and quick reference commands
-  - Clear guidance on when to use complex timeout logic vs simple termination
+**Available memories:**
+- `coding_standards.md` - VHDL rules, tiered system, portability
+- `design_patterns.md` - FSMs, control signals, register interfaces
+- `ghdl_patterns_and_solutions.md` - Compilation, debugging, testbenches
+- `cocotb_testing_guide.md` - Testing framework patterns
+- `codebase_structure.md` - Directory organization
+- `tech_stack.md` - Tools, platform, dependencies
 
-- **Direct Instantiation Requirements**: Mandatory direct instantiation for all top-level files
-  - **Top Layer Files**: All `modules/**/top/*.vhd` files must use `entity WORK.module_name` pattern
-  - **Top Layer Testbenches**: All `modules/**/tb/top/*.vhd` files must use direct instantiation
-  - **Core Layer Testbenches**: Recommended to use direct instantiation for consistency
-  - **Benefits**: Better dependency management, earlier error detection, cleaner code
-  - **Pattern**: `U1: entity WORK.module_name port map (...)` instead of component declarations
-  - **Updated Guidelines**: Both AGENTS.md and .cursor/rules.mdc updated with comprehensive requirements
+**How to use:**
+```bash
+# AI agents: Use Serena MCP tools
+mcp__serena__list_memories
+mcp__serena__read_memory memory_file_name="coding_standards"
 
-- **Probe Configuration Voltage Integration**: Enhanced `Probe_Config_pkg` with voltage-based configuration interface
-  - Voltage-based configuration using intuitive voltage values (e.g., 1.0V, 2.5V)
-  - Digital implementation interface for RTL compatibility
-  - Conversion functions between voltage and digital representations
-  - Comprehensive validation and utility functions
-  - Full integration with `Moku_Voltage_pkg` for Moku platform compatibility
-  - 18 comprehensive test cases covering all functionality
-  - Maintains backward compatibility with existing digital constants
+# Humans: Read directly
+cat .serena/memories/coding_standards.md
+```
 
-#### Changed
-- **Probe_Config_pkg**: Complete redesign to support both voltage and digital interfaces
-  - Primary interface now uses voltage values for configuration
-  - Legacy digital constants maintained for backward compatibility
-  - Enhanced validation with tolerance-based voltage comparison (1mV tolerance)
+## 🎯 Coding Standards
 
-#### Technical Details
-- **Voltage Range**: Full Moku platform support (-5V to +5V)
-- **Precision**: 1mV tolerance for voltage comparisons
-- **Performance**: No floating-point operations in RTL critical path
-- **Verilog Compatibility**: Maintained through conversion functions
+### VHDL-2008 with Verilog Portability
 
-### [v0.2.0] - 2025-01-27
-#### Added
-- **Moku_Voltage_pkg**: Comprehensive voltage conversion utilities for Moku platform
-  - 16-bit signed ADC/DAC interface support (-32768 to +32767)
-  - Voltage range: -5.0V to +5.0V with ~305 µV resolution
-  - Conversion functions: voltage ↔ digital with automatic range validation
-  - Testbench convenience functions for voltage comparison and validation
-  - Common voltage reference points (1V, 2.4V, 2.5V, 3V, 3.3V, 5V)
-  - Comprehensive testbench with 50+ test cases
+**Three-tier rule system:**
 
-#### Added
-- **PercentLut_pkg**: Percentage-based lookup table utilities
-  - Efficient percentage-to-value conversion for probe driver applications
-  - Comprehensive testbench with edge case coverage
-  - Integration with Moku voltage specifications
+**Tier 1 (Strict RTL)** - `common/`, `core/`, `top/`:
+- Only `std_logic`, `std_logic_vector`, `unsigned`, `signed`
+- No enumeration types (use `std_logic_vector` with constants)
+- No records in port declarations
+- **MANDATORY**: Direct instantiation in top layer
 
-#### Added
-- **Build System**: Comprehensive Makefile-based build system for each module
-  - Dependency-ordered compilation (packages → core → top → testbenches)
-  - GHDL VHDL-2008 standard compliance
-  - Comprehensive test execution with pass/fail reporting
-  - Clean build artifact management
+**Tier 2 (Relaxed Data)** - `datadef/`:
+- Records allowed for data organization
+- LUTs and complex constants
+- Must document Verilog conversion strategy
 
-### [v0.1.0] - 2025-01-27
-#### Added
-- **Project Foundation**: Initial VHDL project structure with Verilog portability focus
-- **Standardized Module Layout**: Common, datadef, core, top, and testbench directories
-- **VHDL-2008 Standards**: Strict coding standards for maximum Verilog compatibility
-- **Template System**: Pre-built templates for common VHDL patterns
-- **Documentation**: Comprehensive guidelines and best practices
+**Tier 3 (Full VHDL-2008)** - `tb/` (deprecated):
+- All VHDL-2008 features allowed
+- Use CocotB instead for new tests
 
-## Recent Updates
+### Direct Instantiation (MANDATORY)
 
-The `PercentLut_pkg` has been enhanced with full integration to `Moku_Voltage_pkg`, providing seamless voltage-to-LUT conversion for the Moku platform's 16-bit signed ADC/DAC interfaces.
-
-#### Key Features
-- **Voltage Range Support**: Both unipolar (0V to +5V) and bipolar (-5V to +5V) ranges
-- **Backward Compatibility**: All existing functions work unchanged
-- **Predefined LUTs**: Ready-to-use constants for common voltage ranges
-- **Verilog Compatible**: All functions use standard VHDL types
-
-#### Usage Examples
+All top-level files must use direct instantiation:
 
 ```vhdl
--- Import the packages
-use work.PercentLut_pkg.all;
-use work.Moku_Voltage_pkg.all;
+-- ✅ REQUIRED
+U1: entity WORK.module_name
+    port map (
+        clk => clk,
+        rst => rst,
+        data_in => data_in,
+        data_out => data_out
+    );
 
--- Create a 0V to 5V LUT using Moku voltage conversion
-variable my_lut : percent_lut_record_t := create_moku_voltage_lut_record(5.0);
-
--- Convert 2.5V to LUT index
-variable index : natural := moku_voltage_to_percent_index(2.5); -- Returns 50
-
--- Convert LUT index back to voltage
-variable voltage : real := percent_index_to_moku_voltage(50); -- Returns 2.5V
-
--- Use predefined LUTs
-variable lookup_result : std_logic_vector(15 downto 0) := 
-    get_percentlut_value_safe(MOKU_5V_LUT, 75); -- 75% of 5V = 3.75V
-
--- Bipolar voltage conversion (-5V to +5V)
-variable bipolar_index : natural := moku_bipolar_voltage_to_percent_index(-2.5); -- Returns 25
-variable bipolar_voltage : real := percent_index_to_moku_bipolar_voltage(75); -- Returns +2.5V
-
--- Custom voltage range LUT
-variable custom_lut : percent_lut_record_t := 
-    create_voltage_percent_lut_record(0.0, 3.3); -- 0V to 3.3V range
+-- ❌ FORBIDDEN in top layer
+component module_name is ... end component;
+U1: module_name port map (...);
 ```
 
-#### Available Predefined LUTs
-- `MOKU_5V_LUT` - 0V to 5V unipolar range
-- `MOKU_3V3_LUT` - 0V to 3.3V unipolar range  
-- `MOKU_BIPOLAR_LUT` - -5V to +5V bipolar range
+### Signal Naming
 
-#### Testing
-Comprehensive testbench with 53 test cases covering all voltage integration functions, including round-trip conversion tests and boundary condition validation.
+- `ctrl_*` - Control signals (enable, reset)
+- `cfg_*` - Configuration parameters
+- `stat_*` - Status and monitoring
+
+## 🔧 Key Design Patterns
+
+### Shared Modules
+
+**`modules/volo_common/`**:
+- `volo_common_pkg.vhd` - General utilities
+- `Moku_Voltage_pkg.vhd` - Voltage conversion (16-bit ADC/DAC)
+- `Moku_Pct_pkg.vhd` - Type-safe percentage-to-voltage conversion
+- `clk_divider_core.vhd` - Clock divider with enable control
+
+### FSM Implementation
+
+Use `std_logic_vector` encoding (no enums):
+
+```vhdl
+constant IDLE_STATE   : std_logic_vector(1 downto 0) := "00";
+constant ACTIVE_STATE : std_logic_vector(1 downto 0) := "01";
+constant DONE_STATE   : std_logic_vector(1 downto 0) := "10";
+
+signal current_state : std_logic_vector(1 downto 0);
+```
+
+### Control Signal Priority
+
+1. **Reset** (`reset` or `n_reset`) - Forces safe state
+2. **Clock Enable** (`clk_en`) - Freezes sequential logic
+3. **Functional Enable** (`enable`) - Gates functional work
+
+## 📖 Documentation
+
+### For AI Agents
+- **`.cursor/rules.mdc`** - Points to Serena memories
+- **`CLAUDE.md`** - Claude Code quick reference
+- **`AGENTS.md`** - Build commands and guidelines
+- **Serena memories** - Complete knowledge base
+
+### For Humans
+- **`README.md`** - This file (project overview)
+- **`CLAUDE.md`** - Quick start and key patterns
+- **`tests/README.md`** - CocotB testing guide
+- **`modules/README.md`** - Module system documentation
+
+### Archived Documentation
+- **`archive/ai-workflow-legacy-2025-10-22/`** - Legacy AI workflow
+- **`archive/ghdl_testbench_docs_*/`** - Old GHDL testbench patterns
+
+## 🚧 Active Development
+
+**Current modules:**
+- ✅ `modules/volo_common/` - Shared utilities (stable)
+- ✅ `modules/SimpleWaveGen/` - Reference implementation (deployed)
+- 🔧 `modules/EMFI-Seq/` - EMFI sequencer (in development)
+
+**Testing migration:**
+- ✅ CocotB framework established (`tests/`)
+- ✅ Example tests passing (`test_clk_divider_core.py`)
+- 🔧 Migrating remaining GHDL testbenches to CocotB
+
+## 📜 Changelog
+
+### 2025-10-22 - Serena-First Architecture
+- Migrated all knowledge to Serena MCP memories
+- Archived legacy `ai-workflow/` directory
+- Removed obsolete modules and documentation
+- Added `Moku_Pct_pkg.vhd` with CocotB tests
+- Standardized on CocotB testing framework
+
+### 2025-01-27 - SimpleWaveGen Deployment
+- Successfully deployed SimpleWaveGen to Moku hardware
+- Platform interface package pattern established
+- Direct instantiation pattern enforced
+- GHDL testbench patterns documented
+
+### 2025-01-27 - Foundation
+- Initial VHDL-2008 project structure
+- Tiered rule system for Verilog portability
+- Standardized module architecture
+- Moku voltage conversion utilities
+
+## 🤝 Contributing
+
+**Before starting work:**
+1. Check Serena memories for existing patterns
+2. Read `CLAUDE.md` and `AGENTS.md`
+3. Follow standardized module structure
+4. Use CocotB for all new tests
+5. Use direct instantiation in top layer
+6. Update Serena memories with new learnings
+
+## 📄 License
+
+This project is part of Johnny's evolving VHDL development workflow for Moku FPGA devices.
+
+---
+
+**Key Principle**: All valuable knowledge lives in Serena memories (`.serena/memories/`). When in doubt, check there first!
