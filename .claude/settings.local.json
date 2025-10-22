@@ -7,7 +7,13 @@
       "mcp__serena__find_file",
       "mcp__serena__find_symbol",
       "mcp__serena__get_symbols_overview",
-      "mcp__serena__search_for_pattern"
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__list_memories",
+      "mcp__serena__read_memory",
+      "Bash(make compile-single-module:*)",
+      "Bash(make clean:*)",
+      "Bash(make TEST_MODULE=clk_divider_core:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

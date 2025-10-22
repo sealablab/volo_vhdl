@@ -12,11 +12,13 @@ entity CustomWrapper is
         InputA  : in  signed(15 downto 0);
         InputB  : in  signed(15 downto 0);
         InputC  : in  signed(15 downto 0);
+        InputD  : in  signed(15 downto 0);
         
         -- Output signals
         OutputA : out signed(15 downto 0);
         OutputB : out signed(15 downto 0);
         OutputC : out signed(15 downto 0);
+        OutputD : out signed(15 downto 0);
         
         -- Control registers
         Control0  : in  std_logic_vector(31 downto 0);

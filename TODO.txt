@@ -1,0 +1,10 @@
+Things to do:
+
+# create and switch to an feature/EMFI-Seq-Clk-div 
+- ask the serena mcp server to describe the current clk divider
+
+- examine the current EMFI-Seq module and suggest integration strategy
+
+..go from there :)
+
+Ask claude to integrate the clk-divider module advertised by serena into the EMFI-Seq 

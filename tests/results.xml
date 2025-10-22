@@ -1,0 +1,12 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1761114529" />
+    <testcase name="test_reset_behavior" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="36" time="0.0006251335144042969" sim_time_ns="20.0" ratio_time="31993.165522501906" />
+    <testcase name="test_divide_by_1" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="66" time="0.0003440380096435547" sim_time_ns="130.0" ratio_time="377865.2252252252" />
+    <testcase name="test_divide_by_2" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="93" time="0.0005269050598144531" sim_time_ns="250.0" ratio_time="474468.778280543" />
+    <testcase name="test_divide_by_10" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="127" time="0.0016388893127441406" sim_time_ns="1050.0" ratio_time="640677.800407332" />
+    <testcase name="test_enable_control" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="154" time="0.0005371570587158203" sim_time_ns="240.0" ratio_time="446796.6977363515" />
+    <testcase name="test_max_division" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="216" time="0.008253812789916992" sim_time_ns="5160.0" ratio_time="625165.6211906757" />
+    <testcase name="test_counter_status" classname="test_clk_divider_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_clk_divider_core.py" lineno="255" time="0.0005960464477539062" sim_time_ns="240.0" ratio_time="402653.184" />
+  </testsuite>
+</testsuites>
