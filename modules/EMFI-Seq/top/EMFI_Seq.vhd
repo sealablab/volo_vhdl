@@ -19,6 +19,9 @@ entity EMFI_Seq is
         Enable          : in  std_logic;
         ClkEn           : in  std_logic;
 
+        -- Clock Division Configuration
+        DivSel          : in  std_logic_vector(7 downto 0);
+
         -- Configuration Interface (Per-State Delays)
         DelayS1         : in  unsigned(6 downto 0);
         DelayS2         : in  unsigned(6 downto 0);
@@ -29,7 +32,8 @@ entity EMFI_Seq is
         DACOut          : out signed(15 downto 0);
         StatusOut       : out unsigned(6 downto 0);
         StateOut        : out std_logic_vector(3 downto 0);
-        MonitorOut      : out unsigned(15 downto 0)
+        MonitorOut      : out unsigned(15 downto 0);
+        DivStatOut      : out std_logic_vector(7 downto 0)
     );
 end entity EMFI_Seq;
 
@@ -41,7 +45,34 @@ architecture rtl of EMFI_Seq is
     signal dac_out_internal    : signed(15 downto 0);
     signal monitor_internal    : unsigned(15 downto 0);
 
+    -- Internal signals for clock divider
+    signal div_clk_en_internal : std_logic;
+    signal div_stat_internal   : std_logic_vector(7 downto 0);
+    signal fsm_clk_en          : std_logic;
+
 begin
+
+    -- ========================================================================
+    -- CLOCK DIVIDER
+    -- ========================================================================
+    -- Provides configurable clock division for the FSM timing
+    -- The divider's clk_en output is combined with the external ClkEn
+    CLK_DIVIDER: entity WORK.clk_divider_core
+        generic map (
+            MAX_DIV => 256
+        )
+        port map (
+            clk      => Clk,
+            rst_n    => not Reset,          -- clk_divider uses active-low reset
+            enable   => Enable,             -- Freeze divider when EMFI_Seq disabled
+            div_sel  => DivSel,
+            clk_en   => div_clk_en_internal,
+            stat_reg => div_stat_internal
+        );
+
+    -- Combine external ClkEn with divider output (AND gate)
+    -- This allows external override while also using internal division
+    fsm_clk_en <= ClkEn and div_clk_en_internal;
 
     -- ========================================================================
     -- FSM SEQUENCER CORE
@@ -50,7 +81,7 @@ begin
         port map (
             clk          => Clk,
             rst          => Reset,
-            clk_en       => ClkEn,
+            clk_en       => fsm_clk_en,     -- Combined external + divider clock enable
             en           => Enable,
             delay_s1     => DelayS1,
             delay_s2     => DelayS2,
@@ -77,5 +108,6 @@ begin
     StatusOut  <= status_internal;
     StateOut   <= state_oh_internal;
     MonitorOut <= monitor_internal;
+    DivStatOut <= div_stat_internal;    -- Clock divider counter status
 
 end architecture rtl;
