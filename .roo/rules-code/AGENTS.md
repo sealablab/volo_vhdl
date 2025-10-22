@@ -1,18 +1,31 @@
-# Project Coding Rules (Non-Obvious Only)
+# Project Coding Rules (Roo Context)
 
-## VHDL-2008 Specific Requirements
-- Always use `--std=08` flag with GHDL for all operations
+## 📚 Primary Source: Serena MCP Memory System
+
+All coding standards and guidelines are maintained in **Serena MCP** at `.serena/memories/`.
+
+**Key Memories:**
+- `coding_standards` - VHDL rules and tiered system
+- `design_patterns` - Implementation patterns
+- `cocotb_testing_guide` - Testing framework (CocotB standard)
+
+## ⚡ Quick Reference (Critical Only)
+
+### VHDL-2008 Requirements
+- Always use `--std=08` flag with GHDL
 - Use direct instantiation in top-level modules (no component declarations)
-- Follow signal priority hierarchy: `reset > clock_enable > enable`
+- Follow signal priority: `reset > clock_enable > enable`
 
-## Module Development Guidelines
-- Use signal prefixes consistently: `ctrl_*` (control), `cfg_*` (configuration), `stat_*` (status)
-- Avoid unintended latches by ensuring all branches assign outputs
-- Follow single-writer rule for signals (one process assigns a signal)
-- Use named port maps and explicit type conversions
+### Signal Naming
+- `ctrl_*` - Control signals
+- `cfg_*` - Configuration parameters
+- `stat_*` - Status and monitoring
 
-## Testbench Development
-- Implement all 4 layers in testbenches (Interface, Validation, Functional, Generic)
-- Test WHAT the module does, not HOW it does it (no implementation assumptions)
-- Use `std.env.stop(0)` or `assert false report "Simulation completed" severity failure` for termination
-- Print `'ALL TESTS PASSED'` or `'TEST FAILED'` + `'SIMULATION DONE'` for automation
+### Testing
+- **Current Standard**: CocotB (Python-based)
+- **Location**: `tests/` directory
+- **⚠️ DO NOT**: Create new GHDL testbenches (deprecated)
+
+## 📖 For Complete Details
+
+Run `mcp__serena__read_memory` with memory name or see `CLAUDE.md` for overview.
