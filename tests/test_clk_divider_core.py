@@ -18,13 +18,18 @@ Date: 2025-01-22
 """
 
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, FallingEdge, ClockCycles, Timer
-from cocotb.types import LogicArray
+from cocotb.triggers import RisingEdge, ClockCycles
 
+# Import shared test utilities
+from conftest import (
+    setup_clock,
+    reset_active_low,
+    count_pulses,
+    verify_division_ratio,
+    assert_pulse_count
+)
 
 # Test parameters
-CLK_PERIOD_NS = 10
 MAX_DIV = 256
 
 
@@ -42,25 +47,18 @@ async def test_reset_behavior(dut):
     dut._log.info("Test 1: Reset Behavior")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
+    # Initialize: start clock and apply reset (using shared utilities!)
+    await setup_clock(dut)
 
-    # Apply reset (active-low)
-    dut.rst_n.value = 0
+    # Set inputs before reset
     dut.enable.value = 1
     dut.div_sel.value = 0
 
-    await ClockCycles(dut.clk, 2)
+    await reset_active_low(dut)
 
     # Check reset state
     assert dut.clk_en.value == 0, "clk_en should be 0 after reset"
     assert dut.stat_reg.value == 0, "stat_reg should be 0 after reset"
-
-    dut._log.info("✓ Reset state verified")
-
-    # Release reset
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
 
     dut._log.info("✓ Reset test PASSED")
 
@@ -77,20 +75,11 @@ async def test_divide_by_1(dut):
     dut._log.info("Test 2: Divide by 1 (Bypass Mode)")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
-
-    # Set divide by 1
-    dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
     # clk_en should be continuously high
     for i in range(10):
@@ -106,37 +95,25 @@ async def test_divide_by_2(dut):
     """
     Test 3: Divide by 2
 
-    When div_sel=1 (divide by 2), clk_en should pulse every 2 clock cycles.
-    Expected pattern: pulse on cycle 0, low on cycle 1, pulse on cycle 2, etc.
+    When div_sel=2, clk_en should pulse every 2 clock cycles.
+    Expected pattern: pulse, low, pulse, low, ...
     """
     dut._log.info("=" * 60)
     dut._log.info("Test 3: Divide by 2")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
-    # Set divide by 2 (div_sel=1 means actual division of 2)
-    # Note: Design uses simple mapping where div_sel=value means divide by (value+1) when value>0
-    # So div_sel=1 gives a division period of 2
-    dut.div_sel.value = 2  # div_sel=2 for divide-by-2 behavior
+    # Set divide by 2
+    dut.div_sel.value = 2
     await ClockCycles(dut.clk, 2)  # Wait for it to load
 
-    # Count clk_en pulses over 20 clock cycles
-    clk_en_count = 0
-    for i in range(20):
-        await RisingEdge(dut.clk)
-        if dut.clk_en.value == 1:
-            clk_en_count += 1
-            dut._log.debug(f"  Cycle {i}: clk_en pulse detected")
+    # Count pulses using shared utility!
+    clk_en_count = await count_pulses(dut.clk_en, dut.clk, 20)
 
     # Should see ~10 pulses (every 2 cycles)
     expected_pulses = 10
@@ -158,35 +135,19 @@ async def test_divide_by_10(dut):
     dut._log.info("Test 4: Divide by 10")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
     # Set divide by 10
     dut.div_sel.value = 10
-    await ClockCycles(dut.clk, 1)
+    await ClockCycles(dut.clk, 2)
 
-    # Count clk_en pulses over 100 clock cycles
-    clk_en_count = 0
-    for i in range(100):
-        await RisingEdge(dut.clk)
-        if dut.clk_en.value == 1:
-            clk_en_count += 1
-            dut._log.debug(f"  Cycle {i}: clk_en pulse detected")
+    # Use assert_pulse_count helper (combines count + assert!)
+    await assert_pulse_count(dut.clk_en, dut.clk, cycles=100, expected=10)
 
-    # Should see 10 pulses (every 10 cycles)
-    expected_pulses = 10
-    assert clk_en_count == expected_pulses, \
-        f"Expected {expected_pulses} pulses, got {clk_en_count}"
-
-    dut._log.info(f"✓ Divide by 10 verified ({clk_en_count} pulses in 100 cycles)")
     dut._log.info("✓ Divide by 10 test PASSED")
 
 
@@ -202,16 +163,11 @@ async def test_enable_control(dut):
     dut._log.info("Test 5: Enable Control (Freeze Functionality)")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
     # Set divide by 5
     dut.div_sel.value = 5
@@ -269,16 +225,11 @@ async def test_max_division(dut):
     dut._log.info("Test 6: Maximum Division (div_sel=255)")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
     # Set maximum division
     dut.div_sel.value = 255
@@ -313,16 +264,11 @@ async def test_counter_status(dut):
     dut._log.info("Test 7: Status Register (Counter Value)")
     dut._log.info("=" * 60)
 
-    # Start clock
-    clock = cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, units="ns").start())
-
-    # Reset
-    dut.rst_n.value = 0
+    # Initialize
+    await setup_clock(dut)
     dut.enable.value = 1
     dut.div_sel.value = 0
-    await ClockCycles(dut.clk, 2)
-    dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
+    await reset_active_low(dut)
 
     # Set divide by 5
     dut.div_sel.value = 5
