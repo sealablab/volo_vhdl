@@ -67,14 +67,17 @@ async def init_control_registers(dut, stair_levels=None):
         stair_levels: Optional dict with keys S1-S4 for custom stair levels
                      If None, uses default levels (1.1V, 1.2V, 1.3V, 1.4V)
     """
-    # Control0: Enable=0 (inverted), ClkEn=0 (inverted), DivSel=0 (÷1)
-    dut.Control0.value = 0x00000000
+    # Control0: Enable=0 (DISABLED initially), ClkEn=1, DivSel=0
+    # Note: Control0[31]=1 means Enable=0 (inverted in Top.vhd)
+    # This prevents FSM from advancing during initialization
+    dut.Control0.value = 0x80000000  # Bit 31 = 1 → Enable=0
 
-    # Control1-4: Delay values (will be randomized in tests)
-    dut.Control1.value = 0
-    dut.Control2.value = 0
-    dut.Control3.value = 0
-    dut.Control4.value = 0
+    # Control1-4: Delay values (set to safe non-zero defaults)
+    # Tests will override these as needed
+    dut.Control1.value = 10  # S1 delay
+    dut.Control2.value = 10  # S2 delay
+    dut.Control3.value = 10  # S3 delay
+    dut.Control4.value = 10  # S4 delay
 
     # Control5-8: Stair levels (signed 16-bit DAC codes)
     if stair_levels is None:
@@ -184,17 +187,19 @@ async def test_fixed_stair_levels(dut):
 
     await setup_clock(dut)
     await init_control_registers(dut)
-    await reset_dut(dut)
 
-    # Set minimal delays for fast state transitions (delay=1)
-    # Note: Control0[31] is Enable (inverted), Control0[30] is ClkEn (inverted)
-    # Set both to 0 to enable operation
-    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
+    # Set delays BEFORE reset so they're available when FSM initializes
     dut.Control1.value = 1  # S1 delay = 1
     dut.Control2.value = 1  # S2 delay = 1
     dut.Control3.value = 1  # S3 delay = 1
     dut.Control4.value = 1  # S4 delay = 1
+    await ClockCycles(dut.Clk, 1)
 
+    await reset_dut(dut)
+
+    # Enable sequencer operation
+    # Note: Control0[31] is Enable (inverted), Control0[30] is ClkEn (inverted)
+    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
     await ClockCycles(dut.Clk, 2)
 
     # Track state transitions and verify DAC output
@@ -209,9 +214,7 @@ async def test_fixed_stair_levels(dut):
     dut._log.info("Monitoring state transitions and DAC output...")
 
     for i, (state_name, state_oh, expected_dac) in enumerate(expected_sequence):
-        # Wait for state transition (delay + 1 cycle for transition)
-        await ClockCycles(dut.Clk, 3)
-
+        # Check current state (before waiting for next transition)
         outputs = get_output_values(dut)
         actual_state = state_oh_to_name(outputs["state_oh"])
 
@@ -222,6 +225,10 @@ async def test_fixed_stair_levels(dut):
 
         assert outputs["dac_out"] == expected_dac, \
             f"DAC output mismatch in {state_name}: expected {expected_dac}, got {outputs['dac_out']}"
+
+        # Wait for state transition
+        # With delay=1: 1 cycle to count down, 1 cycle to transition = 2 cycles total
+        await ClockCycles(dut.Clk, 2)
 
     dut._log.info("✓ Fixed stair levels test PASSED")
 
@@ -238,7 +245,6 @@ async def test_randomized_delays_stair_routing(dut):
 
     await setup_clock(dut)
     await init_control_registers(dut)
-    await reset_dut(dut)
 
     # Generate random delay values at test runtime (7-bit max = 127)
     random.seed()  # Use current time as seed
@@ -253,13 +259,17 @@ async def test_randomized_delays_stair_routing(dut):
     dut._log.info(f"  S3 delay: {delay_s3}")
     dut._log.info(f"  S4 delay: {delay_s4}")
 
-    # Configure control registers
-    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
+    # Set delays BEFORE reset
     dut.Control1.value = delay_s1
     dut.Control2.value = delay_s2
     dut.Control3.value = delay_s3
     dut.Control4.value = delay_s4
+    await ClockCycles(dut.Clk, 1)
 
+    await reset_dut(dut)
+
+    # Enable sequencer
+    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
     await ClockCycles(dut.Clk, 2)
 
     # Test sequence: S1 -> S2 -> S3 -> S4 -> S1 (wrap)
@@ -274,7 +284,7 @@ async def test_randomized_delays_stair_routing(dut):
     dut._log.info("\nVerifying state transitions with randomized delays...")
 
     for i, (state_name, state_oh, expected_dac, delay_cycles) in enumerate(test_sequence):
-        # Current state should be active
+        # Check current state (before waiting for transition)
         outputs = get_output_values(dut)
         actual_state = state_oh_to_name(outputs["state_oh"])
 
@@ -288,8 +298,8 @@ async def test_randomized_delays_stair_routing(dut):
         assert outputs["dac_out"] == expected_dac, \
             f"DAC mismatch in {state_name}: expected {expected_dac}, got {outputs['dac_out']}"
 
-        # Wait for delay + transition cycle
-        await ClockCycles(dut.Clk, delay_cycles + 2)
+        # Wait for delay + 1 cycle for transition
+        await ClockCycles(dut.Clk, delay_cycles + 1)
 
     dut._log.info("\n✓ Randomized delays test PASSED")
     dut._log.info("  All stair levels routed correctly under random timing configurations")
@@ -307,15 +317,18 @@ async def test_status_register_sticky_bits(dut):
 
     await setup_clock(dut)
     await init_control_registers(dut)
-    await reset_dut(dut)
 
-    # Set minimal delays
-    dut.Control0.value = 0x00000000
+    # Set delays BEFORE reset
     dut.Control1.value = 2
     dut.Control2.value = 2
     dut.Control3.value = 2
     dut.Control4.value = 2
+    await ClockCycles(dut.Clk, 1)
 
+    await reset_dut(dut)
+
+    # Enable sequencer
+    dut.Control0.value = 0x00000000
     await ClockCycles(dut.Clk, 2)
 
     # After reset, S1 marker should be set
@@ -323,26 +336,26 @@ async def test_status_register_sticky_bits(dut):
     assert outputs["status"] == 0b0000001, \
         f"After reset, only S1 marker (bit 0) should be set, got 0b{outputs['status']:07b}"
 
-    # Transition to S2
-    await ClockCycles(dut.Clk, 5)
+    # Transition to S2 (delay=2, so wait 3 cycles)
+    await ClockCycles(dut.Clk, 3)
     outputs = get_output_values(dut)
     assert outputs["status"] & 0b0000011 == 0b0000011, \
         f"After S2 entry, bits 0,1 should be set, got 0b{outputs['status']:07b}"
 
     # Transition to S3
-    await ClockCycles(dut.Clk, 5)
+    await ClockCycles(dut.Clk, 3)
     outputs = get_output_values(dut)
     assert outputs["status"] & 0b0000111 == 0b0000111, \
         f"After S3 entry, bits 0,1,2 should be set, got 0b{outputs['status']:07b}"
 
     # Transition to S4
-    await ClockCycles(dut.Clk, 5)
+    await ClockCycles(dut.Clk, 3)
     outputs = get_output_values(dut)
     assert outputs["status"] & 0b0001111 == 0b0001111, \
         f"After S4 entry, bits 0,1,2,3 should be set, got 0b{outputs['status']:07b}"
 
     # Wrap back to S1 (sticky bits should remain)
-    await ClockCycles(dut.Clk, 5)
+    await ClockCycles(dut.Clk, 3)
     outputs = get_output_values(dut)
     assert outputs["status"] & 0b0001111 == 0b0001111, \
         f"After wrap to S1, all sticky bits should remain, got 0b{outputs['status']:07b}"
@@ -478,15 +491,18 @@ async def test_runtime_random_stair_levels(dut):
 
     # Initialize with custom stair levels
     await init_control_registers(dut, stair_levels=random_levels)
-    await reset_dut(dut)
 
-    # Configure for fast state transitions
-    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
+    # Set delays BEFORE reset
     dut.Control1.value = 2
     dut.Control2.value = 2
     dut.Control3.value = 2
     dut.Control4.value = 2
+    await ClockCycles(dut.Clk, 1)
 
+    await reset_dut(dut)
+
+    # Enable sequencer
+    dut.Control0.value = 0x00000000  # Enable=1, ClkEn=1, DivSel=0
     await ClockCycles(dut.Clk, 2)
 
     # Verify each state outputs the correct random level
@@ -500,7 +516,7 @@ async def test_runtime_random_stair_levels(dut):
     dut._log.info("\nVerifying random stair levels...")
 
     for i, (state_name, state_oh, expected_dac, delay_cycles) in enumerate(test_sequence):
-        # Current state should be active
+        # Check current state (before waiting for transition)
         outputs = get_output_values(dut)
         actual_state = state_oh_to_name(outputs["state_oh"])
 
@@ -514,8 +530,8 @@ async def test_runtime_random_stair_levels(dut):
         assert outputs["dac_out"] == expected_dac, \
             f"DAC mismatch in {state_name}: expected {expected_dac}, got {outputs['dac_out']}"
 
-        # Wait for state transition
-        await ClockCycles(dut.Clk, delay_cycles + 3)
+        # Wait for delay + 1 cycle for transition
+        await ClockCycles(dut.Clk, delay_cycles + 1)
 
     dut._log.info("\n✓ Runtime-randomized stair levels test PASSED")
     dut._log.info("  All random stair levels routed correctly!")
