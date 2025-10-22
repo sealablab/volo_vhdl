@@ -28,6 +28,12 @@ entity EMFI_Seq is
         DelayS3         : in  unsigned(6 downto 0);
         DelayS4         : in  unsigned(6 downto 0);
 
+        -- Configuration Interface (Stair-Step Voltage Levels)
+        LevelS1         : in  signed(15 downto 0);
+        LevelS2         : in  signed(15 downto 0);
+        LevelS3         : in  signed(15 downto 0);
+        LevelS4         : in  signed(15 downto 0);
+
         -- Output Interface
         DACOut          : out signed(15 downto 0);
         StatusOut       : out unsigned(6 downto 0);
@@ -97,6 +103,10 @@ begin
     ANALOG_MONITOR: entity WORK.onehot_analog_monitor
         port map (
             state_oh    => state_oh_internal,
+            level_s1    => LevelS1,
+            level_s2    => LevelS2,
+            level_s3    => LevelS3,
+            level_s4    => LevelS4,
             dac_out_s16 => dac_out_internal,
             monitor_u16 => monitor_internal
         );

@@ -55,6 +55,19 @@ ifeq ($(TEST_MODULE),moku_pct_pkg)
     COCOTB_TEST_MODULES = test_moku_pct_pkg
 endif
 
+# emfi_seq_top test
+ifeq ($(TEST_MODULE),emfi_seq_top)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
+                   $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_fsm.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_stair.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/EMFI_Seq.vhd \
+                   $(PROJECT_ROOT)/mcc_templates/CustomWrapper_test_stub.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/Top.vhd
+    TOPLEVEL = customwrapper
+    COCOTB_TEST_MODULES = test_emfi_seq_top
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
@@ -83,6 +96,10 @@ test-all:
 	@$(MAKE) TEST_MODULE=moku_pct_pkg
 	@echo ""
 	@echo "======================================================================="
+	@echo ""
+	@$(MAKE) TEST_MODULE=emfi_seq_top
+	@echo ""
+	@echo "======================================================================="
 	@echo "All tests complete!"
 	@echo "======================================================================="
 
@@ -101,6 +118,7 @@ help:
 	@echo "  - clk_divider_core     (volo_common/core)"
 	@echo "  - moku_voltage_pkg     (volo_common/common)"
 	@echo "  - moku_pct_pkg         (volo_common/common)"
+	@echo "  - emfi_seq_top         (EMFI-Seq/top)"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  WAVES=1                - Enable waveform dump (default)"
@@ -113,6 +131,7 @@ list-tests:
 	@echo "  - test_clk_divider_core.py    (7 tests)"
 	@echo "  - test_moku_voltage_pkg.py    (3 tests)"
 	@echo "  - test_moku_pct_pkg.py        (9 tests)"
+	@echo "  - test_emfi_seq_top.py        (8 tests)"
 	@echo ""
 	@echo "To add more tests, create test_<module>.py and update this Makefile"
 
