@@ -16,19 +16,24 @@ architecture sim of clk_divider_core_tb is
     -- Signals
     signal clk      : std_logic := '0';
     signal rst_n    : std_logic := '0';
-    signal div_sel  : std_logic_vector(3 downto 0) := (others => '0');
+    signal enable   : std_logic := '1';  -- New enable signal
+    signal div_sel  : std_logic_vector(7 downto 0) := (others => '0');  -- Now 8-bit
     signal clk_en   : std_logic;
     signal stat_reg : std_logic_vector(7 downto 0);
-    
+
     -- Test control signals
     signal test_complete : boolean := false;
-    
+
     -- Component declaration
     component clk_divider_core is
+        generic (
+            MAX_DIV : natural := 256
+        );
         port (
             clk         : in  std_logic;
             rst_n       : in  std_logic;
-            div_sel     : in  std_logic_vector(3 downto 0);
+            enable      : in  std_logic;
+            div_sel     : in  std_logic_vector(7 downto 0);
             clk_en      : out std_logic;
             stat_reg    : out std_logic_vector(7 downto 0)
         );
@@ -47,11 +52,15 @@ begin
         wait;
     end process;
     
-    -- DUT instantiation
+    -- DUT instantiation with default generic (MAX_DIV = 256)
     dut: clk_divider_core
+        generic map (
+            MAX_DIV => 256
+        )
         port map (
             clk      => clk,
             rst_n    => rst_n,
+            enable   => enable,
             div_sel  => div_sel,
             clk_en   => clk_en,
             stat_reg => stat_reg
@@ -66,14 +75,15 @@ begin
         
         -- Procedure to test a specific division ratio
         procedure test_division(
-            constant div_select : in std_logic_vector(3 downto 0);
+            constant div_select : in std_logic_vector(7 downto 0);
             constant division_ratio : in integer
         ) is
         begin
-            -- Set division select
+            -- Set division select and ensure enabled
             div_sel <= div_select;
+            enable <= '1';
             wait for CLK_PERIOD;
-            
+
             -- Reset the divider
             rst_n <= '0';
             wait for CLK_PERIOD * 2;
@@ -125,41 +135,51 @@ begin
     begin
         -- Initial reset
         rst_n <= '0';
-        div_sel <= "0000";
+        enable <= '1';
+        div_sel <= x"00";
         wait for CLK_PERIOD * 5;
-        
-        report "Starting clock divider tests...";
-        
-        -- Test all division ratios
-        test_division("0000", 1);   -- Divide by 1
-        test_division("0001", 2);   -- Divide by 2
-        test_division("0010", 3);   -- Divide by 3
-        test_division("0011", 4);   -- Divide by 4
-        test_division("0100", 5);   -- Divide by 5
-        test_division("0101", 6);   -- Divide by 6
-        test_division("0110", 7);   -- Divide by 7
-        test_division("0111", 8);   -- Divide by 8
-        test_division("1000", 9);   -- Divide by 9
-        test_division("1001", 10);  -- Divide by 10
-        test_division("1010", 11);  -- Divide by 11
-        test_division("1011", 12);  -- Divide by 12
-        test_division("1100", 13);  -- Divide by 13
-        test_division("1101", 14);  -- Divide by 14
-        test_division("1110", 15);  -- Divide by 15
-        test_division("1111", 16);  -- Divide by 16
-        
+
+        report "Starting enhanced clock divider tests...";
+
+        -- Test basic division ratios (8-bit select now)
+        test_division(x"00", 1);   -- Divide by 1 (special case)
+        test_division(x"01", 1);   -- Divide by 1
+        test_division(x"02", 2);   -- Divide by 2
+        test_division(x"03", 3);   -- Divide by 3
+        test_division(x"04", 4);   -- Divide by 4
+        test_division(x"05", 5);   -- Divide by 5
+        test_division(x"08", 8);   -- Divide by 8
+        test_division(x"0A", 10);  -- Divide by 10
+        test_division(x"10", 16);  -- Divide by 16
+        test_division(x"20", 32);  -- Divide by 32
+        test_division(x"64", 100); -- Divide by 100
+        test_division(x"FF", 255); -- Divide by 255 (max for 8-bit)
+
+        -- Test enable functionality
+        report "Testing enable input (freeze/unfreeze)...";
+        rst_n <= '1';
+        div_sel <= x"04"; -- Divide by 4
+        enable <= '1';
+        wait for CLK_PERIOD * 10;
+
+        -- Freeze the counter
+        enable <= '0';
+        wait for CLK_PERIOD * 10;
+        assert clk_en = '0' report "FAIL: clk_en should be low when disabled" severity error;
+
+        -- Unfreeze and continue
+        enable <= '1';
+        wait for CLK_PERIOD * 10;
+
         -- Test dynamic switching between division ratios
         report "Testing dynamic division switching...";
-        rst_n <= '1';
-        
-        -- Quick test of switching from div2 to div4
-        div_sel <= "0001"; -- Div by 2
+        div_sel <= x"02"; -- Div by 2
         wait for CLK_PERIOD * 10;
-        
-        div_sel <= "0011"; -- Div by 4
+
+        div_sel <= x"08"; -- Div by 8
         wait for CLK_PERIOD * 20;
-        
-        div_sel <= "0000"; -- Div by 1
+
+        div_sel <= x"00"; -- Div by 1
         wait for CLK_PERIOD * 5;
         
         report "ALL TESTS PASSED";

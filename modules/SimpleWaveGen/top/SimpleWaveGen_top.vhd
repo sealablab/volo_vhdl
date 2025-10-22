@@ -112,10 +112,14 @@ begin
     
     -- Clock Divider Instance (Direct Instantiation Required)
     U_clk_divider: entity WORK.clk_divider_core
+        generic map (
+            MAX_DIV => 256
+        )
         port map (
             clk => clk,
             rst_n => not rst, -- Convert active high reset to active low
-            div_sel => cfg_clk_div_sel,
+            enable => ctrl_global_enable,  -- Use global enable to control divider
+            div_sel => x"0" & cfg_clk_div_sel,  -- Extend 4-bit to 8-bit
             clk_en => clk_en,
             stat_reg => clk_div_stat
         );
