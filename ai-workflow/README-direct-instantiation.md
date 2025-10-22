@@ -4,6 +4,8 @@
 
 **Direct instantiation** is a VHDL feature that allows you to instantiate entities directly without declaring components first. This pattern provides a more concise and modern approach to VHDL design, eliminating the need for component declarations while maintaining full functionality.
 
+> **Note**: This content has been integrated into the Serena MCP memory system as `ghdl_patterns_and_solutions` for AI-assisted development. The memory system provides searchable, context-aware access to these patterns. This file is maintained for human reference and historical context.
+
 ## What is Direct Instantiation?
 
 Direct instantiation uses the `entity` keyword to directly reference and instantiate an entity from a specific library, rather than going through the traditional component declaration and instantiation process.
