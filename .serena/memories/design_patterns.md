@@ -195,7 +195,161 @@ begin
 end procedure;
 ```
 
-### 7. LUT and Data Structure Pattern (Datadef Layer)
+### 7. Voltage/Data Conversion Package Pattern (Datadef Layer)
+
+**When to Use**: Module needs voltage conversion, data scaling, or complex mathematical operations with validation.
+
+**Example**: `modules/EMFI-Seq/datadef/Moku_Voltage_pkg_en.vhd` (Reference Implementation)
+
+**Package Structure**:
+```vhdl
+-- In datadef/conversion_package.vhd
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+package Moku_Voltage_pkg_en is
+    -- System constants with unit documentation
+    constant VOLTAGE_DATA_WIDTH : natural := 16;      -- Units: bits
+    constant VOLTAGE_REFERENCE  : real := 5.0;        -- Units: volts
+    constant VOLTAGE_MIN        : real := -5.0;       -- Units: volts
+    constant VOLTAGE_MAX        : real := 5.0;        -- Units: volts
+    constant DIGITAL_MAX        : natural := 65535;   -- Units: count
+    
+    -- Bidirectional conversion functions
+    function voltage_to_digital(voltage : real) return std_logic_vector;
+    function digital_to_voltage(digital : std_logic_vector) return real;
+    
+    -- Safety and validation functions
+    function clamp_voltage_safe(voltage : real) return real;
+    function is_voltage_safe(voltage : real) return boolean;
+    
+    -- Scaling and arithmetic operations
+    function scale_voltage(voltage : real; scale_factor : real) return real;
+    function add_voltages_safe(v1, v2 : real) return real;
+    
+    -- Default constants for common values
+    constant DEFAULT_VOLTAGE_ZERO : real := 0.0;
+    constant DEFAULT_DIGITAL_MID  : std_logic_vector(15 downto 0) := x"8000";
+end package;
+
+package body Moku_Voltage_pkg_en is
+    -- Linear mapping: -5V → 0x0000, 0V → 0x8000, +5V → 0xFFFF
+    function voltage_to_digital(voltage : real) return std_logic_vector is
+        variable clamped_voltage : real;
+        variable digital_value : natural;
+    begin
+        clamped_voltage := clamp_voltage_safe(voltage);
+        digital_value := natural((clamped_voltage - VOLTAGE_MIN) * 
+                                  real(DIGITAL_MAX) / (VOLTAGE_MAX - VOLTAGE_MIN));
+        return std_logic_vector(to_unsigned(digital_value, VOLTAGE_DATA_WIDTH));
+    end function;
+    
+    function clamp_voltage_safe(voltage : real) return real is
+    begin
+        if voltage < VOLTAGE_MIN then
+            return VOLTAGE_MIN;
+        elsif voltage > VOLTAGE_MAX then
+            return VOLTAGE_MAX;
+        else
+            return voltage;
+        end if;
+    end function;
+    
+    -- ... other function implementations ...
+end package body;
+```
+
+**Usage in Core Module**:
+```vhdl
+-- In core/EMFI_Seq_stair.vhd
+use work.Moku_Voltage_pkg_en.all;
+
+architecture rtl of onehot_analog_monitor is
+    -- Voltage codes computed using package functions (self-documenting)
+    constant CODE_S1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));
+    constant CODE_S2 : signed(15 downto 0) := signed(voltage_to_digital(1.2));
+    constant CODE_S3 : signed(15 downto 0) := signed(voltage_to_digital(1.3));
+    constant CODE_S4 : signed(15 downto 0) := signed(voltage_to_digital(1.4));
+    constant CODE_Z  : signed(15 downto 0) := signed(voltage_to_digital(0.0));
+begin
+    -- Combinational decode using computed constants
+    with state_oh select
+        dac_out_s16 <= CODE_S1 when "0001",
+                       CODE_S2 when "0010",
+                       CODE_S3 when "0100",
+                       CODE_S4 when "1000",
+                       CODE_Z  when others;
+end architecture;
+```
+
+**Key Benefits**:
+- **Self-documenting**: Voltage values explicit in code (1.1, 1.2, etc.)
+- **Compile-time computation**: Functions evaluated during synthesis
+- **Consistency**: All modules use same conversion algorithm
+- **Testable**: Package can be unit tested independently
+- **Maintainable**: Change voltage range in one place
+- **Safe**: Built-in clamping and validation
+
+**Testbench Pattern** (Tier 3 - Full VHDL-2008):
+```vhdl
+-- In tb/datadef/tb_Moku_Voltage_pkg_en.vhd
+test_process : process
+    variable v_result : real;
+    variable d_result : std_logic_vector(15 downto 0);
+    
+    -- Helper for real number comparison with tolerance
+    constant TOLERANCE : real := 0.01;  -- 10mV
+    function real_equal(a, b : real) return boolean is
+    begin
+        return abs(a - b) < TOLERANCE;
+    end function;
+begin
+    -- Test bidirectional conversion
+    d_result := voltage_to_digital(1.1);
+    check_test("1.1V conversion", d_result = x"9C28");
+    
+    v_result := digital_to_voltage(x"9C28");
+    check_test("Reverse conversion", real_equal(v_result, 1.1));
+    
+    -- Test clamping
+    d_result := voltage_to_digital(10.0);  -- Over max
+    check_test("Clamp high", d_result = x"FFFF");
+    
+    -- Test round-trip
+    v_result := digital_to_voltage(voltage_to_digital(2.5));
+    check_test("Round-trip 2.5V", real_equal(v_result, 2.5));
+end process;
+```
+
+**Documentation Pattern**:
+Create `datadef/README_PackageName.md` with:
+- Function descriptions and signatures
+- Unit conventions (volts, bits, ratio, etc.)
+- Usage examples from actual code
+- Integration notes
+- Testbench location and coverage
+
+**Verilog Conversion Strategy**:
+- Package functions → SystemVerilog functions or parameters
+- Constants computed at compile time → `localparam` with pre-computed values
+- Real arithmetic → Fixed-point with documented precision
+- Document conversion approach in package header comments
+
+**When NOT to Use**:
+- Simple constant definitions (use plain constants)
+- Clock-dependent operations (belongs in core layer)
+- Platform-specific code (use platform_interface_pkg pattern)
+
+**Reference Files**:
+- `modules/EMFI-Seq/datadef/Moku_Voltage_pkg_en.vhd` - Implementation
+- `modules/EMFI-Seq/datadef/README_Moku_Voltage_pkg_en.md` - Documentation
+- `modules/EMFI-Seq/tb/datadef/tb_Moku_Voltage_pkg_en.vhd` - Tests (42/43 passing)
+- `modules/EMFI-Seq/core/EMFI_Seq_stair.vhd` - Usage example
+
+**Discovered**: 2025-01-21, EMFI-Seq voltage package development
+
+### 8. LUT and Data Structure Pattern (Datadef Layer)
 Define data structures in datadef with Verilog conversion strategy:
 
 ```vhdl
@@ -264,6 +418,16 @@ end entity;
 -- CORRECT: Append to footer below "------- New Tips here-------"
 ```
 
+### ❌ Don't Hardcode Conversion Values Without Documentation
+```vhdl
+-- WRONG: Magic numbers without explanation
+constant CODE_S1 : signed(15 downto 0) := x"1C29";  -- What voltage is this?
+
+-- CORRECT: Use conversion package or document heavily
+constant CODE_S1 : signed(15 downto 0) := signed(voltage_to_digital(1.1));  -- 1.1V
+-- Or if hardcoded, add extensive comments explaining the calculation
+```
+
 ## Module Dependency Management
 Define dependencies in `modules/Makefile.deps`:
 
@@ -276,11 +440,32 @@ SimpleWaveGen_DEPS := volo_common clk_divider
 probe_driver_DEPS := volo_common
 ```
 
-## Reference Implementation
-**SimpleWaveGen** (`modules/SimpleWaveGen/`) is the canonical reference:
-- Demonstrates all required patterns
+## Reference Implementations
+
+### SimpleWaveGen (Complete Reference)
+**Location**: `modules/SimpleWaveGen/`
+
+**Demonstrates**:
 - Successfully deployed to Moku device
 - Complete testing at all layers
 - Platform interface package usage
 - Direct instantiation in top layer
 - Proper control signal handling
+
+### EMFI-Seq (Voltage Conversion Reference)
+**Location**: `modules/EMFI-Seq/`
+
+**Demonstrates**:
+- Voltage conversion package pattern (datadef layer)
+- Multi-core integration (FSM + analog monitor)
+- Compile-time constant computation
+- Comprehensive package testing (59/60 tests passing)
+- Self-documenting voltage codes
+- Pattern 1 (Simple Direct Mapping) MCC integration
+
+**Key Files**:
+- `datadef/Moku_Voltage_pkg_en.vhd` - Conversion package with validation
+- `datadef/README_Moku_Voltage_pkg_en.md` - Complete package documentation
+- `core/EMFI_Seq_stair.vhd` - Usage of voltage package
+- `tb/datadef/tb_Moku_Voltage_pkg_en.vhd` - Package tests
+- `tb/core/tb_EMFI_Seq_stair.vhd` - Core module tests
