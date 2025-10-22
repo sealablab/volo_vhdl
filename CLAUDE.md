@@ -84,9 +84,11 @@ modules/module_name/
 
 **Top Layer** (`top/*.vhd`):
 - Integration with platform control system (Moku CustomWrapper)
-- Register exposure (control, config, status)
-- **REQUIRED**: Direct instantiation pattern for all module connections
-- Do NOT include CustomWrapper entity body in module files
+- Two file pattern (see MCC Integration Patterns section):
+  - **ModuleName.vhd**: Entity + architecture (instantiates cores with direct instantiation)
+  - **Top.vhd**: CustomWrapper architecture only (maps registers to module ports)
+- MCC provides CustomWrapper entity - do NOT create mcc-Top.vhd entity files
+- Start with simple direct mapping pattern unless validation is needed
 
 ## Critical Coding Standards
 
@@ -291,23 +293,106 @@ Append below the `------- New Tips here-------` marker. Do NOT reorganize the ma
 - `clk_divider` - Clock division utility (built first as dependency)
 - `volo_common` - Common utilities across all modules
 
-### MCC Integration
-- Template located in `mcc_templates/mcc-Top.vhd`
-- Compiled automatically as part of build process
-- Do NOT include CustomWrapper entity body in module files
+### MCC Integration Patterns
+
+**Two patterns are supported for MCC (Moku CustomWrapper) integration:**
+
+#### Pattern 1: Simple Direct Mapping (Preferred for simple modules)
+**Example**: `modules/TPD/DCSequencer/`
+
+File structure:
+```
+top/
+├── ModuleName.vhd  # Entity + architecture (instantiates cores)
+└── Top.vhd         # CustomWrapper architecture only
+```
+
+**ModuleName.vhd** - Main module file:
+- Defines entity with clean interface
+- Architecture instantiates core modules
+- Uses standard port names (Clk, Reset, Enable, etc.)
+
+**Top.vhd** - CustomWrapper integration:
+- Contains ONLY architecture: `architecture ModuleName of CustomWrapper`
+- MCC provides CustomWrapper entity declaration
+- Direct register mapping in port map (no intermediate signals)
+- No synchronous process, no default values
+- Minimal complexity
+
+Example from DCSequencer:
+```vhdl
+-- Top.vhd
+architecture DCSequencer of CustomWrapper is
+begin
+    DC_SEQUENCER: entity WORK.DCSequencer
+        port map (
+            Clk => Clk,
+            Reset => Reset,
+            DataIn => InputA,
+            HIThreshold => signed(Control0(31 downto 16)),
+            LOThreshold => signed(Control0(15 downto 0)),
+            DataOutA => OutputA,
+            DataOutB => OutputB
+        );
+end architecture;
+```
+
+**When to use:**
+- Simple register mapping
+- No complex validation needed
+- Minimal control logic
+- Direct Control/Output port usage
+
+#### Pattern 2: Platform Interface Package (For complex modules)
+**Example**: `modules/SimpleWaveGen/`
+
+File structure:
+```
+common/
+└── platform_interface_pkg.vhd  # Register field extraction, validation
+top/
+├── ModuleName_top.vhd          # Entity + architecture with register logic
+└── ModuleName_customwrapper.vhd # CustomWrapper architecture
+```
+
+**When to use:**
+- Complex register field extraction
+- Validation functions needed
+- Multiple configuration parameters
+- Status register assembly logic
+- Fault detection/aggregation
+
+**Key principle**: Start with Pattern 1 (simple). Only move to Pattern 2 if you need validation functions or complex register logic.
 
 ### Dependency Management
 - Shared modules built first in compilation order
 - Module dependencies defined in `modules/Makefile.deps`
 - Unified work library for cross-module references
 
-## Working Example
+## Working Examples
 
-**SimpleWaveGen** (`modules/SimpleWaveGen/`) is a complete, tested reference implementation:
+### Pattern 1 (Simple Direct Mapping)
+**DCSequencer** (`modules/TPD/DCSequencer/`) - Minimal MCC integration:
+- 2 files in top/: DCSequencer.vhd + Top.vhd
+- Direct Control register mapping
+- No platform interface package
+- Clean and simple pattern
+
+**EMFI-Seq** (`modules/EMFI-Seq/`) - Multi-core integration:
+- 2 files in top/: EMFI_Seq.vhd + Top.vhd
+- Instantiates multiple cores (FSM + analog monitor)
+- Direct register mapping
+- Good example of simple multi-core integration
+
+### Pattern 2 (Platform Interface Package)
+**SimpleWaveGen** (`modules/SimpleWaveGen/`) - Complex MCC integration:
 - Successfully deployed to Moku device
 - Demonstrates full workflow from GHDL testing to bitstream
 - Includes all layers: common, core, top, testbenches
+- Uses platform_interface_pkg for validation
 - See `GHDL-to-MCC-example.md` for development journey
+
+**Recommendation**: Study DCSequencer or EMFI-Seq first for simple integrations. Use SimpleWaveGen as reference when you need validation/fault handling.
 
 ## Common Pitfalls
 
@@ -317,6 +402,8 @@ Append below the `------- New Tips here-------` marker. Do NOT reorganize the ma
 4. **Don't test internal state** - Test external behavior only
 5. **Don't modify ng/ tip files** - Only append to footer section
 6. **Don't use records in RTL ports** - Only in datadef packages
+7. **Don't create separate mcc-Top.vhd entity files** - MCC provides CustomWrapper entity
+8. **Don't over-engineer MCC integration** - Start with Pattern 1 (simple direct mapping) unless you need validation
 
 ## Verification Checklist
 

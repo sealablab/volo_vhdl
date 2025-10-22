@@ -223,16 +223,19 @@ All VOLO modules must implement these four standard control signals:
   - Ideally implement as a state machine
 
 #### Top Layer (`modules/**/top/*.vhd`)
-- **Purpose**: Integrate multiple modules and handle system-level concerns
+- **Purpose**: Integrate cores and interface with MCC platform (Moku CustomWrapper)
+- **Standard Pattern** (2 files - see DCSequencer or EMFI-Seq examples):
+  1. **ModuleName.vhd** - Entity + architecture that instantiates core modules
+  2. **Top.vhd** - CustomWrapper architecture only (register mapping)
 - **Responsibilities**:
-  - **External interface** - Connect to platform control system (generally a Moku CustomWrapper)
-  - **Register exposure** - Expose appropriate control, configuration, and status registers
-  - **Module integration** - Connect core modules using direct instantiation
-  - **Important**: DO NOT include MCC CustomWrapper entity body
-  - Keep top-level modules clean and focused
+  - **ModuleName.vhd**: Use direct instantiation for all core module connections
+  - **Top.vhd**: Map Control/Output ports directly to module entity (simple pattern)
+  - **Important**: MCC provides CustomWrapper entity - do NOT create mcc-Top.vhd
+  - Keep both files clean and minimal
+  - Start with simple direct register mapping unless validation is needed
   - **Note**: Not all modules will require a 'top' file
 
-**Direct Instantiation Requirement**: All internal module connections in top layer files MUST use direct instantiation (`entity WORK.module_name`) rather than component declarations.
+**Direct Instantiation Requirement**: All internal module connections MUST use direct instantiation (`entity WORK.module_name`) rather than component declarations.
 
 ### FSM Implementation
 - Use `std_logic_vector` for state encoding
