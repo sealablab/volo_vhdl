@@ -11,6 +11,7 @@ CocotB (Coroutine-based Cosimulation TestBench) is the **standard testing framew
 ```bash
 cd tests/
 make TEST_MODULE=clk_divider_core      # Run specific module
+make TEST_MODULE=mcc_primitives        # Run MCC primitives test
 make test-all                          # Run all tests
 make clean                             # Clean artifacts
 make waves                             # View waveforms
@@ -70,11 +71,171 @@ All tests can use these helpers from `tests/conftest.py`:
 
 ## MCC Module Testing
 
+### MCC_READY Convention (MANDATORY for all MCC modules)
+
+**Control0[31] = MCC_READY flag (ACTIVE-HIGH)**
+
+This convention solves the "all-zero reset state" problem during bitstream loading:
+
+**The Problem**:
+When an FPGA bitstream is loaded onto Moku hardware:
+1. Bitstream loads → all control registers = 0x00000000
+2. Network delay (10-200ms typical) before configuration arrives
+3. Registers updated over network with actual configuration
+4. Module starts operating
+
+During step 2, the module sees **all zeros** on control inputs. Without MCC_READY, this can cause unpredictable behavior.
+
+**The Solution - CR0[31] as MCC_READY**:
+```
+Control0[31] = 0 → Module DISABLED (safe during all-zero state)
+Control0[31] = 1 → Module ENABLED and ready for operation
+```
+
+**VHDL Implementation Pattern** (in Top.vhd):
+```vhdl
+architecture ModuleName of CustomWrapper is
+    signal mcc_ready      : std_logic;
+    signal user_enable    : std_logic;
+    signal global_enable  : std_logic;
+begin
+    -- Extract MCC_READY flag (CR0[31])
+    mcc_ready     <= Control0(31);
+    user_enable   <= Control0(30);  -- Example: user-level enable
+    
+    -- Gate module with MCC_READY (safe during all-zero state)
+    global_enable <= mcc_ready and user_enable;
+    
+    MODULE_INST: entity WORK.ModuleName
+        port map (
+            Clk    => Clk,
+            Reset  => Reset,
+            Enable => global_enable,  -- Safe: disabled when CR0[31]=0
+            ...
+        );
+end architecture;
+```
+
+**Benefits**:
+- ✓ Safe default: All-zero state keeps module disabled
+- ✓ Clear semantic: Bit 31 = "configuration valid and ready"
+- ✓ Active-high logic: No confusing inversions
+- ✓ Network-aware: External system sets CR0[31]=1 after config loaded
+- ✓ Testable: CocotB tests simulate realistic initialization
+
+**Example**: See `modules/EMFI-Seq/top/Top.vhd` for reference implementation
+
+### MCC Primitives (NEW - Added 2025-10-22)
+
+The following primitives in `conftest.py` handle MCC initialization with realistic network latency:
+
+**MCC Initialization**:
+- `init_mcc_inputs(dut)` - Zero all InputA-D channels
+- `mcc_set_regs(dut, control_regs, set_mcc_ready=True, ...)` - Set control registers with network delay
+- `wait_for_mcc_ready(dut, settle_cycles=10)` - Wait for module to stabilize
+- `wait_for_first_clk_en(dut, clk_en_signal="clk_en", ...)` - Wait for first clock enable pulse
+- `mcc_disable(dut, ...)` - Clear MCC_READY to safely disable module
+
+### MCC Test Initialization Pattern (UPDATED)
+
+**Old pattern** (DEPRECATED - manual register writes):
+```python
+async def init_control_registers(dut):
+    dut.Control0.value = 0x00000000
+    dut.Control1.value = 0
+    # ... manual initialization
+```
+
+**New pattern** (RECOMMENDED - uses MCC primitives):
+```python
+from conftest import (
+    setup_clock,
+    reset_active_high,
+    init_mcc_inputs,
+    mcc_set_regs,
+    wait_for_mcc_ready
+)
+
+@cocotb.test()
+async def test_mcc_initialization(dut):
+    # Step 1: Hardware startup
+    await setup_clock(dut, clk_signal="Clk")
+    await reset_active_high(dut, rst_signal="Reset")
+    await init_mcc_inputs(dut)
+    
+    # Step 2: Simulate network delay + configuration load
+    await mcc_set_regs(dut, {
+        0: 0x40000001,  # User bits (CR0[31] set automatically)
+        1: 0x0000007F,  # Module config
+        5: 0x0000199A   # Voltage level
+    }, set_mcc_ready=True)  # Automatically sets CR0[31]=1
+    
+    # Step 3: Wait for module to settle
+    await wait_for_mcc_ready(dut)
+    
+    # Now safe to test module behavior
+```
+
+**Network Latency Simulation**:
+```python
+# Random delay (10-200ms) - simulates real-world variability
+await mcc_set_regs(dut, {...}, set_mcc_ready=True)
+
+# Fixed delay (reproducible tests)
+await mcc_set_regs(dut, {...}, set_mcc_ready=True, 
+                  total_delay_ms=50.0, per_reg_delay_ms=0)
+
+# No delay (fast tests)
+await mcc_set_regs(dut, {...}, set_mcc_ready=True,
+                  simulate_network_delay=False)
+```
+
+**Runtime Register Updates**:
+```python
+# Update registers while module is running
+await mcc_set_regs(dut, {
+    5: 0x00001000  # Change voltage
+}, set_mcc_ready=False)  # Module already running, don't touch CR0[31]
+```
+
+**Complete Workflow Example**:
+```python
+@cocotb.test()
+async def test_complete_initialization(dut):
+    """Demonstrate complete MCC initialization workflow"""
+    
+    # === Phase 1: Hardware startup ===
+    await setup_clock(dut, clk_signal="Clk", period_ns=10)
+    await reset_active_high(dut, rst_signal="Reset")
+    await init_mcc_inputs(dut)
+    
+    # === Phase 2: All-zero state (simulates bitstream load) ===
+    # GHDL defaults all signals to 0, so this is implicit
+    # In real hardware, registers are 0 after bitstream load
+    for i in range(16):
+        getattr(dut, f"Control{i}").value = 0
+    await ClockCycles(dut.Clk, 10)
+    
+    # === Phase 3: Network delay + configuration ===
+    await mcc_set_regs(dut, {
+        0: 0x40000001,  # DivSel, enables, etc.
+        1: 0x0000000A,  # Delays
+        5: 0x0000199A,  # Voltage levels
+    }, set_mcc_ready=True, total_delay_ms=25.0)
+    
+    # === Phase 4: Wait for module to settle ===
+    await wait_for_mcc_ready(dut, settle_cycles=20)
+    
+    # === Phase 5: Verify operational ===
+    await ClockCycles(dut.Clk, 100)
+    # ... test module behavior
+```
+
 ### CustomWrapper Entity Stub
 
 For testing MCC modules (those using CustomWrapper), you need the CustomWrapper entity stub:
 
-**File**: `tests/customwrapper_stub.vhd`
+**File**: `mcc_templates/CustomWrapper_test_stub.vhd`
 
 **Interface** (from MCC spec):
 ```vhdl
@@ -97,6 +258,7 @@ end entity CustomWrapper;
 
 **Key Points**:
 - Control registers are `std_logic_vector(31 downto 0)` NOT `signed`
+- Control0[31] = MCC_READY flag (MANDATORY convention)
 - MCC provides 16 control registers (Control0-Control15)
 - MCC provides 4 input channels (InputA-D) and 4 output channels (OutputA-D)
 - Stub must be included in VHDL_SOURCES before module's Top.vhd
@@ -104,50 +266,24 @@ end entity CustomWrapper;
 
 ### Example Makefile Entry
 ```makefile
-ifeq ($(TEST_MODULE),emfi_seq_top)
+ifeq ($(TEST_MODULE),mcc_primitives)
     VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
                    $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
                    $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_fsm.vhd \
                    $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_stair.vhd \
                    $(MODULES_DIR)/EMFI-Seq/top/EMFI_Seq.vhd \
-                   customwrapper_stub.vhd \
+                   $(PROJECT_ROOT)/mcc_templates/CustomWrapper_test_stub.vhd \
                    $(MODULES_DIR)/EMFI-Seq/top/Top.vhd
     TOPLEVEL = customwrapper          # Lowercase!
-    COCOTB_TEST_MODULES = test_emfi_seq_top
+    COCOTB_TEST_MODULES = test_mcc_primitives
 endif
-```
-
-### MCC Test Initialization Pattern
-```python
-async def init_control_registers(dut):
-    """Initialize all MCC control registers"""
-    # Control0: Module-specific (e.g., Enable, ClkEn, DivSel)
-    dut.Control0.value = 0x00000000
-   
-    # Control1-4: Module-specific parameters
-    dut.Control1.value = 0
-    dut.Control2.value = 0
-    dut.Control3.value = 0
-    dut.Control4.value = 0
-   
-    # Control5-15: Initialize unused registers
-    for i in range(5, 16):
-        getattr(dut, f"Control{i}").value = 0
-   
-    # Initialize all input channels
-    dut.InputA.value = 0
-    dut.InputB.value = 0
-    dut.InputC.value = 0
-    dut.InputD.value = 0
-   
-    await ClockCycles(dut.Clk, 1)
 ```
 
 ## Test Organization
 
 ### File Naming
 - Test files: `test_<module_name>.py`
-- Example: `test_clk_divider_core.py`, `test_emfi_seq_top.py`
+- Example: `test_clk_divider_core.py`, `test_emfi_seq_top.py`, `test_mcc_primitives.py`
 
 ### Test Numbering
 Use numbered test functions with clear descriptions:
@@ -169,12 +305,13 @@ async def test_clock_enable(dut):
 ### Test Categories
 Typical test sequence:
 1. **Reset behavior** - Verify reset clears state
-2. **Basic functionality** - Core feature works
-3. **Edge cases** - Boundary conditions, special values
-4. **Control signals** - Enable, ClkEn, Reset interactions
-5. **Randomized inputs** - Runtime-generated test data
-6. **Integration** - Multi-module interactions
-7. **Summary** - Final validation message
+2. **MCC initialization** - Verify MCC_READY convention (for MCC modules)
+3. **Basic functionality** - Core feature works
+4. **Edge cases** - Boundary conditions, special values
+5. **Control signals** - Enable, ClkEn, Reset interactions
+6. **Randomized inputs** - Runtime-generated test data
+7. **Integration** - Multi-module interactions
+8. **Summary** - Final validation message
 
 ## Best Practices
 
@@ -223,6 +360,17 @@ VOLTAGE_1V1 = 0x199A  # From Moku_Voltage_pkg
 dut.config.value = VOLTAGE_1V1
 ```
 
+### 6. Use MCC Primitives for MCC Modules
+```python
+# Bad - manual register writes
+dut.Control0.value = 0x80000000
+await ClockCycles(dut.Clk, 100)
+
+# Good - MCC primitives with network latency
+await mcc_set_regs(dut, {0: 0x40000000}, set_mcc_ready=True)
+await wait_for_mcc_ready(dut)
+```
+
 ## Working Examples
 
 ### Simple Core Test
@@ -243,6 +391,14 @@ dut.config.value = VOLTAGE_1V1
 - MCC control register mapping
 - Multi-core integration
 - Runtime randomization
+
+### MCC Primitives Test (NEW)
+**File**: `tests/test_mcc_primitives.py` (6 tests passing)
+- MCC_READY all-zero state safety
+- Network latency simulation
+- Enable/disable sequences
+- Runtime register updates
+- Complete initialization workflow
 
 ## Migration from GHDL Testbenches
 
@@ -274,6 +430,7 @@ async def test_feature(dut):
 - Runtime randomization
 - Better logging and debugging
 - Cross-platform compatibility
+- MCC network latency simulation
 
 ## Common Pitfalls
 
@@ -322,6 +479,28 @@ dut.Control0.value = 0x80000000  # Correct
 dut.Control0.value = signed(...) # Wrong
 ```
 
+### 6. Forgetting MCC_READY Convention
+```python
+# Bad - CR0[31] not handled
+dut.Control0.value = 0x40000000  # Missing MCC_READY bit
+
+# Good - use mcc_set_regs which handles CR0[31]
+await mcc_set_regs(dut, {0: 0x40000000}, set_mcc_ready=True)
+```
+
+### 7. Not Simulating Network Delay
+```python
+# Bad - unrealistic instant configuration
+dut.Control0.value = 0x80000000
+dut.Control1.value = 0x0000007F
+
+# Good - realistic network latency
+await mcc_set_regs(dut, {
+    0: 0x40000000,
+    1: 0x0000007F
+}, set_mcc_ready=True)  # Includes 10-200ms delay by default
+```
+
 ## Debugging
 
 ### Enable Waveforms
@@ -357,22 +536,27 @@ log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
 3. **Include dependencies**: List all VHDL sources in compilation order
 4. **Set TOPLEVEL**: Use lowercase entity name
 5. **Write tests**: Use async/await pattern
-6. **Run**: `make TEST_MODULE=<module>`
-7. **Update help**: Add to `make list-tests` output
+6. **Use MCC primitives**: For MCC modules, use mcc_set_regs(), etc.
+7. **Run**: `make TEST_MODULE=<module>`
+8. **Update help**: Add to `make list-tests` output
 
 ## Reference Files
 
-- **Template**: `tests/test_clk_divider_core.py` - Complete working example
+- **Template**: `tests/test_clk_divider_core.py` - Core module example
+- **MCC Template**: `tests/test_mcc_primitives.py` - MCC initialization example
 - **Utilities**: `tests/conftest.py` - Shared helper functions
 - **Makefile**: `tests/Makefile` - Build system integration
 - **README**: `tests/README.md` - User-facing documentation
-- **MCC Stub**: `tests/customwrapper_stub.vhd` - CustomWrapper entity for MCC testing
+- **MCC Stub**: `mcc_templates/CustomWrapper_test_stub.vhd` - CustomWrapper entity
 
 ## Summary
 
 ✅ **DO**:
 - Use CocotB for all new tests
 - Import helpers from conftest.py
+- Use MCC primitives for MCC modules (mcc_set_regs, wait_for_mcc_ready, etc.)
+- Follow MCC_READY convention (CR0[31] active-high)
+- Simulate network latency for realistic tests
 - Add clear logging and assertions
 - Use runtime randomization
 - Test each module independently
@@ -381,7 +565,9 @@ log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
 ❌ **DON'T**:
 - Create new GHDL testbenches
 - Hard-code test values (use constants)
-- Skip initialization
-- Assume signal defaults
+- Skip MCC_READY implementation in Top.vhd
+- Manually write Control0 without mcc_set_regs
+- Skip network latency simulation
+- Assume instant register updates
 - Rely on test execution order
 - Forget to add Makefile entry

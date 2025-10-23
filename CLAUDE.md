@@ -394,6 +394,90 @@ top/
 
 **Key principle**: Start with Pattern 1 (simple). Only move to Pattern 2 if you need validation functions or complex register logic.
 
+#### MCC_READY Convention (MANDATORY for ALL MCC modules)
+
+**Added**: 2025-10-22
+
+**Problem**: During FPGA bitstream loading, all MCC control registers initialize to 0x00000000. Network delay (10-200ms typical) occurs before configuration arrives. Modules must remain in a safe, disabled state during this "all-zero" period.
+
+**Solution**: Use **Control0[31] as MCC_READY flag** (active-high)
+
+```
+Control0[31] = 0 → Module DISABLED (safe during all-zero state)
+Control0[31] = 1 → Module ENABLED and ready for operation
+```
+
+**VHDL Implementation Pattern** (Top.vhd):
+```vhdl
+-- Register Map (add to Top.vhd header comments):
+-- MCC_READY Convention:
+--   Control0[31] = MCC_READY flag (ACTIVE-HIGH)
+--     0 = Module disabled (safe during bitstream load / all-zero state)
+--     1 = Module enabled and ready for operation
+--
+-- Control0[31]:    MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
+-- Control0[30]:    User Enable (1=enable, 0=disable)
+-- Control0[29:0]:  Module-specific configuration
+
+architecture ModuleName of CustomWrapper is
+    -- MCC control signals
+    signal mcc_ready      : std_logic;
+    signal user_enable    : std_logic;
+    signal global_enable  : std_logic;
+begin
+    -- Extract MCC_READY flag and gate module enable
+    mcc_ready      <= Control0(31);
+    user_enable    <= Control0(30);
+    global_enable  <= mcc_ready and user_enable;
+
+    MODULE_INST: entity WORK.ModuleName
+        port map (
+            Clk    => Clk,
+            Reset  => Reset,
+            Enable => global_enable,  -- Safe: disabled when CR0[31]=0
+            ...
+        );
+end architecture;
+```
+
+**CocotB Test Pattern** (see `tests/conftest.py` for primitives):
+```python
+from conftest import (
+    setup_clock, reset_active_high, init_mcc_inputs,
+    mcc_set_regs, wait_for_mcc_ready
+)
+
+@cocotb.test()
+async def test_initialization(dut):
+    # Hardware startup
+    await setup_clock(dut, clk_signal="Clk")
+    await reset_active_high(dut, rst_signal="Reset")
+    await init_mcc_inputs(dut)
+
+    # Simulate network delay + config (CR0[31] set automatically)
+    await mcc_set_regs(dut, {
+        0: 0x40000001,  # User bits (CR0[31] handled by primitive)
+        1: 0x0000007F   # Module params
+    }, set_mcc_ready=True)  # Sets CR0[31]=1 after config
+
+    # Wait for module to settle
+    await wait_for_mcc_ready(dut)
+
+    # Test normal operation
+    # ...
+```
+
+**Benefits**:
+- ✓ Safe default: All-zero state keeps module disabled
+- ✓ Clear semantic: Bit 31 = "configuration valid and ready"
+- ✓ Active-high logic: No confusing inversions
+- ✓ Network-aware: MCC sets CR0[31]=1 only after config loaded
+- ✓ Testable: CocotB primitives simulate realistic network latency
+
+**Reference Implementation**: `modules/EMFI-Seq/top/Top.vhd` (updated 2025-10-22)
+
+**Test Reference**: `tests/test_mcc_primitives.py` (6 tests passing)
+
 ### Dependency Management
 - Shared modules built first in compilation order
 - Module dependencies defined in `modules/Makefile.deps`
@@ -408,10 +492,11 @@ top/
 - No platform interface package
 - Clean and simple pattern
 
-**EMFI-Seq** (`modules/EMFI-Seq/`) - Multi-core integration:
+**EMFI-Seq** (`modules/EMFI-Seq/`) - Multi-core integration with MCC_READY:
 - 2 files in top/: EMFI_Seq.vhd + Top.vhd
 - Instantiates multiple cores (FSM + analog monitor)
-- Direct register mapping
+- **Demonstrates MCC_READY pattern** (updated 2025-10-22)
+- Direct register mapping with safe all-zero state handling
 - Good example of simple multi-core integration
 
 ### Pattern 2 (Platform Interface Package)
@@ -434,6 +519,8 @@ top/
 6. **Don't create separate mcc-Top.vhd entity files** - MCC provides CustomWrapper entity
 7. **Don't over-engineer MCC integration** - Start with Pattern 1 (simple direct mapping) unless you need validation
 8. **Don't create new GHDL testbenches** - Use CocotB instead (see `tests/README.md`)
+9. **Don't use inverted MCC_READY logic** - Use active-high CR0[31] convention (safe during all-zero state)
+10. **Don't manually write Control0 in tests** - Use `mcc_set_regs()` primitive to handle MCC_READY correctly
 
 ## Verification Checklist
 
@@ -443,7 +530,9 @@ Before committing code:
 - [ ] Proper signal prefixes (`ctrl_*`, `cfg_*`, `stat_*`)
 - [ ] Top layer uses direct instantiation (`entity WORK.module_name`)
 - [ ] Standard control signal priority: reset > clk_en > enable
+- [ ] **MCC modules**: Implement MCC_READY convention (CR0[31] active-high)
+- [ ] **MCC tests**: Use `mcc_set_regs()` primitive (don't manually write Control0)
 - [ ] Testbench prints required messages (ALL TESTS PASSED, etc.)
-- [ ] Testbench follows 4-layer architecture
+- [ ] Testbench follows 4-layer architecture (or uses CocotB)
 - [ ] GHDL compiles with `--std=08`
-- [ ] All tests pass with `make test`
+- [ ] All tests pass with `make test` or `make TEST_MODULE=<module>`

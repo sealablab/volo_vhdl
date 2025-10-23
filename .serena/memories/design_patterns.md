@@ -27,7 +27,105 @@ end architecture;
 - Uniform pattern across top-level files
 - Easier dependency tracking
 
-### 2. Platform Interface Package Pattern
+### 2. MCC_READY Pattern (MANDATORY for all MCC modules)
+
+**Added**: 2025-10-22
+
+**Problem**: FPGA bitstream loading creates an "all-zero" state before configuration arrives over the network (10-200ms delay). Modules need safe default behavior during this phase.
+
+**Solution**: Use Control0[31] as MCC_READY flag (active-high)
+
+**Convention**:
+```
+Control0[31] = 0 → Module DISABLED (safe during bitstream load)
+Control0[31] = 1 → Module ENABLED and ready for operation
+```
+
+**VHDL Implementation** (Top.vhd):
+```vhdl
+-- Register Map (Comment Header - MANDATORY):
+-- MCC_READY Convention:
+--   Control0[31] = MCC_READY flag (ACTIVE-HIGH)
+--     0 = Module disabled (safe during bitstream load / all-zero state)
+--     1 = Module enabled and ready for operation
+--
+-- Control0[31]:    MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
+-- Control0[30]:    User Enable (1=enable, 0=disable)
+-- Control0[29:0]:  Module-specific configuration
+
+architecture ModuleName of CustomWrapper is
+    -- MCC control signals
+    signal mcc_ready      : std_logic;
+    signal user_enable    : std_logic;
+    signal global_enable  : std_logic;
+    
+    -- Internal signals
+    signal status_internal  : unsigned(6 downto 0);
+    -- ...
+begin
+    -- ========================================================================
+    -- MCC_READY LOGIC (Active-High Convention)
+    -- ========================================================================
+    -- Control0[31] = MCC_READY: Set by MCC after configuration loaded
+    -- Control0[30] = User Enable: User-level enable bit
+    -- Global enable gates both: module only operates when MCC is ready AND user enables
+    mcc_ready      <= Control0(31);
+    user_enable    <= Control0(30);
+    global_enable  <= mcc_ready and user_enable;
+    
+    -- ========================================================================
+    -- MODULE INSTANCE
+    -- ========================================================================
+    MODULE_INST: entity WORK.ModuleName
+        port map (
+            Clk    => Clk,
+            Reset  => Reset,
+            Enable => global_enable,        -- Safe: disabled during all-zero state
+            ClkEn  => '1',                  -- Or Control0(29) if runtime control needed
+            ...
+        );
+end architecture;
+```
+
+**Benefits**:
+- ✓ **Safe default**: All-zero state keeps module disabled
+- ✓ **Clear semantic**: Bit 31 = "configuration valid and ready"
+- ✓ **Active-high logic**: No confusing inversions
+- ✓ **Network-aware**: External system sets CR0[31]=1 only after all config loaded
+- ✓ **Testable**: CocotB tests simulate realistic initialization with network delay
+
+**CocotB Testing Pattern**:
+```python
+from conftest import (
+    setup_clock, reset_active_high, init_mcc_inputs,
+    mcc_set_regs, wait_for_mcc_ready
+)
+
+@cocotb.test()
+async def test_initialization(dut):
+    # Hardware startup
+    await setup_clock(dut, clk_signal="Clk")
+    await reset_active_high(dut, rst_signal="Reset")
+    await init_mcc_inputs(dut)
+    
+    # Simulate network delay + config load (includes CR0[31]=1)
+    await mcc_set_regs(dut, {
+        0: 0x40000001,  # User config (CR0[31] set automatically)
+        1: 0x0000007F   # Module params
+    }, set_mcc_ready=True)
+    
+    # Wait for module to settle
+    await wait_for_mcc_ready(dut)
+    
+    # Test normal operation
+    # ...
+```
+
+**Reference Implementation**: `modules/EMFI-Seq/top/Top.vhd`
+
+**Test Reference**: `tests/test_mcc_primitives.py` (6 tests passing)
+
+### 3. Platform Interface Package Pattern
 For modules requiring register interfaces, use a platform interface package:
 
 ```vhdl
@@ -71,7 +169,7 @@ global_enable <= extract_ctrl_global_enable(ctrl0_data);
 status_reg <= assemble_status0_reg(enabled, wave_select);
 ```
 
-### 3. Standard Control Signal Pattern
+### 4. Standard Control Signal Pattern
 Implement control signals with clear priority:
 
 ```vhdl
@@ -121,7 +219,7 @@ end process;
 - **Functional Enable (enable=0)**: Module is idle but clocked, outputs go to parked/safe values
 - **All Active**: Normal state machine progression and data processing
 
-### 4. FSM State Encoding Pattern
+### 5. FSM State Encoding Pattern
 Use `std_logic_vector` with constants instead of enums:
 
 ```vhdl
@@ -148,7 +246,7 @@ begin
 end process;
 ```
 
-### 5. Status Register Implementation Pattern
+### 6. Status Register Implementation Pattern
 Standard status register with sticky fault bits:
 
 ```vhdl
@@ -178,7 +276,7 @@ begin
 end process;
 ```
 
-### 5a. Status Register Bit Conventions
+### 6a. Status Register Bit Conventions
 
 **Standard Bit Assignments** (All VOLO modules):
 ```vhdl
@@ -233,7 +331,7 @@ end process;
 - **Validation**: Status register testable without precise timing
 - **Standardization**: Consistent across all modules
 
-### 6. Testbench 4-Layer Architecture
+### 7. Testbench 4-Layer Architecture
 Structure testbenches in four distinct layers:
 
 ```vhdl
@@ -266,7 +364,7 @@ begin
 end procedure;
 ```
 
-### 7. Voltage/Data Conversion Package Pattern (Datadef Layer)
+### 8. Voltage/Data Conversion Package Pattern (Datadef Layer)
 
 **When to Use**: Module needs voltage conversion, data scaling, or complex mathematical operations with validation.
 
@@ -405,7 +503,7 @@ Create documentation with:
 
 **Discovered**: 2025-01-21, EMFI-Seq voltage package development
 
-### 8. LUT and Data Structure Pattern (Datadef Layer)
+### 9. LUT and Data Structure Pattern (Datadef Layer)
 Define data structures in datadef with Verilog conversion strategy:
 
 ```vhdl
@@ -484,6 +582,16 @@ constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);  -- 1.1V
 -- Or if hardcoded, add extensive comments explaining the calculation
 ```
 
+### ❌ Don't Use Inverted MCC_READY Logic
+```vhdl
+-- WRONG: Inverted logic (confusing, unsafe during all-zero state)
+Enable => not Control0(31),  -- Enable=1 when CR0[31]=0 (UNSAFE!)
+
+-- CORRECT: Active-high MCC_READY convention
+mcc_ready <= Control0(31);
+global_enable <= mcc_ready and user_enable;  -- Safe during all-zero state
+```
+
 ## Module Dependency Management
 Define dependencies in `modules/Makefile.deps`:
 
@@ -513,11 +621,12 @@ SHARED_MODULES = volo_common
 - Direct instantiation in top layer
 - Proper control signal handling
 
-### EMFI-Seq (Multi-Core Reference - Pattern 1)
+### EMFI-Seq (Multi-Core Reference - Pattern 1 + MCC_READY)
 **Location**: `modules/EMFI-Seq/`
 
 **Demonstrates**:
-- Pattern 1: Simple Direct Mapping MCC integration
+- **Pattern 1**: Simple Direct Mapping MCC integration
+- **MCC_READY Pattern**: Active-high CR0[31] for safe initialization
 - Voltage conversion package pattern (uses volo_common/Moku_Voltage_pkg)
 - Multi-core integration (FSM + analog monitor)
 - Compile-time constant computation
@@ -527,7 +636,26 @@ SHARED_MODULES = volo_common
 - `core/EMFI_Seq_stair.vhd` - Usage of Moku_Voltage_pkg
 - `core/EMFI_Seq_fsm.vhd` - FSM implementation
 - `top/EMFI_Seq.vhd` - Multi-core integration
-- `top/Top.vhd` - CustomWrapper architecture (Pattern 1)
+- `top/Top.vhd` - **CustomWrapper architecture with MCC_READY pattern**
+
+**Top.vhd Highlights** (MCC_READY reference):
+```vhdl
+architecture EMFI_Seq of CustomWrapper is
+    signal mcc_ready      : std_logic;
+    signal user_enable    : std_logic;
+    signal global_enable  : std_logic;
+begin
+    mcc_ready      <= Control0(31);
+    user_enable    <= Control0(30);
+    global_enable  <= mcc_ready and user_enable;
+    
+    EMFI_SEQUENCER: entity WORK.EMFI_Seq
+        port map (
+            Enable => global_enable,  -- Safe during all-zero state
+            ...
+        );
+end architecture;
+```
 
 ### volo_common (Shared Modules Reference)
 **Location**: `modules/volo_common/`

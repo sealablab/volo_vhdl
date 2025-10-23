@@ -361,6 +361,234 @@ def log_signal_table(dut, signal_names, title="Signal Values"):
 
 
 # =============================================================================
+# MCC (Moku CustomWrapper) Helpers
+# =============================================================================
+
+async def init_mcc_inputs(dut):
+    """
+    Initialize all MCC input channels to zero
+
+    Args:
+        dut: Device Under Test (CustomWrapper)
+
+    Example:
+        await init_mcc_inputs(dut)
+    """
+    dut.InputA.value = 0
+    dut.InputB.value = 0
+    dut.InputC.value = 0
+    dut.InputD.value = 0
+
+
+async def mcc_set_regs(dut, control_regs,
+                       set_mcc_ready=True,
+                       simulate_network_delay=True,
+                       total_delay_ms=None,
+                       per_reg_delay_ms=None):
+    """
+    Set MCC control registers with realistic network latency simulation
+
+    This simulates the real-world MCC register update process over network.
+    Use this for BOTH initial configuration and runtime register updates.
+
+    Network Latency Simulation:
+    - Total delay before first write: 10-200ms (random if not specified)
+    - Per-register delay: 1-10ms (random if not specified)
+    - Realistic for Moku network communication
+
+    MCC_READY Convention (CR0[31]):
+    - CR0[31] = 0: Module disabled (safe during "all-zero" bitstream load)
+    - CR0[31] = 1: Module enabled and ready for operation
+    - set_mcc_ready=True will automatically set CR0[31]=1 after config
+
+    Args:
+        dut: Device Under Test (CustomWrapper entity)
+        control_regs: Dict of {reg_num: value} to set
+                      Note: CR0[31] (MCC_READY) is auto-handled if set_mcc_ready=True
+        set_mcc_ready: If True, sets CR0[31]=1 after loading registers (default: True)
+        simulate_network_delay: Enable network latency simulation (default: True)
+        total_delay_ms: Total delay before first register write (default: 10-200ms random)
+        per_reg_delay_ms: Delay between each register write (default: 1-10ms random)
+
+    Example - Initial configuration with MCC_READY:
+        await setup_clock(dut, clk_signal="Clk")
+        await reset_active_high(dut, rst_signal="Reset")
+        await init_mcc_inputs(dut)
+
+        await mcc_set_regs(dut, {
+            0: 0x40000000,  # User config bits (CR0[31] handled separately)
+            1: 0x0000007F,  # DelayS1
+            5: 0x0000199A   # Voltage level
+        }, set_mcc_ready=True)  # Sets CR0[31]=1 to enable module
+
+        await wait_for_mcc_ready(dut)  # Let module settle
+
+    Example - Runtime update (module already enabled):
+        await mcc_set_regs(dut, {
+            5: 0x00001000   # Change voltage only
+        }, set_mcc_ready=False, total_delay_ms=15.0)  # Explicit 15ms delay
+
+    Example - Reproducible timing (no randomness):
+        await mcc_set_regs(dut, {...},
+                          simulate_network_delay=False)  # No delay, immediate update
+    """
+    import random
+    from cocotb.triggers import Timer, ClockCycles
+
+    # Total delay before starting register writes
+    if simulate_network_delay and total_delay_ms is None:
+        total_delay_ms = random.uniform(10, 200)  # 10-200ms realistic range
+
+    if simulate_network_delay and total_delay_ms > 0:
+        delay_ns = int(total_delay_ms * 1_000_000)
+        dut._log.info(f"⏱  Network latency: {total_delay_ms:.1f}ms")
+        await Timer(delay_ns, units="ns")
+
+    # Write each register with optional per-register delay
+    for reg_num, value in sorted(control_regs.items()):
+        # Mask out bit 31 from CR0 if set_mcc_ready=True (we'll set it last)
+        if reg_num == 0 and set_mcc_ready:
+            value = value & 0x7FFFFFFF  # Clear bit 31
+
+        getattr(dut, f"Control{reg_num}").value = value
+        dut._log.info(f"  Control{reg_num} ← 0x{value:08X}")
+
+        # Per-register delay (simulate sequential network writes)
+        if simulate_network_delay:
+            if per_reg_delay_ms is None:
+                delay = random.uniform(1, 10)  # 1-10ms per register
+            else:
+                delay = per_reg_delay_ms
+
+            if delay > 0:
+                await Timer(int(delay * 1_000_000), units="ns")
+
+    await ClockCycles(dut.Clk, 2)
+
+    # Set MCC_READY flag (CR0[31]=1) to enable module
+    if set_mcc_ready:
+        cr0_current = int(dut.Control0.value)
+        cr0_ready = cr0_current | 0x80000000  # Set bit 31
+        dut.Control0.value = cr0_ready
+        dut._log.info(f"✓ MCC_READY asserted (CR0 = 0x{cr0_ready:08X})")
+        await ClockCycles(dut.Clk, 2)
+
+
+async def wait_for_mcc_ready(dut, settle_cycles=10):
+    """
+    Wait for module to stabilize after MCC_READY assertion
+
+    After setting CR0[31]=1 (MCC_READY), modules may need time to:
+    - Initialize internal state machines
+    - Settle outputs to safe/default values
+    - Complete any startup sequences
+
+    This function provides a simple fixed-cycle settle time.
+
+    Args:
+        dut: Device Under Test
+        settle_cycles: Number of clock cycles to wait (default: 10)
+
+    Returns:
+        None (always succeeds)
+
+    Example:
+        await mcc_set_regs(dut, {...}, set_mcc_ready=True)
+        await wait_for_mcc_ready(dut)  # Default 10 cycles
+        # Now safe to test module behavior
+
+    Example - Longer settle time:
+        await wait_for_mcc_ready(dut, settle_cycles=50)
+    """
+    clk = dut.Clk if hasattr(dut, "Clk") else dut.clk
+    await ClockCycles(clk, settle_cycles)
+    dut._log.info(f"✓ Module settled ({settle_cycles} cycles after MCC_READY)")
+
+
+async def wait_for_first_clk_en(dut, clk_en_signal="clk_en", timeout_cycles=1000):
+    """
+    Wait for the first clock enable pulse (useful for clock divider modules)
+
+    After initialization, modules with clock dividers may need time before
+    their first clk_en pulse. This helper waits for that first pulse to
+    ensure timing is stable before running tests.
+
+    Args:
+        dut: Device Under Test
+        clk_en_signal: Name of clock enable signal (default: "clk_en")
+        timeout_cycles: Maximum cycles to wait (default: 1000)
+
+    Returns:
+        bool: True if pulse detected, False if timeout
+
+    Example:
+        await mcc_set_regs(dut, {...}, set_mcc_ready=True)
+        await wait_for_mcc_ready(dut)
+
+        # Wait for clock divider to produce first pulse
+        success = await wait_for_first_clk_en(dut)
+        assert success, "Clock divider never produced clk_en pulse"
+
+    Example - Custom signal name:
+        success = await wait_for_first_clk_en(dut, clk_en_signal="ClkEn")
+    """
+    clk = dut.Clk if hasattr(dut, "Clk") else dut.clk
+    clk_en = getattr(dut, clk_en_signal)
+
+    for cycle in range(timeout_cycles):
+        await RisingEdge(clk)
+        if int(clk_en.value) == 1:
+            dut._log.info(f"✓ First clk_en pulse detected (after {cycle} cycles)")
+            return True
+
+    dut._log.warning(f"✗ Timeout: No clk_en pulse detected in {timeout_cycles} cycles")
+    return False
+
+
+async def mcc_disable(dut, simulate_network_delay=True, delay_ms=None):
+    """
+    Safely disable MCC module by clearing CR0[31] (MCC_READY flag)
+
+    This parks the module in a safe disabled state, useful for:
+    - Testing enable/disable sequences
+    - Preparing for configuration changes
+    - Verifying safe shutdown behavior
+
+    Args:
+        dut: Device Under Test (CustomWrapper)
+        simulate_network_delay: Enable network latency (default: True)
+        delay_ms: Override delay (default: 1-10ms random)
+
+    Returns:
+        None
+
+    Example:
+        # Disable module to change configuration
+        await mcc_disable(dut)
+        await mcc_set_regs(dut, {...}, set_mcc_ready=True)  # Re-enable with new config
+
+    Example - Immediate disable (no network delay):
+        await mcc_disable(dut, simulate_network_delay=False)
+    """
+    import random
+    from cocotb.triggers import Timer, ClockCycles
+
+    if simulate_network_delay:
+        if delay_ms is None:
+            delay_ms = random.uniform(1, 10)
+        await Timer(int(delay_ms * 1_000_000), units="ns")
+
+    cr0_current = int(dut.Control0.value)
+    cr0_disabled = cr0_current & 0x7FFFFFFF  # Clear bit 31
+    dut.Control0.value = cr0_disabled
+
+    clk = dut.Clk if hasattr(dut, "Clk") else dut.clk
+    await ClockCycles(clk, 2)
+
+    dut._log.info(f"✓ MCC_READY cleared (CR0 = 0x{cr0_disabled:08X}) - module disabled")
+
+
+# =============================================================================
 # Module-Specific Helpers (can be expanded as needed)
 # =============================================================================
 
