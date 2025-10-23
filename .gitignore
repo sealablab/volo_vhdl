@@ -34,3 +34,5 @@ static/
 *.txt.md
 typescript
 2025-*.txt
+.DS_Store
+t.txt
