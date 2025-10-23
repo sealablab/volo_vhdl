@@ -129,6 +129,16 @@ ifeq ($(TEST_MODULE),pinatatx_core)
     COCOTB_TEST_MODULES = test_pinatatx_core
 endif
 
+# simpleserial_v1_tx test (ChipWhisperer protocol)
+ifeq ($(TEST_MODULE),simpleserial_v1_tx)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/volo_uart_pkg.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_baud_gen.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_tx_core.vhd \
+                   $(VOLO_COMMON)/core/volo_simpleserial_v1_tx.vhd
+    TOPLEVEL = simpleserial_v1_tx
+    COCOTB_TEST_MODULES = test_simpleserial_v1_tx
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
