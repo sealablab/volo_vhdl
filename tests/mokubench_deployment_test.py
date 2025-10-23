@@ -30,13 +30,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from bench_framework import HardwareBackend, BenchConfig, SlotConfig, Connection
 
-# Platform definitions (from platform_models.md)
+# Platform definitions (must match config.py format)
 MOKU_GO = {
     'id': 2,
     'name': 'Moku:Go',
     'slots': 2,
-    'inputs': 2,
-    'outputs': 2,
+    'inputs': ['Input1', 'Input2'],
+    'outputs': ['Output1', 'Output2'],
     'clock': 125e6
 }
 
@@ -44,8 +44,8 @@ MOKU_PRO = {
     'id': 3,
     'name': 'Moku:Pro',
     'slots': 4,
-    'inputs': 4,
-    'outputs': 4,
+    'inputs': ['Input1', 'Input2', 'Input3', 'Input4'],
+    'outputs': ['Output1', 'Output2', 'Output3', 'Output4'],
     'clock': 500e6
 }
 
@@ -89,12 +89,7 @@ def create_simple_counter_config(platform_id: int = 2) -> BenchConfig:
             2: SlotConfig(
                 instrument='Oscilloscope',
                 settings={
-                    'timebase': (-5e-3, 5e-3),  # ±5ms window
-                    'trigger': {
-                        'type': 'Edge',
-                        'source': 'Input1',
-                        'level': 0.5
-                    }
+                    'timebase': (-5e-3, 5e-3)  # ±5ms window
                 }
             )
         },
