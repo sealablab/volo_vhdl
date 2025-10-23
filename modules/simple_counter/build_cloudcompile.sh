@@ -40,11 +40,15 @@ echo -e "${YELLOW}[1/4] Creating package directory...${NC}"
 rm -rf "${PKG_DIR}"
 mkdir -p "${PKG_DIR}"
 
-# Copy required files
-echo -e "${YELLOW}[2/4] Copying VHDL files...${NC}"
-cp "${TEMPLATES_DIR}/mcc-Top.vhd" "${PKG_DIR}/"
+# Copy required files for CloudCompile
+# NOTE: DO NOT include mcc-Top.vhd! MCC provides CustomWrapper entity.
+# Only include: module source + architecture (no entity)
+echo -e "${YELLOW}[2/4] Copying VHDL files for CloudCompile...${NC}"
 cp "${MODULE_DIR}/core/simple_counter_core.vhd" "${PKG_DIR}/"
 cp "${MODULE_DIR}/top/Top.vhd" "${PKG_DIR}/"
+echo "  ✓ Copied: simple_counter_core.vhd (module logic)"
+echo "  ✓ Copied: Top.vhd (CustomWrapper architecture)"
+echo "  ! Excluded: mcc-Top.vhd (MCC provides CustomWrapper entity)"
 
 # Create README for upload
 echo -e "${YELLOW}[3/4] Creating README...${NC}"
@@ -57,9 +61,12 @@ Description: 16-bit counter for MokuBench Phase 3 proof of concept
 Platform: Moku:Go / Moku:Pro
 
 Files Included:
-- mcc-Top.vhd: CustomWrapper entity (Moku platform interface)
 - simple_counter_core.vhd: 16-bit counter core logic
 - Top.vhd: CustomWrapper architecture (simple_counter_top)
+
+IMPORTANT: This package does NOT include mcc-Top.vhd because Moku Cloud
+Compile already provides the CustomWrapper entity. Only upload the
+architecture (Top.vhd) and your module logic.
 
 Control Register Map:
 - Control0[31]: MCC_READY (auto-set by platform)
@@ -98,37 +105,41 @@ Python MokuBench Usage:
   data = bench.run(duration_ms=100)
 
 Upload Instructions:
-1. Zip this package: zip -r simple_counter.zip mcc-Top.vhd simple_counter_core.vhd Top.vhd
-2. Go to Moku Cloud Compile web interface
+1. Zip this package: zip -r simple_counter.zip *.vhd
+2. Go to Moku Cloud Compile web interface: https://cloud-compile.liquidinstruments.com/
 3. Upload simple_counter.zip
 4. Wait for synthesis (Vivado takes ~5-10 minutes)
 5. Download resulting bitstream.tar.gz
 6. Use with MokuBench!
+
+Note: MCC provides CustomWrapper entity automatically. This package only
+contains your module logic and CustomWrapper architecture.
 EOF
 
-# Test compilation with GHDL (if available)
-echo -e "${YELLOW}[4/4] Testing compilation with GHDL...${NC}"
+# Test compilation with GHDL BEFORE packaging (use local mcc-Top.vhd)
+echo -e "${YELLOW}[4/4] Testing local GHDL compilation...${NC}"
 if command -v ghdl &> /dev/null; then
-    cd "${PKG_DIR}"
-    mkdir -p work
+    mkdir -p "${MODULE_DIR}/ghdl_test_work"
+    cd "${MODULE_DIR}"
 
-    echo "  Analyzing mcc-Top.vhd..."
-    ghdl -a --std=08 --workdir=work mcc-Top.vhd
+    echo "  Analyzing mcc-Top.vhd (from templates)..."
+    ghdl -a --std=08 --workdir=ghdl_test_work "${TEMPLATES_DIR}/mcc-Top.vhd"
 
     echo "  Analyzing simple_counter_core.vhd..."
-    ghdl -a --std=08 --workdir=work simple_counter_core.vhd
+    ghdl -a --std=08 --workdir=ghdl_test_work core/simple_counter_core.vhd
 
     echo "  Analyzing Top.vhd..."
-    ghdl -a --std=08 --workdir=work Top.vhd
+    ghdl -a --std=08 --workdir=ghdl_test_work top/Top.vhd
 
     echo "  Elaborating CustomWrapper..."
-    ghdl -e --std=08 --workdir=work CustomWrapper
+    ghdl -e --std=08 --workdir=ghdl_test_work CustomWrapper
 
-    rm -rf work  # Clean up test artifacts
+    rm -rf ghdl_test_work  # Clean up test artifacts
 
-    echo -e "${GREEN}  ✓ GHDL compilation successful!${NC}"
+    echo -e "${GREEN}  ✓ Local GHDL compilation successful!${NC}"
+    echo "  (CloudCompile package does NOT include mcc-Top.vhd - MCC provides it)"
 else
-    echo -e "${YELLOW}  ! GHDL not found, skipping compilation test${NC}"
+    echo -e "${YELLOW}  ! GHDL not found, skipping local compilation test${NC}"
 fi
 
 echo ""
@@ -139,7 +150,11 @@ echo ""
 echo "Next steps:"
 echo "1. cd ${PKG_DIR}"
 echo "2. zip -r simple_counter.zip *.vhd"
+echo "   (Package contains: simple_counter_core.vhd + Top.vhd only)"
 echo "3. Upload to Moku Cloud Compile: https://cloud-compile.liquidinstruments.com/"
-echo "4. Download bitstream.tar.gz when synthesis completes"
-echo "5. Use with MokuBench!"
+echo "4. Download bitstream.tar.gz when synthesis completes (~5-10 min)"
+echo "5. Save to: bitstreams/simple_counter.tar.gz"
+echo "6. Use with MokuBench!"
+echo ""
+echo "Note: mcc-Top.vhd is NOT included - MCC provides CustomWrapper entity"
 echo ""
