@@ -12,7 +12,7 @@ from .config import BenchConfig
 
 # Import Moku API
 try:
-    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer, LogicAnalyzer
+    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer, LogicAnalyzer, Phasemeter
     MOKU_AVAILABLE = True
 except ImportError:
     MOKU_AVAILABLE = False
@@ -24,6 +24,7 @@ except ImportError:
     Datalogger = Any
     SpectrumAnalyzer = Any
     LogicAnalyzer = Any
+    Phasemeter = Any
 
 
 class HardwareBackend(Backend):
@@ -72,6 +73,7 @@ class HardwareBackend(Backend):
             'Datalogger': Datalogger,
             'SpectrumAnalyzer': SpectrumAnalyzer,
             'LogicAnalyzer': LogicAnalyzer,
+            'Phasemeter': Phasemeter,
         }
 
     @classmethod
@@ -262,6 +264,18 @@ class HardwareBackend(Backend):
                     channel_mask=trigger.get('channel_mask', 0x01)
                 )
 
+        elif instrument_type == 'Phasemeter' and settings:
+            # Apply phasemeter settings
+            if 'pm_loop' in settings:
+                loop_cfg = settings['pm_loop']
+                for channel, cfg in loop_cfg.items():
+                    instrument.set_pm_loop(
+                        channel=channel,
+                        auto_acquire=cfg.get('auto_acquire', False),
+                        frequency=cfg.get('frequency', 1e6),
+                        bandwidth=cfg.get('bandwidth', '100Hz')
+                    )
+
     async def _setup_routing(self) -> None:
         """
         Establish signal routing between slots/ports.
@@ -365,6 +379,12 @@ class HardwareBackend(Backend):
                 # Count channels with data
                 channels_with_data = sum(1 for ch in range(16) if logic_data.get(f'ch{ch}', None) is not None)
                 print(f"  ✓ Captured logic data from {channels_with_data} channels (slot {slot_num})")
+
+            elif slot_config.instrument == 'Phasemeter':
+                # Get phasemeter data
+                phase_data = instrument.get_data()
+                data[slot_num] = phase_data  # Contains phase, frequency, amplitude arrays
+                print(f"  ✓ Captured phasemeter data (slot {slot_num})")
 
         print(f"[MokuBench] ✓ Run complete")
         return data
