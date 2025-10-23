@@ -12,7 +12,7 @@ from .config import BenchConfig
 
 # Import Moku API
 try:
-    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer
+    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer, LogicAnalyzer
     MOKU_AVAILABLE = True
 except ImportError:
     MOKU_AVAILABLE = False
@@ -23,6 +23,7 @@ except ImportError:
     CloudCompile = Any
     Datalogger = Any
     SpectrumAnalyzer = Any
+    LogicAnalyzer = Any
 
 
 class HardwareBackend(Backend):
@@ -70,6 +71,7 @@ class HardwareBackend(Backend):
             'CloudCompile': CloudCompile,
             'Datalogger': Datalogger,
             'SpectrumAnalyzer': SpectrumAnalyzer,
+            'LogicAnalyzer': LogicAnalyzer,
         }
 
     @classmethod
@@ -247,6 +249,19 @@ class HardwareBackend(Backend):
             if 'rbw' in settings:
                 instrument.set_rbw(settings['rbw'])
 
+        elif instrument_type == 'LogicAnalyzer' and settings:
+            # Apply logic analyzer settings
+            if 'samplerate' in settings:
+                instrument.set_samplerate(settings['samplerate'])
+
+            if 'trigger' in settings:
+                trigger = settings['trigger']
+                instrument.set_trigger(
+                    source=trigger.get('source', 'DIO'),
+                    edge=trigger.get('edge', 'Rising'),
+                    channel_mask=trigger.get('channel_mask', 0x01)
+                )
+
     async def _setup_routing(self) -> None:
         """
         Establish signal routing between slots/ports.
@@ -342,6 +357,14 @@ class HardwareBackend(Backend):
                 }
                 freq_points = len(data[slot_num]['frequency'])
                 print(f"  ✓ Captured {freq_points} frequency points from SpectrumAnalyzer (slot {slot_num})")
+
+            elif slot_config.instrument == 'LogicAnalyzer':
+                # Get logic analyzer data
+                logic_data = instrument.get_data()
+                data[slot_num] = logic_data  # Contains ch0-ch15 digital channels
+                # Count channels with data
+                channels_with_data = sum(1 for ch in range(16) if logic_data.get(f'ch{ch}', None) is not None)
+                print(f"  ✓ Captured logic data from {channels_with_data} channels (slot {slot_num})")
 
         print(f"[MokuBench] ✓ Run complete")
         return data
