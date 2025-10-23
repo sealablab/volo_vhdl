@@ -115,7 +115,7 @@ begin
         );
 
     -- UART Transmitter (OutputC)
-    U_UART_TX: entity WORK.uart_tx_core
+    U_UART_TX: entity WORK.uart_pattern_tx
         port map (
             clk         => Clk,
             n_reset     => n_reset,

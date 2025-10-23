@@ -1,0 +1,78 @@
+# SimpleSerial V2 TX Module - Quick Start Prompt
+
+## Context
+We successfully implemented SimpleSerial V1 TX (ChipWhisperer protocol). Now we want to implement SimpleSerial V2 TX, which is the next-generation protocol with binary encoding and higher performance.
+
+## Task
+Implement a complete `volo_simpleserial_v2_tx.vhd` module with full CocotB test suite.
+
+## SimpleSerial V2 Protocol Specs
+- **Baud Rate**: 230400 (6× faster than V1)
+- **Encoding**: Binary COBS (Consistent Overhead Byte Stuffing)
+- **Framing**: 0x00 delimiter (COBS ensures no 0x00 in payload)
+- **Format**: `<0x00><len><cmd><payload><crc><0x00>`
+  - 0x00 = Frame delimiter (start/end)
+  - len = COBS-encoded length byte
+  - cmd = Single command byte
+  - payload = Binary data (0-252 bytes, COBS-encoded)
+  - crc = CRC16-CCITT (optional, often omitted)
+  - 0x00 = Frame delimiter (end)
+
+## Key Differences from V1
+1. **Binary, not ASCII**: Raw binary data, no hex encoding (2× bandwidth)
+2. **COBS encoding**: Eliminates 0x00 bytes in data, uses 0x00 as delimiter
+3. **Higher baud**: 230400 vs 38400 (6× faster)
+4. **CRC protection**: Optional CRC16 for integrity checking
+5. **Variable length**: Explicit length byte, supports up to 252 bytes payload
+
+## Implementation Strategy
+1. **Reuse UART TX core**: Same `volo_uart_tx_core.vhd` with BAUD_RATE=230400
+2. **Add COBS encoder**: New function in `volo_uart_pkg.vhd` or separate package
+3. **Add CRC16**: Optional CRC16-CCITT calculator
+4. **FSM states**:
+   - IDLE ’ SEND_START_DELIM ’ SEND_LEN ’ SEND_CMD ’ SEND_PAYLOAD ’ SEND_CRC ’ SEND_END_DELIM ’ IDLE
+5. **Interface**: Similar to V1 but with `payload_len` up to 252
+
+## COBS Encoding Quick Reference
+- **Purpose**: Replace all 0x00 bytes with non-zero values
+- **Method**: Replace 0x00 with distance to next 0x00 (or end)
+- **Overhead**: 1 byte per 254 bytes (0.4% worst case)
+- **Example**: `[0x00, 0x11, 0x00]` ’ `[0x01, 0x02, 0x11, 0x01]`
+
+## Testing Requirements
+- All patterns from SimpleSerial V1 tests apply
+- Additional: Test COBS encoding edge cases (0x00 in payload)
+- Additional: Test CRC calculation (if implemented)
+- Use same timeout and UART capture patterns from V1
+- Reference: `docs/COCOTB_UART_TEST_PATTERNS.md`
+
+## Files to Create
+1. `modules/volo_common/core/volo_simpleserial_v2_tx.vhd` - Main module
+2. `tests/test_simpleserial_v2_tx.py` - CocotB test suite (9+ tests)
+3. Update `tests/Makefile` - Add simpleserial_v2_tx target
+4. Optional: `modules/volo_common/common/volo_cobs_pkg.vhd` - COBS encoder package
+
+## Leverage Existing Knowledge
+Before starting, read these Serena memories:
+- `cocotb_testing_guide` - Testing patterns (timeout, UART capture)
+- `design_patterns` - FSM patterns, enable control, delta-cycle avoidance
+- `coding_standards` - VHDL rules and tiered system
+
+Review these reference files:
+- `modules/volo_common/core/volo_simpleserial_v1_tx.vhd` - FSM structure
+- `tests/test_simpleserial_v1_tx.py` - Test patterns to replicate
+- `docs/COCOTB_UART_TEST_PATTERNS.md` - UART testing guide
+- `docs/VHDL_DELTA_CYCLE_PATTERNS.md` - Avoid index-dependent races
+
+## Expected Outcome
+- Complete VHDL module with full header documentation
+- Comprehensive test suite (9+ tests, all passing)
+- Proper timeout handling using `run_with_timeout()`
+- Clean FSM with enable control holding state (not resetting to idle)
+- All patterns from SimpleSerial V1 applied (busy flag checking, etc.)
+
+## Notes
+- SimpleSerial V2 is the ChipWhisperer-Nano and ChipWhisperer-Husky standard
+- COBS is simple: just a scan-and-replace algorithm
+- CRC16-CCITT is standard polynomial 0x1021
+- Start simple: Get basic framing working, add CRC later if needed
