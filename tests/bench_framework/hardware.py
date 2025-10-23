@@ -12,7 +12,7 @@ from .config import BenchConfig
 
 # Import Moku API
 try:
-    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger
+    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer
     MOKU_AVAILABLE = True
 except ImportError:
     MOKU_AVAILABLE = False
@@ -22,6 +22,7 @@ except ImportError:
     WaveformGenerator = Any
     CloudCompile = Any
     Datalogger = Any
+    SpectrumAnalyzer = Any
 
 
 class HardwareBackend(Backend):
@@ -68,6 +69,7 @@ class HardwareBackend(Backend):
             'WaveformGenerator': WaveformGenerator,
             'CloudCompile': CloudCompile,
             'Datalogger': Datalogger,
+            'SpectrumAnalyzer': SpectrumAnalyzer,
         }
 
     @classmethod
@@ -236,6 +238,15 @@ class HardwareBackend(Backend):
                     sample_rate = streaming_cfg.get('sample_rate', 1e3)
                     instrument.start_streaming(duration=duration, sample_rate=sample_rate)
 
+        elif instrument_type == 'SpectrumAnalyzer' and settings:
+            # Apply spectrum analyzer settings
+            if 'span' in settings:
+                span = settings['span']
+                instrument.set_span(span[0], span[1])
+
+            if 'rbw' in settings:
+                instrument.set_rbw(settings['rbw'])
+
     async def _setup_routing(self) -> None:
         """
         Establish signal routing between slots/ports.
@@ -320,6 +331,17 @@ class HardwareBackend(Backend):
                 else:
                     data[slot_num] = {'ch1': [], 'ch2': [], 'time': []}
                     print(f"  ⚠ No streaming data available from Datalogger (slot {slot_num})")
+
+            elif slot_config.instrument == 'SpectrumAnalyzer':
+                # Get spectrum analyzer data
+                spectrum_data = instrument.get_data()
+                data[slot_num] = {
+                    'frequency': spectrum_data.get('frequency', []),
+                    'ch1': spectrum_data.get('ch1', []),
+                    'ch2': spectrum_data.get('ch2', [])
+                }
+                freq_points = len(data[slot_num]['frequency'])
+                print(f"  ✓ Captured {freq_points} frequency points from SpectrumAnalyzer (slot {slot_num})")
 
         print(f"[MokuBench] ✓ Run complete")
         return data
