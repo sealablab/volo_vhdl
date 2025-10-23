@@ -11,6 +11,10 @@
 -- #   Control2[6:0]:   State 2 delay (7-bit)
 -- #   Control3[6:0]:   State 3 delay (7-bit)
 -- #   Control4[6:0]:   State 4 delay (7-bit)
+-- #   Control5[15:0]:  State 1 DAC level (signed 16-bit, -5V to +5V)
+-- #   Control6[15:0]:  State 2 DAC level (signed 16-bit, -5V to +5V)
+-- #   Control7[15:0]:  State 3 DAC level (signed 16-bit, -5V to +5V)
+-- #   Control8[15:0]:  State 4 DAC level (signed 16-bit, -5V to +5V)
 -- #
 -- # Output Map:
 -- #   OutputA[15:0]:   DAC stair-step output (signed 16-bit)
@@ -43,6 +47,10 @@ begin
             DelayS2    => unsigned(Control2(6 downto 0)),
             DelayS3    => unsigned(Control3(6 downto 0)),
             DelayS4    => unsigned(Control4(6 downto 0)),
+            LevelS1    => signed(Control5(15 downto 0)),
+            LevelS2    => signed(Control6(15 downto 0)),
+            LevelS3    => signed(Control7(15 downto 0)),
+            LevelS4    => signed(Control8(15 downto 0)),
             DACOut     => OutputA,
             StatusOut  => status_internal,
             StateOut   => state_internal,

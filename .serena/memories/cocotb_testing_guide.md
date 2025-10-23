@@ -1,580 +1,387 @@
-# CocotB Testing Guide - Volo VHDL Project
-
-**Status**: Active - This is the NEW standard for testing (as of 2025-01-22)  
-**Replaces**: Legacy GHDL testbenches (see `ghdl_patterns_and_solutions` memory - DEPRECATED)
+# CocotB Testing Guide for Volo VHDL
 
 ## Overview
+CocotB (Coroutine-based Cosimulation TestBench) is the **standard testing framework** for the Volo VHDL project. It replaces legacy GHDL testbenches with Python-based async/await testing.
 
-CocotB (Coroutine Co-simulation TestBench) is a Python-based testing framework for HDL designs. We use it with GHDL as the simulator backend.
-
-**Replaces**: Legacy GHDL testbenches and 4-layer VHDL architecture
-
-⚠️ **DEPRECATED**: The previous 4-layer GHDL testbench architecture (Interface/Validation/Functional/Generic) is no longer used. CocotB provides better organization through Python's natural test structure with `@cocotb.test()` decorators and clear test function names.
-
-## Why CocotB?
-
-✅ **Advantages over GHDL testbenches:**
-- Modern Python syntax (async/await) instead of VHDL processes
-- Rich assertion library with clear error messages
-- Shared test utilities eliminate code duplication
-- Easier debugging with Python tools
-- Better CI/CD integration
-- Faster test development
-
-## Project Structure
-
-```
-tests/
-├── Makefile                      # CocotB build configuration
-├── conftest.py                   # Shared utilities (fixtures, helpers)
-├── test_clk_divider_core.py      # Clock divider tests (7 tests)
-├── test_moku_voltage_pkg.py      # Voltage conversion tests (3 tests)
-├── test_moku_pct_pkg.py          # Percentage conversion tests (9 tests)
-├── moku_voltage_pkg_tb_wrapper.vhd  # Wrapper for voltage package testing
-├── moku_pct_pkg_tb_wrapper.vhd   # Wrapper for percentage package testing
-└── sim_build/                    # Build artifacts (auto-generated)
-```
+⚠️ **DO NOT CREATE NEW GHDL TESTBENCHES** - Use CocotB instead
 
 ## Quick Start
 
 ### Running Tests
-
 ```bash
 cd tests/
-
-# Run default test module
-make
-
-# Run all tests sequentially
-make test-all
-
-# Run specific module
-make TEST_MODULE=clk_divider_core
-make TEST_MODULE=moku_voltage_pkg
-make TEST_MODULE=moku_pct_pkg
-
-# List available tests
-make list-tests
-
-# Clean artifacts
-make clean
-
-# View waveforms
-make waves                             # View waveforms with GTKWave
+make TEST_MODULE=clk_divider_core      # Run specific module
+make test-all                          # Run all tests
+make clean                             # Clean artifacts
+make waves                             # View waveforms
 ```
 
 ### Environment Variables
-
 ```bash
 WAVES=1                    # Enable waveform dump (default)
 WAVES=0                    # Disable waveforms for faster tests
-COCOTB_LOG_LEVEL=DEBUG     # Set log level (DEBUG, INFO, WARNING, ERROR)
+COCOTB_LOG_LEVEL=DEBUG     # Set log level (DEBUG/INFO/WARNING/ERROR)
 ```
 
-## Available Test Modules
-
-### 1. clk_divider_core (volo_common/core)
-**File**: `test_clk_divider_core.py`  
-**Tests**: 7  
-**Coverage**:
-- Reset behavior
-- Division ratios (2, 5, 10, 16)
-- Enable control
-- Generic parameter variations
-- Counter rollover
-- Status register
-
-**Run**: `make TEST_MODULE=clk_divider_core`
-
-### 2. moku_voltage_pkg (volo_common/common)
-**File**: `test_moku_voltage_pkg.py`  
-**Tests**: 3  
-**Coverage**:
-- Package constants verification (1V, 2.5V, 3.3V, 5V, negative values)
-- Basic conversion sanity checks (passthrough validation)
-- Summary with reference to comprehensive testing
-
-**Run**: `make TEST_MODULE=moku_voltage_pkg`
-
-**Note**: This is a lightweight test focused on constants validation. Comprehensive voltage conversion testing is performed through `test_moku_pct_pkg.py`, which exercises all Moku_Voltage_pkg functions extensively. This maintains the 1:1 package-to-test relationship while avoiding test complexity.
-
-### 3. moku_pct_pkg (volo_common/common)
-**File**: `test_moku_pct_pkg.py`  
-**Tests**: 9  
-**Dependencies**: Moku_Voltage_pkg  
-**Coverage**:
-- Unipolar ranges (0-5V, 0-3.3V, 0-2.5V)
-  - Boundary values (0%, 50%, 100%)
-  - Round-trip conversion (pct → digital → voltage → pct)
-  - Clamping behavior
-- Bipolar ranges (-5V to +5V, -2.5V to +2.5V)
-  - Boundary values
-  - Negative voltage handling
-  - Round-trip conversion
-- Type safety validation
-- Percentage validation and clamping
-
-**Run**: `make TEST_MODULE=moku_pct_pkg`
-
-**Note**: This test provides comprehensive validation of `Moku_Voltage_pkg` functions since `Moku_Pct_pkg` uses voltage conversion internally for all percentage conversions.
-
-## Test File Structure
+## Test Structure
 
 ### Basic Template
-
 ```python
-"""
-CocotB Testbench for <module_name>
-
-Module Under Test: <path/to/module.vhd>
-Description: <what this module does>
-
-Test Categories:
-1. Reset behavior
-2. Core functionality
-3. Edge cases
-4. Error handling
-
-Author: Claude Code (CocotB migration)
-Date: 2025-01-22
-"""
-
 import cocotb
 from cocotb.triggers import RisingEdge, ClockCycles
-
-# Import shared test utilities
-from conftest import (
-    setup_clock,
-    reset_active_low,
-    count_pulses,
-    wait_for_value
-)
+from conftest import setup_clock, reset_active_low
 
 @cocotb.test()
 async def test_reset_behavior(dut):
     """Test 1: Reset Behavior"""
-    dut._log.info("=" * 60)
     dut._log.info("Test 1: Reset Behavior")
-    dut._log.info("=" * 60)
-
-    # Initialize
+   
     await setup_clock(dut)
-    
-    # Set inputs
     dut.enable.value = 1
-    dut.config.value = 0
-    
-    # Apply reset
     await reset_active_low(dut)
-    
-    # Check reset state
+   
     assert dut.output.value == 0, "Output should be 0 after reset"
-    
     dut._log.info("✓ Reset test PASSED")
-
-
-@cocotb.test()
-async def test_basic_functionality(dut):
-    """Test 2: Basic Functionality"""
-    dut._log.info("=" * 60)
-    dut._log.info("Test 2: Basic Functionality")
-    dut._log.info("=" * 60)
-    
-    await setup_clock(dut)
-    dut.enable.value = 1
-    await reset_active_low(dut)
-    
-    # Set input
-    dut.data_in.value = 0x42
-    await ClockCycles(dut.clk, 2)
-    
-    # Check output
-    assert dut.data_out.value == 0x42, f"Expected 0x42, got 0x{dut.data_out.value:02x}"
-    
-    dut._log.info("✓ Basic functionality test PASSED")
 ```
 
-### Package Testing Pattern
+### Shared Utilities (conftest.py)
+All tests can use these helpers from `tests/conftest.py`:
 
-For testing VHDL packages (like Moku_Pct_pkg or Moku_Voltage_pkg), you need a wrapper entity:
+**Clock Management**:
+- `setup_clock(dut, period_ns=10, clk_signal="clk")` - Start clock
+- Default: 10ns period (100MHz)
 
-**Simple Constants-Only Wrapper** (for lightweight package testing):
+**Reset Sequences**:
+- `reset_active_low(dut, cycles=2, rst_signal="rst_n")` - Active-low reset
+- `reset_active_high(dut, cycles=2, rst_signal="rst")` - Active-high reset (MCC style)
+- `reset_dut(dut, active_low=True)` - Auto-detect reset type
+
+**Signal Monitoring**:
+- `count_pulses(signal, clk, num_cycles)` - Count signal pulses
+- `wait_for_value(signal, expected, clk, timeout=1000)` - Wait for value with timeout
+- `capture_signal_sequence(signal, clk, num_cycles)` - Capture value sequence
+
+**Initialization**:
+- `init_dut(dut, clock_period_ns=10, active_low_reset=True)` - Complete init (clock + reset)
+
+**Assertions**:
+- `assert_signal_value(signal, expected, message)` - Assert with helpful error
+- `assert_pulse_count(signal, clk, cycles, expected, tolerance=0)` - Assert pulse count
+
+## MCC Module Testing
+
+### CustomWrapper Entity Stub
+
+For testing MCC modules (those using CustomWrapper), you need the CustomWrapper entity stub:
+
+**File**: `tests/customwrapper_stub.vhd`
+
+**Interface** (from MCC spec):
 ```vhdl
--- moku_voltage_pkg_tb_wrapper.vhd
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.Moku_Voltage_pkg.all;
-
-entity moku_voltage_pkg_tb_wrapper is
+entity CustomWrapper is
     port (
-        -- Expose package constants as output ports
-        const_digital_1v  : out signed(15 downto 0);
-        const_digital_2v5 : out signed(15 downto 0);
-        -- ... other constants
-        
-        -- Simple passthrough for sanity check
-        test_digital_passthrough : in signed(15 downto 0) := (others => '0');
-        test_digital_result      : out signed(15 downto 0)
+        -- System
+        Clk, Reset : in std_logic;
+       
+        -- Inputs (4 x 16-bit signed ADC)
+        InputA, InputB, InputC, InputD : in signed(15 downto 0);
+       
+        -- Outputs (4 x 16-bit signed DAC)
+        OutputA, OutputB, OutputC, OutputD : out signed(15 downto 0);
+       
+        -- Control Registers (16 x 32-bit std_logic_vector)
+        Control0..Control15 : in std_logic_vector(31 downto 0)
     );
-end entity;
-
-architecture simple of moku_voltage_pkg_tb_wrapper is
-begin
-    const_digital_1v <= MOKU_DIGITAL_1V;
-    const_digital_2v5 <= MOKU_DIGITAL_2V5;
-    test_digital_result <= test_digital_passthrough;
-end architecture;
+end entity CustomWrapper;
 ```
 
-**Function Testing Wrapper** (for comprehensive package testing):
-```vhdl
--- moku_pct_pkg_tb_wrapper.vhd
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.Moku_Voltage_pkg.all;
-use work.Moku_Pct_pkg.all;
+**Key Points**:
+- Control registers are `std_logic_vector(31 downto 0)` NOT `signed`
+- MCC provides 16 control registers (Control0-Control15)
+- MCC provides 4 input channels (InputA-D) and 4 output channels (OutputA-D)
+- Stub must be included in VHDL_SOURCES before module's Top.vhd
+- TOPLEVEL must be lowercase: `customwrapper` (GHDL lowercases entity names)
 
-entity moku_pct_pkg_tb_wrapper is
-end entity;
-
-architecture behavioral of moku_pct_pkg_tb_wrapper is
-    -- Test signals exposed to CocotB
-    signal test_pct_5v0 : natural range 0 to 100 := 0;
-    signal test_digital_5v0 : signed(15 downto 0);
-    signal test_voltage : real := 0.0;
-begin
-    -- Drive signals using package functions
-    test_digital_5v0 <= pct_5v0_to_digital(test_pct_5v0);
-    test_voltage <= digital_to_voltage(test_digital_5v0);
-end architecture;
-```
-
-Then test from Python:
-```python
-# Simple constants test
-@cocotb.test()
-async def test_voltage_constants(dut):
-    await Timer(1, units='ns')
-    assert dut.const_digital_1v.value == 6554
-
-# Function test
-@cocotb.test()
-async def test_conversions(dut):
-    dut.test_pct_5v0.value = 50  # Set 50%
-    await Timer(1, units='ns')
-    assert dut.test_digital_5v0.value == 0x4000  # Check digital
-```
-
-**Design Principle**: Keep package tests simple. If comprehensive testing happens elsewhere (e.g., Moku_Voltage_pkg is fully tested through Moku_Pct_pkg), create a lightweight constants-only test to maintain the 1:1 package-to-test relationship without introducing complexity.
-
-## Shared Utilities (conftest.py)
-
-### Clock Management
-
-```python
-await setup_clock(dut)                           # Start 100MHz clock
-await setup_clock(dut, period_ns=20)            # Start 50MHz clock
-await setup_clock(dut, clk_signal="Clk")        # MCC-style capitalized signal
-```
-
-### Reset Sequences
-
-```python
-await reset_active_low(dut)                      # Standard active-low reset
-await reset_active_low(dut, cycles=5)           # Hold reset for 5 cycles
-await reset_active_high(dut)                     # Active-high reset
-await reset_dut(dut, active_low=False)          # Auto-detect
-```
-
-### Signal Monitoring
-
-```python
-# Count pulses
-pulses = await count_pulses(dut.clk_en, dut.clk, 100)
-assert pulses == 10, f"Expected 10 pulses, got {pulses}"
-
-# Wait for specific value
-success = await wait_for_value(dut.done, 1, dut.clk, timeout_cycles=1000)
-assert success, "Module never signaled done"
-
-# Capture signal sequence
-sequence = await capture_signal_sequence(dut.state, dut.clk, 20)
-assert sequence == [0, 0, 1, 2, 3, 0], "Unexpected state sequence"
-```
-
-### Assertion Helpers
-
-```python
-# Assert pulse count (combines counting + assertion)
-await assert_pulse_count(dut.clk_en, dut.clk, cycles=100, expected=10, tolerance=1)
-
-# Assert signal value
-assert_signal_value(dut.output, 0x1234, "Output mismatch after reset")
-```
-
-### Complete Initialization
-
-```python
-# Clock + reset in one call
-await init_dut(dut)
-await init_dut(dut, clock_period_ns=20, active_low_reset=False)
-```
-
-## Common Patterns
-
-### Test Multiple Scenarios
-
-```python
-@cocotb.test()
-async def test_division_ratios(dut):
-    """Test various division ratios"""
-    await setup_clock(dut)
-    dut.enable.value = 1
-    await reset_active_low(dut)
-    
-    test_cases = [
-        (2, 10),    # div_sel=2, expect 10 pulses in 20 cycles
-        (5, 4),     # div_sel=5, expect 4 pulses in 20 cycles
-        (10, 2),    # div_sel=10, expect 2 pulses in 20 cycles
-    ]
-    
-    for div_sel, expected_pulses in test_cases:
-        dut.div_sel.value = div_sel
-        await ClockCycles(dut.clk, 2)  # Let setting propagate
-        
-        pulses = await count_pulses(dut.clk_en, dut.clk, 20)
-        assert pulses == expected_pulses, \
-            f"div_sel={div_sel}: expected {expected_pulses}, got {pulses}"
-        
-        dut._log.info(f"✓ Division by {div_sel} verified")
-```
-
-### Debug with Logging
-
-```python
-# Add detailed logging for debugging
-dut._log.info(f"Status register: 0x{int(dut.status.value):02x}")
-dut._log.info(f"State: {int(dut.state.value)}")
-
-# Log signal table for debugging
-log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
-```
-
-### Timeout Protection
-
-```python
-# Wait with timeout
-success = await wait_for_value(dut.ready, 1, dut.clk, timeout_cycles=100)
-if not success:
-    dut._log.error("Timeout waiting for ready signal")
-    assert False, "Module failed to assert ready within 100 cycles"
-```
-
-## Adding Tests to Makefile
-
-When creating a new test module, update `tests/Makefile`:
-
+### Example Makefile Entry
 ```makefile
-# Add to source files section
-ifeq ($(TEST_MODULE),your_module_core)
-    YOUR_MODULE_DIR = $(MODULES_DIR)/your_module
-    VHDL_SOURCES = $(YOUR_MODULE_DIR)/common/your_pkg.vhd \
-                   $(YOUR_MODULE_DIR)/core/your_module_core.vhd
-    TOPLEVEL = your_module_core
-    COCOTB_TEST_MODULES = test_your_module_core
+ifeq ($(TEST_MODULE),emfi_seq_top)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
+                   $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_fsm.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_stair.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/EMFI_Seq.vhd \
+                   customwrapper_stub.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/Top.vhd
+    TOPLEVEL = customwrapper          # Lowercase!
+    COCOTB_TEST_MODULES = test_emfi_seq_top
 endif
 ```
 
-Update `test-all` target:
-```makefile
-test-all:
-    @$(MAKE) TEST_MODULE=clk_divider_core
-    @$(MAKE) TEST_MODULE=moku_voltage_pkg
-    @$(MAKE) TEST_MODULE=moku_pct_pkg
-    @$(MAKE) TEST_MODULE=your_module_core    # Add your test here
+### MCC Test Initialization Pattern
+```python
+async def init_control_registers(dut):
+    """Initialize all MCC control registers"""
+    # Control0: Module-specific (e.g., Enable, ClkEn, DivSel)
+    dut.Control0.value = 0x00000000
+   
+    # Control1-4: Module-specific parameters
+    dut.Control1.value = 0
+    dut.Control2.value = 0
+    dut.Control3.value = 0
+    dut.Control4.value = 0
+   
+    # Control5-15: Initialize unused registers
+    for i in range(5, 16):
+        getattr(dut, f"Control{i}").value = 0
+   
+    # Initialize all input channels
+    dut.InputA.value = 0
+    dut.InputB.value = 0
+    dut.InputC.value = 0
+    dut.InputD.value = 0
+   
+    await ClockCycles(dut.Clk, 1)
 ```
 
-Update help text:
-```makefile
-help:
-    # ...
-    @echo "  - your_module_core     (your_module/core)"
+## Test Organization
+
+### File Naming
+- Test files: `test_<module_name>.py`
+- Example: `test_clk_divider_core.py`, `test_emfi_seq_top.py`
+
+### Test Numbering
+Use numbered test functions with clear descriptions:
+```python
+@cocotb.test()
+async def test_reset_behavior(dut):
+    """Test 1: Reset Behavior"""
+    dut._log.info("=" * 70)
+    dut._log.info("Test 1: Reset Behavior")
+    dut._log.info("=" * 70)
+    # ... test code
+   
+@cocotb.test()
+async def test_clock_enable(dut):
+    """Test 2: Clock Enable Control"""
+    # ... test code
 ```
+
+### Test Categories
+Typical test sequence:
+1. **Reset behavior** - Verify reset clears state
+2. **Basic functionality** - Core feature works
+3. **Edge cases** - Boundary conditions, special values
+4. **Control signals** - Enable, ClkEn, Reset interactions
+5. **Randomized inputs** - Runtime-generated test data
+6. **Integration** - Multi-module interactions
+7. **Summary** - Final validation message
 
 ## Best Practices
 
-### DO ✅
-
-1. **Use descriptive test names** that explain what is being tested
-2. **Add logging** with clear headers and progress messages
-3. **Use shared utilities** from `conftest.py` to avoid duplication
-4. **Write independent tests** that don't depend on execution order
-5. **Test one feature per test function** for clarity
-6. **Add context to assertions** with helpful error messages
-7. **Wait for signals to propagate** after changing inputs
-8. **Keep package tests simple** - avoid complexity spilling out of testbenches
-
+### 1. Use Runtime Randomization
 ```python
-# Good: Clear assertion message
-assert dut.output.value == expected, \
-    f"Output mismatch: expected 0x{expected:04x}, got 0x{int(dut.output.value):04x}"
+import random
 
-# Bad: No context
-assert dut.output.value == expected
+@cocotb.test()
+async def test_randomized_delays(dut):
+    random.seed()  # Use current time
+    delay = random.randint(2, 15)
+    dut._log.info(f"Random delay: {delay}")
+    dut.delay_config.value = delay
+    # ... verify behavior
 ```
 
-### DON'T ❌
-
-1. **Don't create GHDL testbenches** - Use CocotB instead
-2. **Don't duplicate test utilities** - Use `conftest.py`
-3. **Don't forget to wait for clock edges** after input changes
-4. **Don't use blocking operations** - Use `await` for all waits
-5. **Don't ignore test failures** - Investigate and fix the root cause
-6. **Don't test internal signals** - Test external behavior only
-7. **Don't over-engineer package tests** - If comprehensive testing happens elsewhere, keep it simple
-
-## Common Issues and Solutions
-
-### Issue 1: Signal Not Updating
-
-**Problem**: Signal value doesn't change after assignment
-
-**Cause**: Not waiting for clock edge or simulation delta cycle
-
-**Solution**:
+### 2. Clear Logging
 ```python
-dut.input.value = 0x42
-await ClockCycles(dut.clk, 1)  # Wait for change to propagate
-assert dut.output.value == 0x42
+dut._log.info("=" * 70)
+dut._log.info("Test 3: Random Configuration")
+dut._log.info("=" * 70)
+dut._log.info(f"Config: delay={delay}, threshold={threshold}")
+dut._log.info("✓ Test PASSED")
 ```
 
-### Issue 2: Test Hangs/Timeout
-
-**Problem**: Test never completes
-
-**Cause**: Waiting for a signal that never changes
-
-**Solution**: Use `wait_for_value()` with timeout
+### 3. Helpful Assertions
 ```python
-success = await wait_for_value(dut.done, 1, dut.clk, timeout_cycles=100)
-assert success, "Module didn't complete within timeout"
+assert actual == expected, \
+    f"Mismatch: expected {expected:#x}, got {actual:#x}"
 ```
 
-### Issue 3: Metavalue Warnings
+### 4. Test Independence
+Each test should:
+- Initialize its own clock
+- Apply its own reset
+- Set all required signals
+- Not depend on other tests' state
 
-**Problem**: GHDL warns about metavalues ('U', 'X', etc.)
-
-**Cause**: Reading signals before initialization/reset
-
-**Solution**: Always reset before testing
+### 5. Avoid Magic Numbers
 ```python
-await setup_clock(dut)
-dut.enable.value = 1  # Set inputs BEFORE reset
-await reset_active_low(dut)
-# Now signals are initialized
+# Bad
+dut.config.value = 0x199A
+
+# Good
+VOLTAGE_1V1 = 0x199A  # From Moku_Voltage_pkg
+dut.config.value = VOLTAGE_1V1
 ```
 
-### Issue 4: Real Type Signals Not Accessible
+## Working Examples
 
-**Problem**: `dut.signal_name` raises error for real type signals
+### Simple Core Test
+**File**: `tests/test_clk_divider_core.py` (7 tests passing)
+- Reset behavior
+- Division ratios (power-of-2 and arbitrary)
+- Enable control
+- Edge cases (div=1, div=256)
 
-**Cause**: GHDL's VPI doesn't expose real type signals to CocotB
+### Package Test
+**File**: `tests/test_moku_voltage_pkg.py` (3 tests passing)
+- Package function testing
+- Voltage conversion validation
 
-**Solution**: Avoid testing real type signals directly. Either:
-- Test through integer/signed conversions
-- Use constants-only wrapper for package testing
-- Acknowledge comprehensive testing happens in dependent modules
-
-```python
-# Bad: Trying to access real signal
-dut.voltage_out.value = 2.5  # Will fail
-
-# Good: Test constants and conversions only
-assert dut.const_digital_2v5.value == 16384
-dut.test_digital_passthrough.value = 16384
-await Timer(1, units='ns')
-assert dut.test_digital_result.value == 16384
-```
+### MCC Integration Test
+**File**: `tests/test_emfi_seq_top.py` (7 tests)
+- CustomWrapper stub usage
+- MCC control register mapping
+- Multi-core integration
+- Runtime randomization
 
 ## Migration from GHDL Testbenches
 
-### GHDL vs CocotB Comparison
+**Old pattern** (DEPRECATED):
+```vhdl
+-- tb/core/tb_module.vhd
+entity tb_module is end entity;
+architecture sim of tb_module is
+    -- testbench code
+end architecture;
+```
 
-| GHDL Testbench | CocotB Equivalent |
-|----------------|-------------------|
-| `wait for 10 ns;` | `await ClockCycles(dut.clk, 1)` |
-| `wait until rising_edge(clk);` | `await RisingEdge(dut.clk)` |
-| `assert output = expected report "Failed";` | `assert dut.output.value == expected, "Failed"` |
-| `report "Test message" severity note;` | `dut._log.info("Test message")` |
-| `std.env.stop(0);` | (automatic - test completes when function returns) |
+**New pattern** (STANDARD):
+```python
+# tests/test_module.py
+import cocotb
+from conftest import init_dut
 
-### Migration Steps
+@cocotb.test()
+async def test_feature(dut):
+    await init_dut(dut)
+    # test code
+```
 
-1. Create `tests/test_<module>.py`
-2. Import CocotB and shared utilities
-3. Convert each test section to a `@cocotb.test()` function
-4. Replace VHDL wait statements with CocotB triggers
-5. Replace assertions with Python `assert`
-6. Add module to `tests/Makefile`
-7. Run tests: `make TEST_MODULE=<module> clean && make TEST_MODULE=<module>`
-8. Archive old GHDL testbench if all tests pass
+**Benefits**:
+- Python's expressiveness vs VHDL verbosity
+- Async/await for clean timing control
+- Shared utilities (conftest.py)
+- Runtime randomization
+- Better logging and debugging
+- Cross-platform compatibility
 
-## Example Test Files
+## Common Pitfalls
 
-### Production-Ready Examples
+### 1. Clock Signal Naming
+```python
+# MCC modules use capital Clk
+await setup_clock(dut, clk_signal="Clk")
 
-**Complete Core Module Test**:  
-`tests/test_clk_divider_core.py` - Demonstrates:
-- Multiple test scenarios
-- Shared utility usage
-- Clear logging and assertions
-- Comprehensive coverage (7 tests)
-- Proper error messages
+# Core modules use lowercase clk
+await setup_clock(dut, clk_signal="clk")
+```
 
-**Package Testing (Comprehensive)**:  
-`tests/test_moku_pct_pkg.py` - Demonstrates:
-- Package function testing
-- Wrapper entity pattern
-- Round-trip validation
-- Boundary testing
-- Type safety verification (9 tests)
+### 2. Reset Polarity
+```python
+# Active-low (rst_n)
+await reset_active_low(dut, rst_signal="rst_n")
 
-**Package Testing (Lightweight)**:  
-`tests/test_moku_voltage_pkg.py` - Demonstrates:
-- Constants-only testing approach
-- Simple wrapper to avoid complexity
-- Reference to comprehensive testing elsewhere
-- Maintains 1:1 package-to-test relationship (3 tests)
+# Active-high (Reset - MCC style)
+await reset_active_high(dut, rst_signal="Reset")
+```
 
-## Resources
+### 3. Signal Value Access
+```python
+# Deprecated
+val = int(dut.signal.value.signed_integer)
 
-- **CocotB Documentation**: https://docs.cocotb.org/
-- **Shared Utilities**: `tests/conftest.py` (well-documented)
-- **Example Tests**: 
-  - `tests/test_clk_divider_core.py` (core module testing)
-  - `tests/test_moku_pct_pkg.py` (comprehensive package testing)
-  - `tests/test_moku_voltage_pkg.py` (lightweight package testing)
-- **Makefile**: `tests/Makefile` (build configuration)
+# Correct
+val = int(dut.signal.value.to_signed())
+```
 
-## Status of Migration
+### 4. GHDL Case Sensitivity
+```makefile
+# WRONG - GHDL lowercases entity names
+TOPLEVEL = CustomWrapper
 
-✅ **Migrated to CocotB:**
-- clk_divider_core (7 tests passing)
-- moku_voltage_pkg (3 tests passing - lightweight constants validation)
-- moku_pct_pkg (9 tests passing - comprehensive voltage conversion coverage)
+# CORRECT
+TOPLEVEL = customwrapper
+```
 
-⏳ **To Be Migrated:**
-- EMFI-Seq modules (future)
-- SimpleWaveGen modules (future)
+### 5. Control Register Types
+```python
+# Control registers are std_logic_vector, accept int
+dut.Control0.value = 0x80000000  # Correct
 
-🗑️ **Archived (Old GHDL):**
-- stoplight_core (archived 2025-01-22)
+# Don't try to assign signed
+dut.Control0.value = signed(...) # Wrong
+```
 
----
+## Debugging
 
-**Last Updated**: 2025-10-22  
-**Migration Lead**: Claude Code  
-**Framework Version**: CocotB 2.0.0  
-**Total Active Tests**: 19 (7 clk_divider + 3 moku_voltage + 9 moku_pct)
+### Enable Waveforms
+```bash
+make TEST_MODULE=my_module WAVES=1
+make waves  # View in GTKWave
+```
+
+### Increase Log Level
+```bash
+COCOTB_LOG_LEVEL=DEBUG make TEST_MODULE=my_module
+```
+
+### Add Debug Logging
+```python
+@cocotb.test()
+async def test_debug(dut):
+    dut._log.info(f"Signal value: {dut.signal.value}")
+    dut._log.info(f"State: {dut.state.value}")
+```
+
+### Print All Signals
+```python
+from conftest import log_signal_table
+
+log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
+```
+
+## Adding New Tests
+
+1. **Create test file**: `tests/test_<module>.py`
+2. **Add Makefile entry**: Update `tests/Makefile`
+3. **Include dependencies**: List all VHDL sources in compilation order
+4. **Set TOPLEVEL**: Use lowercase entity name
+5. **Write tests**: Use async/await pattern
+6. **Run**: `make TEST_MODULE=<module>`
+7. **Update help**: Add to `make list-tests` output
+
+## Reference Files
+
+- **Template**: `tests/test_clk_divider_core.py` - Complete working example
+- **Utilities**: `tests/conftest.py` - Shared helper functions
+- **Makefile**: `tests/Makefile` - Build system integration
+- **README**: `tests/README.md` - User-facing documentation
+- **MCC Stub**: `tests/customwrapper_stub.vhd` - CustomWrapper entity for MCC testing
+
+## Summary
+
+✅ **DO**:
+- Use CocotB for all new tests
+- Import helpers from conftest.py
+- Add clear logging and assertions
+- Use runtime randomization
+- Test each module independently
+- Initialize all signals/registers
+
+❌ **DON'T**:
+- Create new GHDL testbenches
+- Hard-code test values (use constants)
+- Skip initialization
+- Assume signal defaults
+- Rely on test execution order
+- Forget to add Makefile entry

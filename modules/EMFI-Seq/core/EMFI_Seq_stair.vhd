@@ -2,23 +2,23 @@
 -- # OneHot-Analog-Monitor (Marker DAC for Sequencer)                        #
 -- #
 -- # High-level
--- # - A tiny wrapper that maps a one-hot sequencer state to a fixed analog
--- #   level on a 16-bit signed DAC output (Moku:Go, -5V..+5V).
+-- # - A tiny wrapper that maps a one-hot sequencer state to a configurable
+-- #   analog level on a 16-bit signed DAC output (Moku:Go, -5V..+5V).
 -- # - Purpose: let students SEE state transitions on a scope and set simple
 -- #   voltage triggers (stair-step levels: S1<S2<S3<S4).
 -- #
 -- # Behavior
--- # - S1 -> 1.1 V  (signed code 0x199A = 6554)
--- # - S2 -> 1.2 V  (signed code 0x1EB8 = 7864)
--- # - S3 -> 1.3 V  (signed code 0x23D7 = 9175)
--- # - S4 -> 1.4 V  (signed code 0x28F5 = 10485)
+-- # - S1 -> level_s1 input (default: 1.1V = 0x199A = 6554)
+-- # - S2 -> level_s2 input (default: 1.2V = 0x1EB8 = 7864)
+-- # - S3 -> level_s3 input (default: 1.3V = 0x23D7 = 9175)
+-- # - S4 -> level_s4 input (default: 1.4V = 0x28F5 = 10485)
 -- # - Any other/invalid one-hot -> 0.0 V (failsafe)
--- # - Voltage codes computed via Moku_Voltage_pkg for accuracy
+-- # - Stair levels are now runtime-configurable via input ports
 -- #
 -- # Notes
 -- # - Output "dac_out_s16" is 16-bit signed (two's complement), matching MCC.
 -- # - We also expose "monitor_u16" (unsigned mirror) for teaching convenience.
--- # - No clock, no math inside: just a combinational LUT = minimal complexity.
+-- # - No clock, no math inside: just a combinational MUX = minimal complexity.
 -- # - VHDL-2008, Vivado 2022.2 / MCC friendly.
 -- ###########################################################################
 
@@ -34,6 +34,12 @@ entity onehot_analog_monitor is
         -- One-hot current state from the sequencer (S1..S4)
         state_oh      : in  std_logic_vector(3 downto 0);  -- "0001","0010","0100","1000"
 
+        -- Configurable stair levels (16-bit signed DAC codes)
+        level_s1      : in  signed(15 downto 0);
+        level_s2      : in  signed(15 downto 0);
+        level_s3      : in  signed(15 downto 0);
+        level_s4      : in  signed(15 downto 0);
+
         -- DAC output (16-bit signed; uses Moku voltage mapping: -5V=0x8000, 0V=0x0000, +5V=0x7FFF)
         dac_out_s16   : out signed(15 downto 0);
 
@@ -43,25 +49,17 @@ entity onehot_analog_monitor is
 end entity onehot_analog_monitor;
 
 architecture rtl of onehot_analog_monitor is
-    -- Voltage codes computed using Moku_Voltage_pkg conversion functions
-    -- Ensures accurate mapping: -5V -> 0x8000, 0V -> 0x0000, +5V -> 0x7FFF
-    -- 1.1V -> 0x199A (6554)
-    -- 1.2V -> 0x1EB8 (7864)
-    -- 1.3V -> 0x23D7 (9175)
-    -- 1.4V -> 0x28F5 (10485)
-    constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);
-    constant CODE_S2 : signed(15 downto 0) := voltage_to_digital(1.2);
-    constant CODE_S3 : signed(15 downto 0) := voltage_to_digital(1.3);
-    constant CODE_S4 : signed(15 downto 0) := voltage_to_digital(1.4);
-    constant CODE_Z  : signed(15 downto 0) := voltage_to_digital(0.0);  -- failsafe 0.0V
+    -- Failsafe value for invalid one-hot states
+    constant CODE_Z  : signed(15 downto 0) := voltage_to_digital(0.0);  -- 0.0V failsafe
 begin
-    -- Combinational decode: one-hot to signed code
+    -- Combinational decode: one-hot state to configurable DAC level
+    -- Stair levels are now inputs (runtime configurable via MCC Control registers)
     with state_oh select
-        dac_out_s16 <= CODE_S1 when "0001",
-                       CODE_S2 when "0010",
-                       CODE_S3 when "0100",
-                       CODE_S4 when "1000",
-                       CODE_Z  when others;
+        dac_out_s16 <= level_s1 when "0001",
+                       level_s2 when "0010",
+                       level_s3 when "0100",
+                       level_s4 when "1000",
+                       CODE_Z   when others;
 
     -- Unsigned mirror for convenience (no arithmetic; just reinterpreting bits)
     monitor_u16 <= unsigned(dac_out_s16);
