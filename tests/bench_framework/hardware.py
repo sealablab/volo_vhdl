@@ -12,7 +12,7 @@ from .config import BenchConfig
 
 # Import Moku API
 try:
-    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile
+    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger
     MOKU_AVAILABLE = True
 except ImportError:
     MOKU_AVAILABLE = False
@@ -21,6 +21,7 @@ except ImportError:
     Oscilloscope = Any
     WaveformGenerator = Any
     CloudCompile = Any
+    Datalogger = Any
 
 
 class HardwareBackend(Backend):
@@ -66,6 +67,7 @@ class HardwareBackend(Backend):
             'Oscilloscope': Oscilloscope,
             'WaveformGenerator': WaveformGenerator,
             'CloudCompile': CloudCompile,
+            'Datalogger': Datalogger,
         }
 
     @classmethod
@@ -224,6 +226,16 @@ class HardwareBackend(Backend):
 
                 instrument.generate_waveform(ch, waveform_type, amplitude=amplitude, frequency=frequency)
 
+        elif instrument_type == 'Datalogger' and settings:
+            # Apply data logger settings
+            # Note: set_samplerate is deprecated, sample_rate is now set in start_streaming
+            if 'streaming' in settings:
+                streaming_cfg = settings['streaming']
+                if streaming_cfg.get('enabled', False):
+                    duration = streaming_cfg.get('duration', 10)
+                    sample_rate = streaming_cfg.get('sample_rate', 1e3)
+                    instrument.start_streaming(duration=duration, sample_rate=sample_rate)
+
     async def _setup_routing(self) -> None:
         """
         Establish signal routing between slots/ports.
@@ -293,6 +305,21 @@ class HardwareBackend(Backend):
                     'time': osc_data['time']
                 }
                 print(f"  ✓ Captured {len(osc_data['ch1'])} samples from Oscilloscope (slot {slot_num})")
+
+            elif slot_config.instrument == 'Datalogger':
+                # Get data logger streaming data
+                stream_data = instrument.get_stream_data()
+                if stream_data:
+                    data[slot_num] = {
+                        'ch1': stream_data.get('ch1', []),
+                        'ch2': stream_data.get('ch2', []),
+                        'time': stream_data.get('time', [])
+                    }
+                    ch1_len = len(data[slot_num]['ch1'])
+                    print(f"  ✓ Captured {ch1_len} samples from Datalogger (slot {slot_num})")
+                else:
+                    data[slot_num] = {'ch1': [], 'ch2': [], 'time': []}
+                    print(f"  ⚠ No streaming data available from Datalogger (slot {slot_num})")
 
         print(f"[MokuBench] ✓ Run complete")
         return data
