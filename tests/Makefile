@@ -102,6 +102,23 @@ ifeq ($(TEST_MODULE),pulsestar)
     COCOTB_TEST_MODULES = test_pulsestar
 endif
 
+# uart_baud_gen test (Volo UART components)
+ifeq ($(TEST_MODULE),uart_baud_gen)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/volo_uart_pkg.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_baud_gen.vhd
+    TOPLEVEL = uart_baud_gen
+    COCOTB_TEST_MODULES = test_uart_baud_gen
+endif
+
+# uart_tx_core test (Volo UART components)
+ifeq ($(TEST_MODULE),uart_tx_core)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/volo_uart_pkg.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_baud_gen.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_tx_core.vhd
+    TOPLEVEL = uart_tx_core
+    COCOTB_TEST_MODULES = test_uart_tx_core
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
