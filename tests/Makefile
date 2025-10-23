@@ -119,6 +119,16 @@ ifeq ($(TEST_MODULE),uart_tx_core)
     COCOTB_TEST_MODULES = test_uart_tx_core
 endif
 
+# pinatatx_core test (Pinata UART transmitter)
+ifeq ($(TEST_MODULE),pinatatx_core)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/volo_uart_pkg.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_baud_gen.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_tx_core.vhd \
+                   $(MODULES_DIR)/PinataTX/core/PinataTX_core.vhd
+    TOPLEVEL = pinatatx_core
+    COCOTB_TEST_MODULES = test_pinatatx_core
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
