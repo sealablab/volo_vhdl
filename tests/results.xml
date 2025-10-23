@@ -1,14 +1,11 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1761167073" />
-    <testcase name="test_pct_5v0_boundaries" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="97" time="0.00012087821960449219" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_pct_3v3_boundaries" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="127" time="0.00016689300537109375" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_pct_2v5_boundaries" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="150" time="6.67572021484375e-05" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_pct_bipolar_5v_boundaries" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="177" time="5.984306335449219e-05" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_pct_bipolar_2v5_boundaries" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="202" time="5.817413330078125e-05" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_round_trip_conversions" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="231" time="0.00015926361083984375" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_clamping_behavior" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="272" time="8.106231689453125e-05" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_percentage_validation" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="302" time="8.678436279296875e-05" sim_time_ns="0.0" ratio_time="0.0" />
-    <testcase name="test_summary" classname="test_moku_pct_pkg" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_moku_pct_pkg.py" lineno="339" time="0.00327301025390625" sim_time_ns="0.0" ratio_time="0.0" />
+    <property name="random_seed" value="1761201354" />
+    <testcase name="test_bench_framework_basic_config" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="21" time="0.00015687942504882812" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_bench_framework_simulation_backend" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="58" time="0.0007719993591308594" sim_time_ns="20.0" ratio_time="25906.757257566398" />
+    <testcase name="test_bench_framework_counter_capture" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="96" time="0.1139369010925293" sim_time_ns="100030.0" ratio_time="877942.0805798873" />
+    <testcase name="test_bench_framework_get_instrument" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="158" time="0.00025391578674316406" sim_time_ns="20.0" ratio_time="78766.27230046949" />
+    <testcase name="test_bench_framework_validation" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="198" time="7.867813110351562e-05" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_all_tests_passed" classname="test_bench_framework_poc" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/test_bench_framework_poc.py" lineno="238" time="3.409385681152344e-05" sim_time_ns="0.0" ratio_time="0.0" />
   </testsuite>
 </testsuites>

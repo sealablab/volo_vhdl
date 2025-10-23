@@ -81,6 +81,14 @@ ifeq ($(TEST_MODULE),mcc_primitives)
     COCOTB_TEST_MODULES = test_mcc_primitives
 endif
 
+# bench_framework_poc test (Phase 1 PoC: simple_counter)
+ifeq ($(TEST_MODULE),bench_framework_poc)
+    VHDL_SOURCES = $(MODULES_DIR)/simple_counter/core/simple_counter_core.vhd
+    TOPLEVEL = simple_counter_core
+    COCOTB_TEST_MODULES = test_bench_framework_poc
+    export BENCH_FRAMEWORK_PATH=$(PROJECT_ROOT)/tests
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
@@ -132,6 +140,7 @@ help:
 	@echo "  - moku_voltage_pkg     (volo_common/common)"
 	@echo "  - moku_pct_pkg         (volo_common/common)"
 	@echo "  - emfi_seq_top         (EMFI-Seq/top)"
+	@echo "  - bench_framework_poc  (Bench Framework Phase 1 PoC)"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  WAVES=1                - Enable waveform dump (default)"
@@ -141,10 +150,11 @@ help:
 
 list-tests:
 	@echo "Available CocotB test modules:"
-	@echo "  - test_clk_divider_core.py    (7 tests)"
-	@echo "  - test_moku_voltage_pkg.py    (3 tests)"
-	@echo "  - test_moku_pct_pkg.py        (9 tests)"
-	@echo "  - test_emfi_seq_top.py        (8 tests)"
+	@echo "  - test_clk_divider_core.py       (7 tests)"
+	@echo "  - test_moku_voltage_pkg.py       (3 tests)"
+	@echo "  - test_moku_pct_pkg.py           (9 tests)"
+	@echo "  - test_emfi_seq_top.py           (8 tests)"
+	@echo "  - test_bench_framework_poc.py    (6 tests - Phase 1 PoC)"
 	@echo ""
 	@echo "To add more tests, create test_<module>.py and update this Makefile"
 

@@ -31,23 +31,37 @@ This will list all available memories. Don't read them all immediately - just be
 - Working tree: `git status` (should be clean)
 - Any stashed work: `git stash list`
 
-### 3. Understand Current Testing Framework
+### 3. Python Environment Setup (UV)
+```bash
+# First time setup - install dependencies
+uv sync --no-install-project
+
+# Verify dependencies are installed
+uv pip list | grep -E "(cocotb|pydantic|moku)"
+```
+See `docs/UV_SETUP.md` for full documentation.
+
+### 4. Understand Current Testing Framework
 - **Standard**: CocotB (Python-based, async/await)
 - **Location**: `tests/` directory
 - **Reference**: `tests/test_clk_divider_core.py` (7 tests passing)
+- **Python Env**: Use `uv run make TEST_MODULE=<module>` to run tests
 - **⚠️ DO NOT**: Create new GHDL testbenches (deprecated)
 
-### 4. Essential Serena Memories
+### 5. Essential Serena Memories
 Read these as needed for your task:
 - `cocotb_testing_guide` - Testing framework (NEW standard)
 - `coding_standards` - VHDL rules and tiered system
 - `design_patterns` - Common patterns and implementations
 - `codebase_structure` - Module organization
 - `tech_stack` - Tools and platform info
+- `bench_config_framework` - Multi-instrument testbench framework (NEW)
 
-### 5. Key Documentation Files
+### 6. Key Documentation Files
 - `CLAUDE.md` - This file (project overview)
 - `AGENTS.md` - Build commands and quick start
+- `docs/UV_SETUP.md` - Python environment setup with uv
+- `docs/BENCH_FRAMEWORK_DESIGN.md` - Multi-instrument testbench framework
 - `tests/README.md` - CocotB testing guide
 - `.cursor/rules.mdc` - Points to Serena memories (source of truth)
 
@@ -55,11 +69,16 @@ Read these as needed for your task:
 
 ### CocotB Testing (Preferred - New Standard)
 ```bash
+# First time: Setup Python environment
+uv sync --no-install-project
+
+# Run tests (automatically uses .venv environment)
 cd tests/
-make TEST_MODULE=clk_divider_core      # Run specific module tests
-make list-tests                        # List available test modules
-make clean                             # Clean test artifacts
-make waves                             # View waveforms (if GTKWave installed)
+uv run make TEST_MODULE=clk_divider_core      # Run specific module tests
+uv run make TEST_MODULE=bench_framework_poc   # Bench framework Phase 1 PoC
+uv run make list-tests                        # List available test modules
+make clean                                    # Clean test artifacts
+make waves                                    # View waveforms (if GTKWave installed)
 
 # Environment variables
 WAVES=1                    # Enable waveform dump (default)

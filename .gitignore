@@ -11,6 +11,8 @@ work-obj*.cf
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+uv.lock
 tests/sim_build/
 tests/*.xml
 tests/*.ghw
