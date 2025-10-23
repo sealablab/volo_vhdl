@@ -51,7 +51,13 @@ async def capture_uart_frame(dut, expected_bits=10):
     # Capture 10 bits (start + 8 data + stop)
     for bit_idx in range(expected_bits):
         # Wait to middle of bit period
-        await ClockCycles(dut.clk, baud_divider)
+        # First sample: wait half bit (we're at start of start bit)
+        # Subsequent samples: wait full bit
+        if bit_idx == 0:
+            await ClockCycles(dut.clk, half_bit)
+        else:
+            await ClockCycles(dut.clk, baud_divider)
+
         bit_value = int(dut.tx.value)
         bits.append(bit_value)
         dut._log.info(f"Bit {bit_idx}: {bit_value}")
