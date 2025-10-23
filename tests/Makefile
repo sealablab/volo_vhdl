@@ -68,6 +68,19 @@ ifeq ($(TEST_MODULE),emfi_seq_top)
     COCOTB_TEST_MODULES = test_emfi_seq_top
 endif
 
+# mcc_primitives test (uses EMFI-Seq as test vehicle)
+ifeq ($(TEST_MODULE),mcc_primitives)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
+                   $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_fsm.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_stair.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/EMFI_Seq.vhd \
+                   $(PROJECT_ROOT)/mcc_templates/CustomWrapper_test_stub.vhd \
+                   $(MODULES_DIR)/EMFI-Seq/top/Top.vhd
+    TOPLEVEL = customwrapper
+    COCOTB_TEST_MODULES = test_mcc_primitives
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1

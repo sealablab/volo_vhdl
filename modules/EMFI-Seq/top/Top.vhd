@@ -3,9 +3,14 @@
 -- # CustomWrapper Architecture for EMFI_Seq
 -- # Pattern: Matches DCSequencer style (architecture-only file)
 -- #
+-- # MCC_READY Convention (NEW):
+-- #   Control0[31] = MCC_READY flag (ACTIVE-HIGH)
+-- #     0 = Module disabled (safe during bitstream load / all-zero state)
+-- #     1 = Module enabled and ready for operation
+-- #
 -- # Register Map:
--- #   Control0[31]:    Enable (gates sequencer operation)
--- #   Control0[30]:    Clock enable
+-- #   Control0[31]:    MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
+-- #   Control0[30]:    User Enable (1=enable sequencer, 0=disable)
 -- #   Control0[7:0]:   Clock divider select (0=÷1, 1=÷2, ..., 255=÷256)
 -- #   Control1[6:0]:   State 1 delay (7-bit)
 -- #   Control2[6:0]:   State 2 delay (7-bit)
@@ -29,19 +34,37 @@ use IEEE.Std_Logic_1164.all;
 use IEEE.Numeric_Std.all;
 
 architecture EMFI_Seq of CustomWrapper is
+    -- MCC control signals
+    signal mcc_ready        : std_logic;
+    signal user_enable      : std_logic;
+    signal global_enable    : std_logic;
+
+    -- Internal signals
     signal status_internal  : unsigned(6 downto 0);
     signal state_internal   : std_logic_vector(3 downto 0);
     signal monitor_internal : unsigned(15 downto 0);
     signal div_stat_internal: std_logic_vector(7 downto 0);
     signal outputc_temp     : std_logic_vector(15 downto 0);
 begin
+    -- ========================================================================
+    -- MCC_READY LOGIC (Active-High Convention)
+    -- ========================================================================
+    -- Control0[31] = MCC_READY: Set by MCC after configuration loaded
+    -- Control0[30] = User Enable: User-level enable bit
+    -- Global enable gates both: module only operates when MCC is ready AND user enables
+    mcc_ready      <= Control0(31);
+    user_enable    <= Control0(30);
+    global_enable  <= mcc_ready and user_enable;
+
+    -- ========================================================================
+    -- EMFI SEQUENCER INSTANCE
+    -- ========================================================================
     EMFI_SEQUENCER: entity WORK.EMFI_Seq
-	-- the `EMFI_Seq` instantiates the fsm / sequencer as well as the analog monitor, which we connect to OutputA below
         port map (
             Clk        => Clk,
             Reset      => Reset,
-            Enable     => not Control0(31),
-            ClkEn      => not Control0(30),
+            Enable     => global_enable,        -- Safe: disabled during all-zero state
+            ClkEn      => '1',                  -- Always enabled (can add Control0[29] if needed)
             DivSel     => std_logic_vector(Control0(7 downto 0)),
             DelayS1    => unsigned(Control1(6 downto 0)),
             DelayS2    => unsigned(Control2(6 downto 0)),
