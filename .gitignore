@@ -7,6 +7,10 @@ work-obj*.cf
 *.exe
 *.mov
 
+# CloudCompile build artifacts
+**/cloudcompile_package/
+bitstreams/*.tar.gz
+
 # Python/CocotB artifacts
 __pycache__/
 *.pyc
