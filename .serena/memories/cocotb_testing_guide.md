@@ -12,6 +12,7 @@ CocotB (Coroutine-based Cosimulation TestBench) is the **standard testing framew
 cd tests/
 make TEST_MODULE=clk_divider_core      # Run specific module
 make TEST_MODULE=mcc_primitives        # Run MCC primitives test
+make TEST_MODULE=simpleserial_v1_tx    # Run SimpleSerial V1 TX test
 make test-all                          # Run all tests
 make clean                             # Clean artifacts
 make waves                             # View waveforms
@@ -26,27 +27,55 @@ COCOTB_LOG_LEVEL=DEBUG     # Set log level (DEBUG/INFO/WARNING/ERROR)
 
 ## Test Structure
 
-### Basic Template
+### Basic Template (UPDATED - Always Use Timeout Wrapper!)
+
+**OLD pattern (DEPRECATED - no timeout protection)**:
+```python
+@cocotb.test()
+async def test_something(dut):
+    await setup_clock(dut)
+    # ... test code ...  # ❌ Can hang forever!
+```
+
+**NEW pattern (REQUIRED - with timeout wrapper)**:
 ```python
 import cocotb
 from cocotb.triggers import RisingEdge, ClockCycles
-from conftest import setup_clock, reset_active_low
+from conftest import setup_clock, reset_active_low, run_with_timeout
 
 @cocotb.test()
 async def test_reset_behavior(dut):
     """Test 1: Reset Behavior"""
-    dut._log.info("Test 1: Reset Behavior")
-   
-    await setup_clock(dut)
-    dut.enable.value = 1
-    await reset_active_low(dut)
-   
-    assert dut.output.value == 0, "Output should be 0 after reset"
-    dut._log.info("✓ Reset test PASSED")
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 1: Reset Behavior")
+        dut._log.info("=" * 80)
+        
+        await setup_clock(dut)
+        dut.enable.value = 1
+        await reset_active_low(dut)
+        
+        assert dut.output.value == 0, "Output should be 0 after reset"
+        dut._log.info("✓ Reset test PASSED")
+    
+    # ✅ ALWAYS wrap with timeout protection
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_reset_behavior")
 ```
+
+**Why the Timeout Wrapper?**
+- ✅ Prevents infinite loops from hanging tests
+- ✅ Provides clear error messages with test name
+- ✅ Catches stuck simulations (e.g., UART never starts)
+- ✅ Wall-clock timeout (prevents simulation from running forever)
+- ✅ Preserves original error in exception chain
+
+**Pattern discovered**: 2025-10-23, SimpleSerial V1 TX development. Learned from `modules/PulseStar/` testbenches.
 
 ### Shared Utilities (conftest.py)
 All tests can use these helpers from `tests/conftest.py`:
+
+**Timeout Protection** (NEW):
+- `run_with_timeout(coro, timeout_sec, test_name)` - Wrap all tests with this!
 
 **Clock Management**:
 - `setup_clock(dut, period_ns=10, clk_signal="clk")` - Start clock
@@ -69,13 +98,179 @@ All tests can use these helpers from `tests/conftest.py`:
 - `assert_signal_value(signal, expected, message)` - Assert with helpful error
 - `assert_pulse_count(signal, clk, cycles, expected, tolerance=0)` - Assert pulse count
 
+## CRITICAL: Timeout Patterns (Added 2025-10-23)
+
+### Pattern 1: NEVER Use Infinite While Loops
+
+**WRONG** (can hang forever):
+```python
+# ❌ DANGEROUS - infinite loop if TX never goes low!
+while dut.uart_tx.value == 1:
+    await RisingEdge(dut.clk)
+```
+
+**RIGHT** (timeout loop):
+```python
+# ✅ SAFE - timeout with clear error
+for _ in range(timeout_cycles):
+    if dut.uart_tx.value == 0:
+        break
+    await RisingEdge(dut.clk)
+else:
+    raise TimeoutError(f"UART TX never went low in {timeout_cycles} cycles")
+```
+
+### Pattern 2: Calculate Timeouts from Hardware Timing
+
+**WRONG** (arbitrary numbers):
+```python
+# ❌ Why 5000? Not based on real timing!
+for _ in range(5000):
+    ...
+```
+
+**RIGHT** (calculated from specs):
+```python
+# ✅ Based on actual hardware timing
+# UART byte @ 38400 baud, 125MHz clock:
+# - Baud period: 1/38400 = 26.04 μs
+# - Bit period: 26.04 μs / 125MHz = 3255 cycles
+# - Char time (10 bits): 3255 × 10 = 32,550 cycles
+# - Safety margin: 2× = 65,000 cycles
+
+async def wait_for_uart_byte(dut, timeout_cycles=65000):
+    """
+    Timeout calculation:
+    - 1 byte (10 bits) @ 38400 baud = 260 μs
+    - @ 125 MHz: 260 μs = 32,500 cycles
+    - Safety margin: 2× = 65,000 cycles
+    """
+    for _ in range(timeout_cycles):
+        if dut.tx_busy.value == 0:
+            return
+        await RisingEdge(dut.clk)
+    else:
+        raise TimeoutError("TX never completed")
+```
+
+### Pattern 3: Timeout Calculation Template
+
+```python
+def calculate_uart_timeout(clk_freq_hz, baud_rate, num_chars, safety_factor=2):
+    """
+    Calculate realistic UART timeout in clock cycles
+    
+    Example:
+        timeout = calculate_uart_timeout(125_000_000, 38400, 34)
+        # For SimpleSerial V1 max frame (34 chars)
+        # Returns ~2.2M cycles
+    """
+    # Character time (10 bits for 8N1)
+    char_time_s = (10 / baud_rate)
+    
+    # Total frame time
+    frame_time_s = char_time_s * num_chars
+    
+    # Convert to cycles with safety margin
+    cycles = int(frame_time_s * clk_freq_hz * safety_factor)
+    
+    return cycles
+
+# Usage:
+timeout = calculate_uart_timeout(125_000_000, 38400, 34)  # 2.2M cycles
+```
+
+## UART Testing Patterns (Added 2025-10-23)
+
+### Pattern 1: UART Byte Capture with Proper Timing
+
+**Critical Discovery**: First sample must be HALF bit, subsequent samples FULL bit!
+
+```python
+async def capture_uart_byte(dut, timeout_cycles=350000):
+    """Capture a single UART byte (8N1 format)"""
+    
+    # 1. Wait for START bit with timeout
+    for _ in range(timeout_cycles):
+        if dut.uart_tx.value == 0:
+            break
+        await RisingEdge(dut.clk)
+    else:
+        raise TimeoutError("No UART start bit detected")
+    
+    # 2. Calculate timing
+    baud_divider = 3255  # 125MHz / 38400
+    half_bit = baud_divider // 2
+    
+    # 3. Sample START bit (CRITICAL: half bit period!)
+    await ClockCycles(dut.clk, half_bit)  # ← To middle of start bit
+    start_bit = int(dut.uart_tx.value)
+    assert start_bit == 0
+    
+    # 4. Sample 8 DATA bits (full bit periods)
+    data_bits = []
+    for _ in range(8):
+        await ClockCycles(dut.clk, baud_divider)  # ← Full bit
+        data_bits.append(int(dut.uart_tx.value))
+    
+    # 5. Sample STOP bit
+    await ClockCycles(dut.clk, baud_divider)
+    stop_bit = int(dut.uart_tx.value)
+    assert stop_bit == 1
+    
+    # 6. Wait for UART core to settle (CRITICAL for back-to-back!)
+    await ClockCycles(dut.clk, baud_divider // 2)
+    
+    # 7. Convert to byte (LSB first)
+    byte_value = 0
+    for i, bit in enumerate(data_bits):
+        byte_value |= (bit << i)
+    
+    return byte_value
+```
+
+**Why the settling delay after stop bit?**
+- UART TX core may not immediately de-assert `uart_busy`
+- Back-to-back transmissions can corrupt without settling time
+- Half bit period provides safety margin
+
+### Pattern 2: Back-to-Back UART Transmissions
+
+**Problem**: Second transmission may start before first fully completes.
+
+**Solution 1 - Check busy in VHDL** (PREFERRED):
+```vhdl
+when STATE_IDLE =>
+    -- Only accept new transmission if UART core is idle
+    if send_pulse = '1' and uart_busy = '0' then
+        -- Start transmission
+    end if;
+```
+
+**Solution 2 - Add delay in test**:
+```python
+for cmd in commands:
+    # Delay to ensure previous transmission settled
+    await ClockCycles(dut.clk, 10000)
+    
+    # Send new command
+    dut.send_pulse.value = 1
+    await RisingEdge(dut.clk)
+    dut.send_pulse.value = 0
+    
+    # Capture response
+    frame = await capture_uart_string(dut)
+```
+
+**Best Practice**: Use BOTH for robustness!
+
 ## MCC Module Testing
 
 ### MCC_READY Convention (MANDATORY for all MCC modules)
 
 **Control0[31] = MCC_READY flag (ACTIVE-HIGH)**
 
-This convention solves the "all-zero reset state" problem during bitstream loading:
+This convention solves the \"all-zero reset state\" problem during bitstream loading:
 
 **The Problem**:
 When an FPGA bitstream is loaded onto Moku hardware:
@@ -153,82 +348,33 @@ from conftest import (
     reset_active_high,
     init_mcc_inputs,
     mcc_set_regs,
-    wait_for_mcc_ready
+    wait_for_mcc_ready,
+    run_with_timeout  # ← Always include!
 )
 
 @cocotb.test()
 async def test_mcc_initialization(dut):
-    # Step 1: Hardware startup
-    await setup_clock(dut, clk_signal="Clk")
-    await reset_active_high(dut, rst_signal="Reset")
-    await init_mcc_inputs(dut)
+    async def test_logic():
+        # Step 1: Hardware startup
+        await setup_clock(dut, clk_signal="Clk")
+        await reset_active_high(dut, rst_signal="Reset")
+        await init_mcc_inputs(dut)
+        
+        # Step 2: Simulate network delay + configuration load
+        await mcc_set_regs(dut, {
+            0: 0x40000001,  # User bits (CR0[31] set automatically)
+            1: 0x0000007F,  # Module config
+            5: 0x0000199A   # Voltage level
+        }, set_mcc_ready=True)  # Automatically sets CR0[31]=1
+        
+        # Step 3: Wait for module to settle
+        await wait_for_mcc_ready(dut)
+        
+        # Now safe to test module behavior
+        dut._log.info("✓ Test PASSED")
     
-    # Step 2: Simulate network delay + configuration load
-    await mcc_set_regs(dut, {
-        0: 0x40000001,  # User bits (CR0[31] set automatically)
-        1: 0x0000007F,  # Module config
-        5: 0x0000199A   # Voltage level
-    }, set_mcc_ready=True)  # Automatically sets CR0[31]=1
-    
-    # Step 3: Wait for module to settle
-    await wait_for_mcc_ready(dut)
-    
-    # Now safe to test module behavior
-```
-
-**Network Latency Simulation**:
-```python
-# Random delay (10-200ms) - simulates real-world variability
-await mcc_set_regs(dut, {...}, set_mcc_ready=True)
-
-# Fixed delay (reproducible tests)
-await mcc_set_regs(dut, {...}, set_mcc_ready=True, 
-                  total_delay_ms=50.0, per_reg_delay_ms=0)
-
-# No delay (fast tests)
-await mcc_set_regs(dut, {...}, set_mcc_ready=True,
-                  simulate_network_delay=False)
-```
-
-**Runtime Register Updates**:
-```python
-# Update registers while module is running
-await mcc_set_regs(dut, {
-    5: 0x00001000  # Change voltage
-}, set_mcc_ready=False)  # Module already running, don't touch CR0[31]
-```
-
-**Complete Workflow Example**:
-```python
-@cocotb.test()
-async def test_complete_initialization(dut):
-    """Demonstrate complete MCC initialization workflow"""
-    
-    # === Phase 1: Hardware startup ===
-    await setup_clock(dut, clk_signal="Clk", period_ns=10)
-    await reset_active_high(dut, rst_signal="Reset")
-    await init_mcc_inputs(dut)
-    
-    # === Phase 2: All-zero state (simulates bitstream load) ===
-    # GHDL defaults all signals to 0, so this is implicit
-    # In real hardware, registers are 0 after bitstream load
-    for i in range(16):
-        getattr(dut, f"Control{i}").value = 0
-    await ClockCycles(dut.Clk, 10)
-    
-    # === Phase 3: Network delay + configuration ===
-    await mcc_set_regs(dut, {
-        0: 0x40000001,  # DivSel, enables, etc.
-        1: 0x0000000A,  # Delays
-        5: 0x0000199A,  # Voltage levels
-    }, set_mcc_ready=True, total_delay_ms=25.0)
-    
-    # === Phase 4: Wait for module to settle ===
-    await wait_for_mcc_ready(dut, settle_cycles=20)
-    
-    # === Phase 5: Verify operational ===
-    await ClockCycles(dut.Clk, 100)
-    # ... test module behavior
+    # ✅ ALWAYS wrap with timeout
+    await run_with_timeout(test_logic(), timeout_sec=15, test_name="test_mcc_initialization")
 ```
 
 ### CustomWrapper Entity Stub
@@ -264,41 +410,30 @@ end entity CustomWrapper;
 - Stub must be included in VHDL_SOURCES before module's Top.vhd
 - TOPLEVEL must be lowercase: `customwrapper` (GHDL lowercases entity names)
 
-### Example Makefile Entry
-```makefile
-ifeq ($(TEST_MODULE),mcc_primitives)
-    VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
-                   $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
-                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_fsm.vhd \
-                   $(MODULES_DIR)/EMFI-Seq/core/EMFI_Seq_stair.vhd \
-                   $(MODULES_DIR)/EMFI-Seq/top/EMFI_Seq.vhd \
-                   $(PROJECT_ROOT)/mcc_templates/CustomWrapper_test_stub.vhd \
-                   $(MODULES_DIR)/EMFI-Seq/top/Top.vhd
-    TOPLEVEL = customwrapper          # Lowercase!
-    COCOTB_TEST_MODULES = test_mcc_primitives
-endif
-```
-
 ## Test Organization
 
 ### File Naming
 - Test files: `test_<module_name>.py`
-- Example: `test_clk_divider_core.py`, `test_emfi_seq_top.py`, `test_mcc_primitives.py`
+- Example: `test_clk_divider_core.py`, `test_emfi_seq_top.py`, `test_mcc_primitives.py`, `test_simpleserial_v1_tx.py`
 
 ### Test Numbering
 Use numbered test functions with clear descriptions:
 ```python
 @cocotb.test()
 async def test_reset_behavior(dut):
-    """Test 1: Reset Behavior"""
-    dut._log.info("=" * 70)
-    dut._log.info("Test 1: Reset Behavior")
-    dut._log.info("=" * 70)
-    # ... test code
+    \"\"\"Test 1: Reset Behavior\"\"\"
+    async def test_logic():
+        dut._log.info(\"=\" * 80)
+        dut._log.info(\"Test 1: Reset Behavior\")
+        dut._log.info(\"=\" * 80)
+        # ... test code
+        dut._log.info(\"✓ Test PASSED\")
+    
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name=\"test_reset_behavior\")
    
 @cocotb.test()
 async def test_clock_enable(dut):
-    """Test 2: Clock Enable Control"""
+    \"\"\"Test 2: Clock Enable Control\"\"\"
     # ... test code
 ```
 
@@ -315,42 +450,71 @@ Typical test sequence:
 
 ## Best Practices
 
-### 1. Use Runtime Randomization
+### 1. ALWAYS Use Timeout Wrapper (NEW!)
+```python
+@cocotb.test()
+async def test_something(dut):
+    async def test_logic():
+        # All test code here
+        pass
+    
+    # ✅ MANDATORY - prevents infinite loops
+    await run_with_timeout(test_logic(), timeout_sec=15, test_name="test_something")
+```
+
+### 2. Calculate Timeouts from Specs (NEW!)
+```python
+# ❌ BAD - arbitrary number
+timeout = 5000
+
+# ✅ GOOD - based on hardware timing
+baud_rate = 38400
+clk_freq = 125_000_000
+bits_per_char = 10
+cycles_per_char = (clk_freq / baud_rate) * bits_per_char  # 32,552
+timeout = cycles_per_char * num_chars * 2  # With safety margin
+```
+
+### 3. Use Runtime Randomization
 ```python
 import random
 
 @cocotb.test()
 async def test_randomized_delays(dut):
-    random.seed()  # Use current time
-    delay = random.randint(2, 15)
-    dut._log.info(f"Random delay: {delay}")
-    dut.delay_config.value = delay
-    # ... verify behavior
+    async def test_logic():
+        random.seed()  # Use current time
+        delay = random.randint(2, 15)
+        dut._log.info(f"Random delay: {delay}")
+        dut.delay_config.value = delay
+        # ... verify behavior
+    
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_randomized_delays")
 ```
 
-### 2. Clear Logging
+### 4. Clear Logging
 ```python
-dut._log.info("=" * 70)
-dut._log.info("Test 3: Random Configuration")
-dut._log.info("=" * 70)
-dut._log.info(f"Config: delay={delay}, threshold={threshold}")
-dut._log.info("✓ Test PASSED")
+dut._log.info(\"=\" * 80)
+dut._log.info(\"Test 3: Random Configuration\")
+dut._log.info(\"=\" * 80)
+dut._log.info(f\"Config: delay={delay}, threshold={threshold}\")
+dut._log.info(\"✓ Test PASSED\")
 ```
 
-### 3. Helpful Assertions
+### 5. Helpful Assertions
 ```python
-assert actual == expected, \
-    f"Mismatch: expected {expected:#x}, got {actual:#x}"
+assert actual == expected, \\
+    f\"Mismatch: expected {expected:#x}, got {actual:#x}\"
 ```
 
-### 4. Test Independence
+### 6. Test Independence
 Each test should:
 - Initialize its own clock
 - Apply its own reset
 - Set all required signals
 - Not depend on other tests' state
+- Be wrapped in `run_with_timeout()`
 
-### 5. Avoid Magic Numbers
+### 7. Avoid Magic Numbers
 ```python
 # Bad
 dut.config.value = 0x199A
@@ -358,17 +522,6 @@ dut.config.value = 0x199A
 # Good
 VOLTAGE_1V1 = 0x199A  # From Moku_Voltage_pkg
 dut.config.value = VOLTAGE_1V1
-```
-
-### 6. Use MCC Primitives for MCC Modules
-```python
-# Bad - manual register writes
-dut.Control0.value = 0x80000000
-await ClockCycles(dut.Clk, 100)
-
-# Good - MCC primitives with network latency
-await mcc_set_regs(dut, {0: 0x40000000}, set_mcc_ready=True)
-await wait_for_mcc_ready(dut)
 ```
 
 ## Working Examples
@@ -379,6 +532,14 @@ await wait_for_mcc_ready(dut)
 - Division ratios (power-of-2 and arbitrary)
 - Enable control
 - Edge cases (div=1, div=256)
+
+### UART Protocol Test (NEW!)
+**File**: `tests/test_simpleserial_v1_tx.py` (9 tests passing)
+- Multi-byte UART protocol (SimpleSerial V1)
+- Hex encoding, payload handling
+- Back-to-back transmissions
+- **Demonstrates**: Timeout patterns, UART timing, FSM testing
+- **Lessons**: Delta-cycle races, enable control semantics, busy flag checking
 
 ### Package Test
 **File**: `tests/test_moku_voltage_pkg.py` (3 tests passing)
@@ -392,7 +553,7 @@ await wait_for_mcc_ready(dut)
 - Multi-core integration
 - Runtime randomization
 
-### MCC Primitives Test (NEW)
+### MCC Primitives Test
 **File**: `tests/test_mcc_primitives.py` (6 tests passing)
 - MCC_READY all-zero state safety
 - Network latency simulation
@@ -400,105 +561,57 @@ await wait_for_mcc_ready(dut)
 - Runtime register updates
 - Complete initialization workflow
 
-## Migration from GHDL Testbenches
-
-**Old pattern** (DEPRECATED):
-```vhdl
--- tb/core/tb_module.vhd
-entity tb_module is end entity;
-architecture sim of tb_module is
-    -- testbench code
-end architecture;
-```
-
-**New pattern** (STANDARD):
-```python
-# tests/test_module.py
-import cocotb
-from conftest import init_dut
-
-@cocotb.test()
-async def test_feature(dut):
-    await init_dut(dut)
-    # test code
-```
-
-**Benefits**:
-- Python's expressiveness vs VHDL verbosity
-- Async/await for clean timing control
-- Shared utilities (conftest.py)
-- Runtime randomization
-- Better logging and debugging
-- Cross-platform compatibility
-- MCC network latency simulation
-
 ## Common Pitfalls
 
-### 1. Clock Signal Naming
+### 1. Not Using Timeout Wrapper (NEW!)
+```python
+# ❌ WRONG - can hang forever
+@cocotb.test()
+async def test_bad(dut):
+    while dut.tx_busy.value:  # Infinite loop!
+        await RisingEdge(dut.clk)
+
+# ✅ CORRECT - timeout protected
+@cocotb.test()
+async def test_good(dut):
+    async def test_logic():
+        for _ in range(timeout):
+            if not dut.tx_busy.value:
+                break
+            await RisingEdge(dut.clk)
+        else:
+            raise TimeoutError()
+    
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_good")
+```
+
+### 2. Wrong UART Sampling Timing (NEW!)
+```python
+# ❌ WRONG - samples wrong bits
+await ClockCycles(dut.clk, baud_divider)  # Always full bit
+start_bit = int(dut.uart_tx.value)
+
+# ✅ CORRECT - half bit for first sample
+await ClockCycles(dut.clk, half_bit)  # Half bit to middle
+start_bit = int(dut.uart_tx.value)
+```
+
+### 3. Clock Signal Naming
 ```python
 # MCC modules use capital Clk
-await setup_clock(dut, clk_signal="Clk")
+await setup_clock(dut, clk_signal=\"Clk\")
 
 # Core modules use lowercase clk
-await setup_clock(dut, clk_signal="clk")
+await setup_clock(dut, clk_signal=\"clk\")
 ```
 
-### 2. Reset Polarity
+### 4. Reset Polarity
 ```python
 # Active-low (rst_n)
-await reset_active_low(dut, rst_signal="rst_n")
+await reset_active_low(dut, rst_signal=\"rst_n\")
 
 # Active-high (Reset - MCC style)
-await reset_active_high(dut, rst_signal="Reset")
-```
-
-### 3. Signal Value Access
-```python
-# Deprecated
-val = int(dut.signal.value.signed_integer)
-
-# Correct
-val = int(dut.signal.value.to_signed())
-```
-
-### 4. GHDL Case Sensitivity
-```makefile
-# WRONG - GHDL lowercases entity names
-TOPLEVEL = CustomWrapper
-
-# CORRECT
-TOPLEVEL = customwrapper
-```
-
-### 5. Control Register Types
-```python
-# Control registers are std_logic_vector, accept int
-dut.Control0.value = 0x80000000  # Correct
-
-# Don't try to assign signed
-dut.Control0.value = signed(...) # Wrong
-```
-
-### 6. Forgetting MCC_READY Convention
-```python
-# Bad - CR0[31] not handled
-dut.Control0.value = 0x40000000  # Missing MCC_READY bit
-
-# Good - use mcc_set_regs which handles CR0[31]
-await mcc_set_regs(dut, {0: 0x40000000}, set_mcc_ready=True)
-```
-
-### 7. Not Simulating Network Delay
-```python
-# Bad - unrealistic instant configuration
-dut.Control0.value = 0x80000000
-dut.Control1.value = 0x0000007F
-
-# Good - realistic network latency
-await mcc_set_regs(dut, {
-    0: 0x40000000,
-    1: 0x0000007F
-}, set_mcc_ready=True)  # Includes 10-200ms delay by default
+await reset_active_high(dut, rst_signal=\"Reset\")
 ```
 
 ## Debugging
@@ -518,15 +631,11 @@ COCOTB_LOG_LEVEL=DEBUG make TEST_MODULE=my_module
 ```python
 @cocotb.test()
 async def test_debug(dut):
-    dut._log.info(f"Signal value: {dut.signal.value}")
-    dut._log.info(f"State: {dut.state.value}")
-```
-
-### Print All Signals
-```python
-from conftest import log_signal_table
-
-log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
+    async def test_logic():
+        dut._log.info(f\"Signal value: {dut.signal.value}\")
+        dut._log.info(f\"State: {dut.state.value}\")
+    
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name=\"test_debug\")
 ```
 
 ## Adding New Tests
@@ -535,7 +644,7 @@ log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
 2. **Add Makefile entry**: Update `tests/Makefile`
 3. **Include dependencies**: List all VHDL sources in compilation order
 4. **Set TOPLEVEL**: Use lowercase entity name
-5. **Write tests**: Use async/await pattern
+5. **Write tests**: Use async/await pattern with `run_with_timeout()`
 6. **Use MCC primitives**: For MCC modules, use mcc_set_regs(), etc.
 7. **Run**: `make TEST_MODULE=<module>`
 8. **Update help**: Add to `make list-tests` output
@@ -543,27 +652,34 @@ log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
 ## Reference Files
 
 - **Template**: `tests/test_clk_divider_core.py` - Core module example
+- **UART Template**: `tests/test_simpleserial_v1_tx.py` - Protocol testing example (NEW!)
 - **MCC Template**: `tests/test_mcc_primitives.py` - MCC initialization example
 - **Utilities**: `tests/conftest.py` - Shared helper functions
 - **Makefile**: `tests/Makefile` - Build system integration
 - **README**: `tests/README.md` - User-facing documentation
 - **MCC Stub**: `mcc_templates/CustomWrapper_test_stub.vhd` - CustomWrapper entity
+- **Patterns**: `docs/COCOTB_UART_TEST_PATTERNS.md` - UART testing deep dive (NEW!)
+- **VHDL Patterns**: `docs/VHDL_DELTA_CYCLE_PATTERNS.md` - Delta-cycle races (NEW!)
 
 ## Summary
 
 ✅ **DO**:
-- Use CocotB for all new tests
+- **ALWAYS wrap tests with `run_with_timeout()`** (prevents infinite loops)
+- Calculate timeouts from hardware specs (not arbitrary numbers)
+- Use timeout loops (`for _ in range()`) not `while` loops
 - Import helpers from conftest.py
-- Use MCC primitives for MCC modules (mcc_set_regs, wait_for_mcc_ready, etc.)
+- Use MCC primitives for MCC modules
 - Follow MCC_READY convention (CR0[31] active-high)
 - Simulate network latency for realistic tests
 - Add clear logging and assertions
 - Use runtime randomization
 - Test each module independently
-- Initialize all signals/registers
+- For UART: Half bit first sample, full bit after, settling delay after stop
 
 ❌ **DON'T**:
 - Create new GHDL testbenches
+- Use `while` loops without timeouts (can hang forever!)
+- Use arbitrary timeout values (calculate from specs!)
 - Hard-code test values (use constants)
 - Skip MCC_READY implementation in Top.vhd
 - Manually write Control0 without mcc_set_regs
@@ -571,3 +687,4 @@ log_signal_table(dut, ["clk_en", "enable", "div_sel", "stat_reg"])
 - Assume instant register updates
 - Rely on test execution order
 - Forget to add Makefile entry
+- Sample UART bits at wrong timing (half/full bit pattern!)
