@@ -17,6 +17,9 @@ dependencies = [
 
     # Hardware Backend (MCC API) - Phase 3
     "moku>=3.0.0",
+
+    # Build Tools (MCC Package Builder)
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,57 @@
+# MCC Package Manifest for simple_counter
+# Canonical packaging configuration for Moku CloudCompile
+# Build with: python3 scripts/build_mcc_package.py modules/simple_counter
+
+name: simple_counter
+description: 16-bit counter for MokuBench proof of concept and testing
+version: 1.0.0
+author: Claude Code
+date: 2025-01-22
+
+# Files to include (relative to module root)
+files:
+  core:
+    - core/simple_counter_core.vhd
+  top:
+    - top/Top.vhd
+
+# No external dependencies for simple_counter
+dependencies: []
+
+# Control register documentation
+control_registers:
+  - register: 0
+    bits:
+      - {range: "31", name: "MCC_READY", type: "auto", description: "Set by MCC after config (active-high)"}
+      - {range: "30", name: "User Enable", type: "user", description: "1=enable, 0=disable"}
+      - {range: "29", name: "Clock Enable", type: "user", description: "1=run counter, 0=freeze"}
+      - {range: "28:0", name: "Reserved", type: "reserved", description: "Future use"}
+
+# Output documentation
+outputs:
+  - port: OutputA
+    description: "16-bit counter value (full range)"
+  - port: OutputB
+    description: "Counter MSB only (8 high bits for visibility)"
+  - port: OutputC
+    description: "Unused (0)"
+  - port: OutputD
+    description: "Unused (0)"
+
+# Example Python usage
+example_code: |
+  from moku.instruments import MultiInstrument, CloudCompile
+
+  m = MultiInstrument('192.168.1.100', platform_id=2)
+  mcc = m.set_instrument(1, CloudCompile, bitstream="simple_counter.tar.gz")
+
+  # Enable counter
+  mcc.set_control(0, 0xE0000000)  # MCC_READY + Enable + ClkEn
+
+  # Route to Oscilloscope for monitoring
+  connections = [
+      dict(source="Slot1OutA", destination="Slot2InA"),  # Counter → OSC Ch1
+  ]
+  m.set_connections(connections=connections)
+
+  # Counter increments every clock cycle (125 MHz)

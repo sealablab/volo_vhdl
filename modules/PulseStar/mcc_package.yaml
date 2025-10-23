@@ -1,0 +1,78 @@
+# MCC Package Manifest for PulseStar
+# Canonical packaging configuration for Moku CloudCompile
+# Build with: python3 scripts/build_mcc_package.py modules/PulseStar
+
+name: pulsestar
+description: 4-channel calibration signal generator with I/Q quadrature, UART serial, and trigger outputs
+version: 1.0.0
+author: Claude Code
+date: 2025-01-22
+
+# Files to include (relative to module root)
+files:
+  datadef:
+    - datadef/waveform_lut_pkg.vhd
+  core:
+    - core/waveform_gen_core.vhd
+    - core/trigger_gen_core.vhd
+    - core/uart_tx_core.vhd
+  top:
+    - top/Top.vhd
+
+# External dependencies (from other modules)
+dependencies:
+  - module: volo_common
+    files:
+      - core/clk_divider_core.vhd
+
+# Control register documentation
+control_registers:
+  - register: 0
+    bits:
+      - {range: "31", name: "MCC_READY", type: "auto", description: "Set by MCC after config (active-high)"}
+      - {range: "30", name: "Global Enable", type: "user", description: "1=enable, 0=disable"}
+      - {range: "29", name: "Clock Enable", type: "user", description: "1=run, 0=freeze all outputs"}
+      - {range: "28:21", name: "Frequency Divider", type: "user", description: "0-255 division ratio for I/Q waveforms"}
+      - {range: "20:0", name: "Reserved", type: "reserved", description: "Future use"}
+  - register: 1
+    bits:
+      - {range: "31:16", name: "UART Baud Div", type: "user", description: "clk / (baud_div+1) = baud_rate (e.g. 1084 → 115200)"}
+      - {range: "15:0", name: "Trigger Interval", type: "user", description: "Clock cycles between trigger pulses"}
+  - register: 2
+    bits:
+      - {range: "31:24", name: "Trigger Width", type: "user", description: "Clock cycles per trigger pulse"}
+      - {range: "23:0", name: "Reserved", type: "reserved", description: "Future use"}
+
+# Output documentation
+outputs:
+  - port: OutputA
+    description: "I Channel (Sine wave, 16-bit signed, full-scale ±32767)"
+  - port: OutputB
+    description: "Q Channel (Cosine wave, 90° phase offset, 16-bit signed)"
+  - port: OutputC
+    description: "UART Serial (VOLO ASCII pattern, 0x7FFF=high, 0x8000=low)"
+  - port: OutputD
+    description: "Trigger Pulse (0x7FFF=active, 0x0000=idle)"
+
+# Example Python usage
+example_code: |
+  from moku.instruments import MultiInstrument, CloudCompile
+
+  m = MultiInstrument('192.168.1.100', platform_id=2)
+  mcc = m.set_instrument(2, CloudCompile, bitstream="pulsestar.tar.gz")
+
+  # Configure: 1kHz I/Q, 115200 baud UART, 256μs trigger interval
+  mcc.set_control(0, 0xC0F00000)  # MCC_READY + Enable + ClkEn + Div=240 (≈1kHz)
+  mcc.set_control(1, 0x043C7D00)  # Baud=1084 (115200), Interval=32000 (256μs)
+  mcc.set_control(2, 0x64000000)  # PulseWidth=100 clocks (800ns @ 125MHz)
+
+  # Route to Oscilloscope for monitoring
+  connections = [
+      dict(source="Slot2OutA", destination="Slot1InA"),  # I channel
+      dict(source="Slot2OutB", destination="Slot1InB"),  # Q channel
+      dict(source="Slot2OutD", destination="Slot1InC"),  # Trigger
+  ]
+  m.set_connections(connections=connections)
+
+  # Frequency: 125MHz / (240+1) / 256 ≈ 2.0 kHz
+  # Baud: 125MHz / (1084+1) ≈ 115200 baud
