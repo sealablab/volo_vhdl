@@ -12,7 +12,12 @@ from .config import BenchConfig
 
 # Import Moku API
 try:
-    from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger, SpectrumAnalyzer, LogicAnalyzer, Phasemeter
+    from moku.instruments import (
+        MultiInstrument, Oscilloscope, WaveformGenerator, CloudCompile, Datalogger,
+        SpectrumAnalyzer, LogicAnalyzer, Phasemeter, LockInAmp, PIDController,
+        FrequencyResponseAnalyzer, DigitalFilterBox, FIRFilterBuilder,
+        ArbitraryWaveformGenerator, TimeFrequencyAnalyzer, LaserLockBox
+    )
     MOKU_AVAILABLE = True
 except ImportError:
     MOKU_AVAILABLE = False
@@ -25,6 +30,14 @@ except ImportError:
     SpectrumAnalyzer = Any
     LogicAnalyzer = Any
     Phasemeter = Any
+    LockInAmp = Any
+    PIDController = Any
+    FrequencyResponseAnalyzer = Any
+    DigitalFilterBox = Any
+    FIRFilterBuilder = Any
+    ArbitraryWaveformGenerator = Any
+    TimeFrequencyAnalyzer = Any
+    LaserLockBox = Any
 
 
 class HardwareBackend(Backend):
@@ -74,6 +87,14 @@ class HardwareBackend(Backend):
             'SpectrumAnalyzer': SpectrumAnalyzer,
             'LogicAnalyzer': LogicAnalyzer,
             'Phasemeter': Phasemeter,
+            'LockInAmp': LockInAmp,
+            'PIDController': PIDController,
+            'FrequencyResponseAnalyzer': FrequencyResponseAnalyzer,
+            'DigitalFilterBox': DigitalFilterBox,
+            'FIRFilterBuilder': FIRFilterBuilder,
+            'ArbitraryWaveformGenerator': ArbitraryWaveformGenerator,
+            'TimeFrequencyAnalyzer': TimeFrequencyAnalyzer,
+            'LaserLockBox': LaserLockBox,
         }
 
     @classmethod
