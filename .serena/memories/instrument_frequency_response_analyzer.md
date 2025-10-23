@@ -5,6 +5,43 @@ Measures transfer function (Bode plot: magnitude and phase vs frequency). Sweeps
 
 ---
 
+## MokuBench Quick Reference
+
+**Status**: ⚠️ Framework support complete, hardware testing pending (license/entitlement required)
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Instrument registered and importable
+- Ready for BenchConfig deployment
+- Settings handlers inherit from base patterns
+- Data collection follows established patterns
+
+**To Use**:
+```python
+from bench_framework import BenchConfig, SlotConfig
+
+config = BenchConfig(
+    platform=MOKU_GO,
+    slots={
+        1: SlotConfig(
+            instrument='FrequencyResponseAnalyzer',
+            settings={
+                'sweep': {
+                    'start_freq': 10,
+                    'stop_freq': 10e6,
+                    'num_points': 512,
+                    'averaging_time': 1e-3
+                }
+            }
+        )
+    },
+    connections=[...]
+)
+```
+
+**Note**: Testing requires Moku device with appropriate license/entitlement.
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

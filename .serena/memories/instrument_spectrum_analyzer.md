@@ -5,6 +5,30 @@ Frequency-domain signal analysis. Converts time-domain signals to frequency spec
 
 ---
 
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_spectrum_test.py`
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_spectrum_test.py --ip 192.168.13.159 --frequency 1000 --span-end 20000
+```
+
+**What It Demonstrates**:
+- Deploy WaveformGenerator (1 kHz test tone) + SpectrumAnalyzer
+- Route waveform to spectrum analyzer
+- Capture 985 frequency points (DC to 20 kHz)
+- Find peak frequency and verify against expected
+
+**Status**: ✅ Validated on Moku:Go hardware
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `span`, `rbw` configuration (best applied post-deployment)
+- Data collection: `get_data()` returns frequency/ch1/ch2 arrays
+- FFT-based frequency analysis
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

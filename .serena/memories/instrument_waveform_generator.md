@@ -5,6 +5,30 @@ Signal generation for stimulus, testing, or reference signals. Generates standar
 
 ---
 
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_waveformgen_test.py`
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_waveformgen_test.py --ip 192.168.13.159 --frequency 1000 --amplitude 1.0
+```
+
+**What It Demonstrates**:
+- Deploy WaveformGenerator + CloudCompile (simple_counter)
+- Generate 1 kHz sine wave on OUT1
+- Route counter output to OUT2
+- Continuous signal generation
+
+**Status**: ✅ Validated on Moku:Go hardware
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `channel`, `type`, `frequency`, `amplitude` configuration
+- Signal generation: `generate_waveform()` applied during setup
+- Works with all waveform types (Sine, Square, Triangle, Ramp, etc.)
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

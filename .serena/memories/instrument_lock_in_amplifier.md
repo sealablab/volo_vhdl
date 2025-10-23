@@ -5,6 +5,39 @@ Phase-sensitive detection and demodulation. Extracts signal amplitude and phase 
 
 ---
 
+## MokuBench Quick Reference
+
+**Status**: ⚠️ Framework support complete, hardware testing pending (license/entitlement required)
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Instrument registered and importable
+- Ready for BenchConfig deployment
+- Settings handlers inherit from base patterns
+- Data collection follows established patterns
+
+**To Use**:
+```python
+from bench_framework import BenchConfig, SlotConfig
+
+config = BenchConfig(
+    platform=MOKU_GO,
+    slots={
+        1: SlotConfig(
+            instrument='LockInAmp',
+            settings={
+                'demodulation': {'frequency': 1e3, 'source': 'Internal'},
+                'filter': {'frequency': 10, 'order': 8}
+            }
+        )
+    },
+    connections=[...]
+)
+```
+
+**Note**: Testing requires Moku device with appropriate license/entitlement.
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

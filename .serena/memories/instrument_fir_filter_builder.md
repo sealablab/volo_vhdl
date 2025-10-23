@@ -3,6 +3,47 @@
 ## Purpose
 Design and deploy **custom FIR (Finite Impulse Response) filters** with configurable coefficients. Provides up to 4 independent filter channels (platform-dependent) with linear phase response and multiple window functions.
 
+---
+
+## MokuBench Quick Reference
+
+**Status**: ⚠️ Framework support complete, hardware testing pending (license/entitlement required)
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Instrument registered and importable
+- Ready for BenchConfig deployment
+- Settings handlers inherit from base patterns
+- Data collection follows established patterns
+
+**To Use**:
+```python
+from bench_framework import BenchConfig, SlotConfig
+
+config = BenchConfig(
+    platform=MOKU_GO,
+    slots={
+        1: SlotConfig(
+            instrument='FIRFilterBuilder',
+            settings={
+                'filter': {
+                    'channel': 1,
+                    'sample_rate': '15.63MHz',
+                    'coefficient_count': 201,
+                    'shape': 'Lowpass',
+                    'low_corner': 0.1,
+                    'window': 'Blackman'
+                }
+            }
+        )
+    },
+    connections=[...]
+)
+```
+
+**Note**: Testing requires Moku device with appropriate license/entitlement.
+
+---
+
 ## Key Python API Methods
 
 ### Initialization

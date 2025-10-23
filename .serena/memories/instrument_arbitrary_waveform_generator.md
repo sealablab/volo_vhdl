@@ -3,6 +3,49 @@
 ## Purpose
 Generate **custom arbitrary waveforms** from user-defined lookup tables (LUTs). Provides precise waveform generation with modulation capabilities (pulse, burst) for specialized signal testing.
 
+---
+
+## MokuBench Quick Reference
+
+**Status**: ⚠️ Framework support complete, hardware testing pending (license/entitlement required)
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Instrument registered and importable
+- Ready for BenchConfig deployment
+- Settings handlers inherit from base patterns
+- Data collection follows established patterns
+
+**To Use**:
+```python
+from bench_framework import BenchConfig, SlotConfig
+import numpy as np
+
+# Define custom waveform
+custom_wave = np.sin(2 * np.pi * np.linspace(0, 3, 300))
+
+config = BenchConfig(
+    platform=MOKU_GO,
+    slots={
+        1: SlotConfig(
+            instrument='ArbitraryWaveformGenerator',
+            settings={
+                'waveform': {
+                    'channel': 1,
+                    'lut_data': list(custom_wave),
+                    'frequency': 1e3,
+                    'amplitude': 1.0
+                }
+            }
+        )
+    },
+    connections=[...]
+)
+```
+
+**Note**: Testing requires Moku device with appropriate license/entitlement.
+
+---
+
 ## Key Python API Methods
 
 ### Initialization

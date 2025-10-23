@@ -241,6 +241,50 @@ m.set_connections(connections=connections)
 
 ---
 
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_deployment_test.py`
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_deployment_test.py --ip 192.168.13.159
+```
+
+**What It Demonstrates**:
+- Deploy CloudCompile (simple_counter) + Oscilloscope
+- Route counter output to oscilloscope input  
+- Capture 1024 samples of waveform data
+- Verify data collection from real hardware
+
+**Status**: ✅ Validated on Moku:Go hardware
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `timebase`, `trigger` configuration
+- Data collection: `get_data()` returns time/ch1/ch2 arrays
+- Works with BenchConfig SlotConfig pattern
+
+**Quick BenchConfig Example**:
+```python
+from bench_framework import BenchConfig, SlotConfig, Connection
+
+config = BenchConfig(
+    platform=MOKU_GO,
+    slots={
+        1: SlotConfig(instrument='Oscilloscope', settings={'timebase': (-5e-3, 5e-3)}),
+        2: SlotConfig(instrument='CloudCompile', bitstream='my_module.tar.gz')
+    },
+    connections=[
+        Connection(source='Slot2OutA', destination='Slot1InA')
+    ]
+)
+
+backend = HardwareBackend.from_config(config, ip_address='192.168.13.159')
+await backend.setup()
+data = await backend.run(duration_ms=100)
+```
+
+---
+
 ## References
 - **Python API Examples**: `mcc_py_api_examples/oscilloscope_*.py`
 - **Routing Guide**: `docs/MCC_Routing_Guide.md`

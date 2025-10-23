@@ -5,6 +5,30 @@ Time-series data recording and streaming. Captures continuous data to file or st
 
 ---
 
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_datalogger_test.py`
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_datalogger_test.py --ip 192.168.13.159 --duration 10 --sample-rate 1000
+```
+
+**What It Demonstrates**:
+- Deploy CloudCompile (simple_counter) + Datalogger
+- Configure streaming at 1 kSa/s
+- Capture time-series data continuously
+- Collect 252 samples over 5 seconds
+
+**Status**: ✅ Validated on Moku:Go hardware
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `streaming` configuration (duration, sample_rate)
+- Data collection: `get_stream_data()` returns time/ch1/ch2 arrays
+- Note: Deprecated `set_samplerate()` API handled automatically
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

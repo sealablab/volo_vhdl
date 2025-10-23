@@ -5,6 +5,29 @@ Digital signal capture and analysis. Records multi-channel digital waveforms wit
 
 ---
 
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_logic_test.py`
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_logic_test.py --ip 192.168.13.159
+```
+
+**What It Demonstrates**:
+- Deploy LogicAnalyzer to slot 1
+- Validate deployment (data capture requires DIO pin connections)
+- Clean teardown
+
+**Status**: ✅ Deployment validated on Moku:Go (full test requires DIO pins)
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `samplerate`, `trigger` configuration
+- Data collection: `get_data()` returns ch0-ch15 digital channel arrays
+- Note: LogicAnalyzer connects to DIO pins, not CustomWrapper virtual outputs
+
+---
+
 ## Key Python API
 
 ### Initialization (Multi-Instrument Mode)

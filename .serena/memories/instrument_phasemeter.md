@@ -3,6 +3,28 @@
 ## Purpose
 Precision **phase and frequency measurement** for up to 4 independent signals. Measures relative phase, frequency, and amplitude with high resolution, ideal for phase-locked loop (PLL) characterization and multi-channel coherence analysis.
 
+---
+
+## MokuBench Quick Reference
+
+**Test Script**: `tests/mokubench_phasemeter_test.py` (minimal deployment test)
+
+**Run Example**:
+```bash
+uv run python tests/mokubench_phasemeter_test.py --ip 192.168.13.159
+```
+
+**Note**: Phasemeter requires specific license/entitlement - not available on all Moku devices.
+
+**Status**: ⚠️ Framework support complete, requires license for hardware testing
+
+**MokuBench Support**: Full framework support in `tests/bench_framework/hardware.py`
+- Settings: `pm_loop` configuration per channel (auto_acquire, frequency, bandwidth)
+- Data collection: `get_data()` returns phase/frequency/amplitude arrays
+- Multi-channel phase comparison supported
+
+---
+
 ## Key Python API Methods
 
 ### Initialization
