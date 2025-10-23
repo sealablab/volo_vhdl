@@ -89,6 +89,19 @@ ifeq ($(TEST_MODULE),bench_framework_poc)
     export BENCH_FRAMEWORK_PATH=$(PROJECT_ROOT)/tests
 endif
 
+# pulsestar test (4-channel calibration generator)
+ifeq ($(TEST_MODULE),pulsestar)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/clk_divider_core.vhd \
+                   $(MODULES_DIR)/PulseStar/datadef/waveform_lut_pkg.vhd \
+                   $(MODULES_DIR)/PulseStar/core/waveform_gen_core.vhd \
+                   $(MODULES_DIR)/PulseStar/core/trigger_gen_core.vhd \
+                   $(MODULES_DIR)/PulseStar/core/uart_tx_core.vhd \
+                   $(PROJECT_ROOT)/mcc_templates/CustomWrapper_test_stub.vhd \
+                   $(MODULES_DIR)/PulseStar/top/Top.vhd
+    TOPLEVEL = customwrapper
+    COCOTB_TEST_MODULES = test_pulsestar
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1

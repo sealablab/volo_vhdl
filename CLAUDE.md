@@ -413,57 +413,81 @@ top/
 
 **Key principle**: Start with Pattern 1 (simple). Only move to Pattern 2 if you need validation functions or complex register logic.
 
-#### MCC_READY Convention (MANDATORY for ALL MCC modules)
+#### MCC 3-Bit Control Scheme (MANDATORY for ALL MCC modules)
 
-**Added**: 2025-10-22
+**Added**: 2025-01-23 (Clock Enable discovery)
+**Updated**: Expanded from original 1-bit MCC_READY convention
 
-**Problem**: During FPGA bitstream loading, all MCC control registers initialize to 0x00000000. Network delay (10-200ms typical) occurs before configuration arrives. Modules must remain in a safe, disabled state during this "all-zero" period.
+**Problem**: During FPGA bitstream loading, all MCC control registers initialize to 0x00000000. Modules must:
+1. Remain disabled during network delay (10-200ms)
+2. Enable clock gating for sequential logic
+3. Provide user-level enable/disable control
 
-**Solution**: Use **Control0[31] as MCC_READY flag** (active-high)
+**Solution**: Use **THREE mandatory control bits in Control0[31:29]**
 
 ```
-Control0[31] = 0 → Module DISABLED (safe during all-zero state)
-Control0[31] = 1 → Module ENABLED and ready for operation
+Control0[31] = MCC_READY (active-high) - Set by MCC after deployment
+Control0[30] = Enable (active-high) - User-controlled enable/disable
+Control0[29] = ClkEn (active-high) - ⚠️ MANDATORY for clocked modules!
+```
+
+**Critical Discovery**: Missing Clock Enable (bit 29) is the **#1 cause of frozen modules**. Without bit 29, sequential logic is frozen even when "enabled" via bit 30.
+
+**Configuration Patterns**:
+```
+# Correct (all 3 bits set):
+0xE0000000 = 1110_0000_0000_0000... (base pattern)
+0xEEF00000 = 1110_1110_1111_0000... (with Div=240)
+             │││
+             ││└── ClkEn (bit 29) ✓
+             │└─── Enable (bit 30) ✓
+             └──── MCC_READY (bit 31) ✓
+
+# WRONG (missing bit 29):
+0xC0000000 = 1100_0000... → MODULE FREEZES!
+0xC0F00000 = 1100_0000... → MODULE FREEZES!
 ```
 
 **VHDL Implementation Pattern** (Top.vhd):
 ```vhdl
 -- Register Map (add to Top.vhd header comments):
--- MCC_READY Convention:
---   Control0[31] = MCC_READY flag (ACTIVE-HIGH)
---     0 = Module disabled (safe during bitstream load / all-zero state)
---     1 = Module enabled and ready for operation
---
--- Control0[31]:    MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
--- Control0[30]:    User Enable (1=enable, 0=disable)
--- Control0[29:0]:  Module-specific configuration
+-- MCC 3-Bit Control Scheme:
+--   Control0[31] = MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
+--   Control0[30] = User Enable (1=enable, 0=disable)
+--   Control0[29] = Clock Enable (1=clocked, 0=frozen) ⚠️ MANDATORY
+--   Control0[28:0] = Module-specific configuration
 
 architecture ModuleName of CustomWrapper is
-    -- MCC control signals
+    -- MCC control signals (extract all 3 bits!)
     signal mcc_ready      : std_logic;
     signal user_enable    : std_logic;
+    signal clk_enable     : std_logic;
     signal global_enable  : std_logic;
 begin
-    -- Extract MCC_READY flag and gate module enable
+    -- Extract all 3 control bits (CRITICAL!)
     mcc_ready      <= Control0(31);
     user_enable    <= Control0(30);
-    global_enable  <= mcc_ready and user_enable;
+    clk_enable     <= Control0(29);  -- ⚠️ MUST extract!
+
+    -- Combine all 3 for safe operation
+    global_enable  <= mcc_ready and user_enable and clk_enable;
 
     MODULE_INST: entity WORK.ModuleName
         port map (
             Clk    => Clk,
             Reset  => Reset,
-            Enable => global_enable,  -- Safe: disabled when CR0[31]=0
+            Enable => global_enable,  -- Safe: all 3 bits required
+            ClkEn  => clk_enable,     -- Or '1' if always clocked
             ...
         );
 end architecture;
 ```
 
-**CocotB Test Pattern** (see `tests/conftest.py` for primitives):
+**CocotB Test Pattern** (with validation and helpers):
 ```python
 from conftest import (
     setup_clock, reset_active_high, init_mcc_inputs,
-    mcc_set_regs, wait_for_mcc_ready
+    mcc_set_regs, wait_for_mcc_ready, mcc_cr0  # Helper!
 )
 
 @cocotb.test()
@@ -473,11 +497,19 @@ async def test_initialization(dut):
     await reset_active_high(dut, rst_signal="Reset")
     await init_mcc_inputs(dut)
 
-    # Simulate network delay + config (CR0[31] set automatically)
+    # Option 1: Use helper (recommended, includes validation)
     await mcc_set_regs(dut, {
-        0: 0x40000001,  # User bits (CR0[31] handled by primitive)
-        1: 0x0000007F   # Module params
-    }, set_mcc_ready=True)  # Sets CR0[31]=1 after config
+        0: mcc_cr0(divider=240),  # Returns 0xEEF00000 with all 3 bits
+        1: 0x043C7D00,            # Module params
+        2: 0x64000000
+    }, set_mcc_ready=True)
+
+    # Option 2: Manual (conftest validates and warns if bit 29 missing)
+    await mcc_set_regs(dut, {
+        0: 0xEEF00000,  # ✓ All 3 bits present (validated automatically)
+        1: 0x043C7D00,
+        2: 0x64000000
+    }, set_mcc_ready=True)
 
     # Wait for module to settle
     await wait_for_mcc_ready(dut)
@@ -486,16 +518,49 @@ async def test_initialization(dut):
     # ...
 ```
 
+**Validation** (`conftest.py` provides automatic checking):
+```python
+# conftest.py provides:
+MCC_READY_BIT = 31
+ENABLE_BIT = 30
+CLK_EN_BIT = 29  # ⚠️ CRITICAL!
+MCC_CR0_BASE = 0xE0000000  # All 3 bits set
+
+def validate_control0(cr0_value, context=""):
+    """Warns if Clock Enable (bit 29) is missing"""
+    # Automatically called by mcc_set_regs()
+
+def mcc_cr0(divider=0, extra_bits=0):
+    """Construct Control0 with all 3 bits"""
+    # Returns 0xE0000000 | divider<<16 | extra_bits
+```
+
+**Why Clock Enable is Critical**:
+Without Clock Enable (bit 29), the module's sequential logic is **completely frozen**:
+- Counters don't increment
+- State machines don't transition
+- Outputs remain static
+- Both simulation AND hardware appear "dead"
+
 **Benefits**:
-- ✓ Safe default: All-zero state keeps module disabled
-- ✓ Clear semantic: Bit 31 = "configuration valid and ready"
-- ✓ Active-high logic: No confusing inversions
+- ✓ Safe default: All-zero state keeps module disabled (bit 31=0)
 - ✓ Network-aware: MCC sets CR0[31]=1 only after config loaded
-- ✓ Testable: CocotB primitives simulate realistic network latency
+- ✓ Clock gating: Bit 29 enables sequential logic (MANDATORY!)
+- ✓ User control: Bit 30 provides runtime enable/disable
+- ✓ Testable: CocotB validates configuration automatically
+- ✓ Debuggable: Tools like `debug_mcc_config.py` test bit patterns
 
-**Reference Implementation**: `modules/EMFI-Seq/top/Top.vhd` (updated 2025-10-22)
+**Reference Implementations**:
+- **`modules/PulseStar/top/Top.vhd`** - Full 3-bit scheme (2025-01-23)
+- **`tests/conftest.py`** - Validation and helper functions (lines 83-164)
+- **`scripts/debug_mcc_config.py`** - Systematic bit pattern testing tool
 
-**Test Reference**: `tests/test_mcc_primitives.py` (6 tests passing)
+**Reference Documentation**:
+- **`mcc_debugging_techniques.md`** (Serena memory) - Full debugging guide
+- **`design_patterns.md`** (Serena memory) - Pattern #2, complete details
+- **`tests/test_mcc_primitives.py`** - Validation test suite
+
+**Historical Context**: This was the root cause of the 2025-01-23 PulseStar debugging session. Changing from 0xC0000000 (2 bits) to 0xE0000000 (3 bits) immediately fixed all "frozen module" issues.
 
 ### Dependency Management
 - Shared modules built first in compilation order
