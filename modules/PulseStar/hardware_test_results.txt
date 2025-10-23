@@ -1,0 +1,138 @@
+======================================================================
+PULSESTAR AUTOMATED HARDWARE VALIDATION
+======================================================================
+
+[1/4] Connecting to Moku...
+✓ Connected to Moku:Go at 192.168.13.159
+
+[2/4] Deploying PulseStar bitstream...
+✓ PulseStar deployed to Slot 2
+
+[3/4] Setting up Oscilloscope...
+✓ Oscilloscope configured (±1.25ms window)
+
+[4/4] Routing signals...
+✓ Signal routing complete:
+    Ch1 ← OutputA (I channel)
+    Ch2 ← OutputB (Q channel)
+    Note: UART/Trigger not routed (oscilloscope limited to 2 channels)
+
+✓ Setup complete!
+
+======================================================================
+TEST 1: Safe Boot (All-Zero State)
+======================================================================
+
+Verifying all outputs are safe before configuration...
+
+Capturing 5.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+Output levels (all-zero state):
+  I channel: 0.000 V (should be ~0)
+  Q channel: 5.002 V (should be ~0)
+  Note: Trigger/UART not monitored (oscilloscope limited to 2 channels)
+
+✓ Test 1: FAIL
+
+======================================================================
+TEST 2: Basic Operation (2kHz I/Q Waveforms)
+======================================================================
+
+Configuring PulseStar:
+  Control0 = 0xC0F00000
+  Control1 = 0x043C7D00
+  Control2 = 0x64000000
+
+Capturing 10.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+[ANALYSIS] I/Q Phase Relationship...
+
+[ANALYSIS] Frequency Measurement (ch1_i)...
+
+⚠ Frequency analysis failed: Not enough zero crossings
+
+✓ Test 2: FAIL
+
+======================================================================
+TEST 3: Trigger Pulse Generation
+======================================================================
+
+⚠ SKIPPED: Oscilloscope only exposes 2 channels in MIM
+  Trigger output (OutputD) mapped to Slot1InD not accessible via ch3/ch4
+  Would need Data Logger or reconfigured routing to monitor
+
+======================================================================
+TEST 4: UART Serial Output
+======================================================================
+
+⚠ SKIPPED: Oscilloscope only exposes 2 channels in MIM
+  UART output (OutputC) mapped to Slot1InC not accessible via ch3/ch4
+  Would need Data Logger or reconfigured routing to monitor
+
+======================================================================
+TEST 5: Frequency Control
+======================================================================
+
+Testing Div=1 (fast mode)...
+  Control0 = 0xC0010000
+
+Capturing 5.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+[ANALYSIS] Frequency Measurement (ch1_i)...
+
+Testing Div=240 (slow mode)...
+  Control0 = 0xC0F00000
+
+Capturing 10.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+[ANALYSIS] Frequency Measurement (ch1_i)...
+
+⚠ Frequency analysis failed:
+  Div=1: Not enough zero crossings
+  Div=240: Not enough zero crossings
+
+✓ Test 5: FAIL
+
+======================================================================
+TEST 6: Enable/Disable Control
+======================================================================
+
+Disabling module...
+  Control0 = 0x80F00000
+
+Capturing 5.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+Re-enabling module...
+  Control0 = 0xC0F00000
+
+Capturing 5.0ms of waveform data...
+✓ Captured 1024 samples (Ch1, Ch2)
+
+Amplitudes:
+  Disabled: 0.000 V (should be ~0)
+  Enabled: 0.000 V (should be >0.5)
+
+✓ Test 6: FAIL
+
+======================================================================
+AUTOMATED VALIDATION SUMMARY
+======================================================================
+  ✗ FAIL: test_1
+  ✗ FAIL: test_2
+  ⊘ SKIP: test_3
+  ⊘ SKIP: test_4
+  ✗ FAIL: test_5
+  ✗ FAIL: test_6
+
+Results: 0 passed, 2 skipped, 4 failed (6 total)
+
+⚠ Some tests failed - check logs above
+
+======================================================================
+Cleaning up...
+✓ Moku connection closed

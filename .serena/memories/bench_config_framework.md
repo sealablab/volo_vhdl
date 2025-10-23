@@ -1,5 +1,42 @@
 # Bench Configuration Framework
 
+## ⚠️ CRITICAL: MCC CloudCompile Control Registers
+
+When configuring CloudCompile slots with `control_registers`, you **MUST** use the 3-bit control scheme:
+
+```python
+SlotConfig(
+    instrument='CloudCompile',
+    bitstream='my_module.tar.gz',
+    control_registers={
+        0: 0xE0000000,  # ✓ Bits 31+30+29 (MCC_READY + Enable + ClkEn)
+        # NOT 0xC0000000  # ✗ Missing bit 29 → MODULE FREEZES!
+    }
+)
+```
+
+**Required Bits in Control0[31:29]**:
+- Bit 31: MCC_READY (set by MCC after deployment)
+- Bit 30: Enable (user-level enable/disable)
+- Bit 29: ClkEn (⚠️ MANDATORY - enables sequential logic)
+
+**Use Helper Function**:
+```python
+from conftest import mcc_cr0
+
+SlotConfig(
+    instrument='CloudCompile',
+    control_registers={
+        0: mcc_cr0(divider=240),  # Returns 0xEEF00000
+        1: 0x043C7D00              # Module params
+    }
+)
+```
+
+See `design_patterns.md` and `mcc_debugging_techniques.md` for complete details.
+
+---
+
 ## Overview
 
 The Bench Configuration Framework provides a unified abstraction for multi-instrument testbenches that works with both:
@@ -31,6 +68,7 @@ Uses Pydantic for type-safe, validated configurations:
 ```python
 from bench_framework import BenchConfig, SlotConfig, Connection
 from bench_framework.config import MOKU_GO, MOKU_PRO
+from conftest import mcc_cr0  # Helper for Control0 values
 
 config = BenchConfig(
     platform=MOKU_GO,
@@ -42,7 +80,10 @@ config = BenchConfig(
         2: SlotConfig(
             instrument='CloudCompile',
             bitstream='my_module.tar.gz',
-            control_registers={0: 0x80000001}
+            control_registers={
+                0: mcc_cr0(divider=240),  # ✓ All 3 bits set automatically
+                1: 0x043C7D00
+            }
         ),
         3: SlotConfig(
             instrument='Oscilloscope',
@@ -67,6 +108,7 @@ config = BenchConfig(
 - Connection port names valid
 - Required fields present
 - Type safety via Pydantic
+- **Control register validation** (automatic in `conftest.py`)
 
 #### 2. Backend Abstract Class (`backend.py`)
 
@@ -185,6 +227,8 @@ make TEST_MODULE=bench_framework_poc
 ### Pattern 1: Configuration-Driven Testing
 
 ```python
+from conftest import mcc_cr0  # Helper function
+
 @cocotb.test()
 async def test_my_module(dut):
     # Setup DUT
@@ -197,9 +241,16 @@ async def test_my_module(dut):
     config = BenchConfig(
         platform=MOKU_GO,
         slots={
-            1: SlotConfig(instrument='CloudCompile', settings={}),
-            2: SlotConfig(instrument='Oscilloscope', 
-                         settings={'channels': ['count_out']})
+            1: SlotConfig(
+                instrument='CloudCompile',
+                control_registers={
+                    0: mcc_cr0(divider=240)  # ✓ All 3 bits set
+                }
+            ),
+            2: SlotConfig(
+                instrument='Oscilloscope',
+                settings={'channels': ['count_out']}
+            )
         },
         connections=[
             Connection(source='Slot1OutA', destination='Slot2InA')
@@ -223,7 +274,14 @@ config = BenchConfig(
     platform=MOKU_PRO,
     slots={
         1: SlotConfig(instrument='WaveformGenerator', ...),
-        2: SlotConfig(instrument='CloudCompile', bitstream='fir.tar.gz'),
+        2: SlotConfig(
+            instrument='CloudCompile',
+            bitstream='fir.tar.gz',
+            control_registers={
+                0: mcc_cr0(),  # Base pattern (0xE0000000)
+                1: 0x0000007F
+            }
+        ),
         3: SlotConfig(instrument='Oscilloscope', ...),
         4: SlotConfig(instrument='SpectrumAnalyzer', ...)
     },
@@ -244,6 +302,7 @@ config = BenchConfig(
 5. **Multi-Instrument Orchestration**: Complex setups become trivial
 6. **Version Control**: Configs live in git with VHDL
 7. **Reproducibility**: Same config = same test, always
+8. **Safe Defaults**: Helper functions ensure correct Control0 patterns
 
 ## Dependencies
 
@@ -308,7 +367,7 @@ moku>=3.0.0        # Hardware backend (Phase 3)
 - Test Guide: `tests/README.md`
 - Example Module: `modules/simple_counter/`
 - Example Tests: `tests/test_bench_framework_poc.py`
-- Related Memories: `cocotb_testing_guide`, `instrument_*`
+- Related Memories: `cocotb_testing_guide`, `instrument_*`, `mcc_debugging_techniques`
 
 ## Integration with Existing Workflow
 

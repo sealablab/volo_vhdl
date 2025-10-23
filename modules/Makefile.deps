@@ -7,9 +7,10 @@
 # Application modules that depend on volo_common
 MODULE_DEPS_SimpleWaveGen = volo_common
 MODULE_DEPS_EMFI-Seq = volo_common
+MODULE_DEPS_PulseStar = volo_common
 
 # Define the build order (modules will be built in this order)
-MODULE_BUILD_ORDER = SimpleWaveGen EMFI-Seq
+MODULE_BUILD_ORDER = SimpleWaveGen EMFI-Seq PulseStar
 
 # Define which modules provide shared libraries
 # These modules will be built first and their objects will be available to dependent modules

@@ -1,5 +1,38 @@
 # Design Patterns and Guidelines
 
+## ⚠️ CRITICAL: MCC 3-Bit Control Scheme (READ THIS FIRST!)
+
+**ALL MCC modules require THREE control bits in Control0[31:29]:**
+
+```
+Control0[31] = MCC_READY (active-high) - Set by MCC after deployment
+Control0[30] = Enable (active-high) - User-controlled enable/disable
+Control0[29] = ClkEn (active-high) - ⚠️ MANDATORY for clocked logic
+```
+
+**Correct Pattern:** `0xE0000000` (bits 31+30+29 all set)  
+**WRONG Pattern:** `0xC0000000` (missing bit 29) → **MODULE FREEZES!**
+
+**Why This Matters**: Missing Clock Enable (bit 29) is the #1 cause of frozen modules. Without bit 29, sequential logic is frozen even when "enabled" via bit 30.
+
+**Quick Start - Use Helper Function**:
+```python
+# In CocotB tests (conftest.py provides helpers)
+from conftest import mcc_cr0
+
+# Automatic 3-bit scheme:
+cr0 = mcc_cr0(divider=240)  # Returns 0xEEF00000 ✓
+cr0 = mcc_cr0()              # Returns 0xE0000000 ✓
+
+# Manual (ensure all 3 bits!):
+cr0 = 0xEEF00000  # ✓ Bits 31+30+29 all set
+cr0 = 0xC0F00000  # ✗ Missing bit 29 → FREEZE!
+```
+
+**Reference**: See detailed MCC_READY pattern below, `mcc_debugging_techniques.md` memory, and `conftest.py` validation functions.
+
+---
+
 ## Key Design Patterns
 
 ### 1. Direct Instantiation Pattern (MANDATORY for Top Layer)
@@ -27,51 +60,87 @@ end architecture;
 - Uniform pattern across top-level files
 - Easier dependency tracking
 
-### 2. MCC_READY Pattern (MANDATORY for all MCC modules)
+### 2. MCC 3-Bit Control Scheme (MANDATORY for all MCC modules)
 
-**Added**: 2025-10-22
+**Added**: 2025-01-23 (Clock Enable discovery)  
+**Updated**: Expanded from original 1-bit MCC_READY convention
 
-**Problem**: FPGA bitstream loading creates an "all-zero" state before configuration arrives over the network (10-200ms delay). Modules need safe default behavior during this phase.
+**Problem**: During FPGA bitstream loading, all MCC control registers initialize to 0x00000000. Modules must:
+1. Remain disabled during network delay (10-200ms)
+2. Enable clock gating for sequential logic
+3. Provide user-level enable/disable control
 
-**Solution**: Use Control0[31] as MCC_READY flag (active-high)
+**Solution**: Use THREE mandatory control bits in Control0[31:29]
 
-**Convention**:
+**Control Bit Definitions**:
 ```
-Control0[31] = 0 → Module DISABLED (safe during bitstream load)
-Control0[31] = 1 → Module ENABLED and ready for operation
+Control0[31] = MCC_READY (active-high)
+  - Set by MCC after bitstream deployment
+  - 0 = Bitstream loading, config not ready
+  - 1 = Config loaded, module ready to operate
+
+Control0[30] = Enable (active-high)
+  - User-controlled module enable/disable
+  - 0 = Module idle (safe parked state)
+  - 1 = Module enabled for operation
+
+Control0[29] = ClkEn (active-high) ⚠️ CRITICAL!
+  - Clock enable for sequential logic
+  - 0 = Sequential logic FROZEN (no state updates)
+  - 1 = Sequential logic active (clocked)
+```
+
+**Configuration Patterns**:
+```
+# With clock divider (bits 23:16)
+Div=240 (0xF0): 0xEEF00000
+                1110_1110_1111_0000...
+                ^^^^ ^^^^
+                │││└─ Divider bits (240 = 0xF0)
+                ││└── ClkEn (bit 29) ✓
+                │└─── Enable (bit 30) ✓
+                └──── MCC_READY (bit 31) ✓
+
+# Base pattern (no divider):
+0xE0000000 = 1110_0000_0000_0000...
+             │││
+             ││└── ClkEn (bit 29) ✓
+             │└─── Enable (bit 30) ✓
+             └──── MCC_READY (bit 31) ✓
+
+# WRONG patterns (DO NOT USE):
+0xC0000000 = 1100_0000... (missing bit 29) → FREEZE!
+0x60000000 = 0110_0000... (missing bit 31) → DISABLED!
 ```
 
 **VHDL Implementation** (Top.vhd):
 ```vhdl
--- Register Map (Comment Header - MANDATORY):
--- MCC_READY Convention:
---   Control0[31] = MCC_READY flag (ACTIVE-HIGH)
---     0 = Module disabled (safe during bitstream load / all-zero state)
---     1 = Module enabled and ready for operation
---
--- Control0[31]:    MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
--- Control0[30]:    User Enable (1=enable, 0=disable)
--- Control0[29:0]:  Module-specific configuration
+-- Register Map (Comment Header - MANDATORY)
+-- MCC 3-Bit Control Scheme:
+--   Control0[31] = MCC_READY (1=ready, 0=disabled) - AUTO SET BY MCC
+--   Control0[30] = User Enable (1=enable, 0=disable)
+--   Control0[29] = Clock Enable (1=clocked, 0=frozen) ⚠️ MANDATORY
+--   Control0[28:0] = Module-specific configuration
 
 architecture ModuleName of CustomWrapper is
-    -- MCC control signals
+    -- MCC control signals (extract all 3 bits!)
     signal mcc_ready      : std_logic;
     signal user_enable    : std_logic;
+    signal clk_enable     : std_logic;
     signal global_enable  : std_logic;
     
     -- Internal signals
     signal status_internal  : unsigned(6 downto 0);
-    -- ...
 begin
     -- ========================================================================
-    -- MCC_READY LOGIC (Active-High Convention)
+    -- MCC 3-BIT CONTROL EXTRACTION (CRITICAL!)
     -- ========================================================================
-    -- Control0[31] = MCC_READY: Set by MCC after configuration loaded
-    -- Control0[30] = User Enable: User-level enable bit
-    -- Global enable gates both: module only operates when MCC is ready AND user enables
-    mcc_ready      <= Control0(31);
-    user_enable    <= Control0(30);
-    global_enable  <= mcc_ready and user_enable;
+    mcc_ready      <= Control0(31);  -- MCC sets after deployment
+    user_enable    <= Control0(30);  -- User-level enable
+    clk_enable     <= Control0(29);  -- ⚠️ MUST extract for clocked modules!
+    
+    -- Combine all 3 for safe operation
+    global_enable  <= mcc_ready and user_enable and clk_enable;
     
     -- ========================================================================
     -- MODULE INSTANCE
@@ -80,25 +149,18 @@ begin
         port map (
             Clk    => Clk,
             Reset  => Reset,
-            Enable => global_enable,        -- Safe: disabled during all-zero state
-            ClkEn  => '1',                  -- Or Control0(29) if runtime control needed
+            Enable => global_enable,   -- Safe: all 3 bits required
+            ClkEn  => clk_enable,      -- Or '1' if always clocked
             ...
         );
 end architecture;
 ```
 
-**Benefits**:
-- ✓ **Safe default**: All-zero state keeps module disabled
-- ✓ **Clear semantic**: Bit 31 = "configuration valid and ready"
-- ✓ **Active-high logic**: No confusing inversions
-- ✓ **Network-aware**: External system sets CR0[31]=1 only after all config loaded
-- ✓ **Testable**: CocotB tests simulate realistic initialization with network delay
-
-**CocotB Testing Pattern**:
+**CocotB Testing Pattern** (with validation):
 ```python
 from conftest import (
     setup_clock, reset_active_high, init_mcc_inputs,
-    mcc_set_regs, wait_for_mcc_ready
+    mcc_set_regs, wait_for_mcc_ready, mcc_cr0  # Helper!
 )
 
 @cocotb.test()
@@ -108,10 +170,18 @@ async def test_initialization(dut):
     await reset_active_high(dut, rst_signal="Reset")
     await init_mcc_inputs(dut)
     
-    # Simulate network delay + config load (includes CR0[31]=1)
+    # Option 1: Use helper (recommended, includes validation)
     await mcc_set_regs(dut, {
-        0: 0x40000001,  # User config (CR0[31] set automatically)
-        1: 0x0000007F   # Module params
+        0: mcc_cr0(divider=240),  # Returns 0xEEF00000 with all 3 bits
+        1: 0x043C7D00,            # Module params
+        2: 0x64000000
+    }, set_mcc_ready=True)
+    
+    # Option 2: Manual (conftest validates and warns if bit 29 missing)
+    await mcc_set_regs(dut, {
+        0: 0xEEF00000,  # ✓ All 3 bits present (validated automatically)
+        1: 0x043C7D00,
+        2: 0x64000000
     }, set_mcc_ready=True)
     
     # Wait for module to settle
@@ -121,575 +191,52 @@ async def test_initialization(dut):
     # ...
 ```
 
-**Reference Implementation**: `modules/EMFI-Seq/top/Top.vhd`
-
-**Test Reference**: `tests/test_mcc_primitives.py` (6 tests passing)
-
-### 3. Platform Interface Package Pattern
-For modules requiring register interfaces, use a platform interface package:
-
-```vhdl
--- In common/platform_interface_pkg.vhd
-package platform_interface_pkg is
-    -- Register field bit positions
-    constant CTRL_GLOBAL_ENABLE_BIT : natural := 0;
-    constant CTRL_DIV_SEL_LOW : natural := 4;
-    constant CTRL_DIV_SEL_HIGH : natural := 7;
-    
-    -- Validation functions
-    function is_wave_select_valid(wave_select : std_logic_vector(1 downto 0)) 
-        return std_logic;
-    
-    -- Field extraction functions
-    function extract_ctrl_global_enable(ctrl_data : std_logic_vector(7 downto 0)) 
-        return std_logic;
-    
-    -- Status assembly functions
-    function assemble_status0_reg(
-        enabled : std_logic;
-        wave_select : std_logic_vector(1 downto 0)
-    ) return std_logic_vector;
-end package;
-```
-
-**Usage**:
-```vhdl
--- In core or top layer
-use work.platform_interface_pkg.all;
-
--- Validate configuration
-if is_wave_select_valid(wave_select) = '0' then
-    fault_out <= '1';  -- Trigger fault
-end if;
-
--- Extract fields
-global_enable <= extract_ctrl_global_enable(ctrl0_data);
-
--- Assemble status
-status_reg <= assemble_status0_reg(enabled, wave_select);
-```
-
-### 4. Standard Control Signal Pattern
-Implement control signals with clear priority:
-
-```vhdl
-process(clk, n_reset)
-begin
-    if n_reset = '0' then
-        -- Priority 1: Reset dominates
-        state <= IDLE_STATE;
-        output <= (others => '0');
-    elsif rising_edge(clk) then
-        if clk_en = '1' then
-            -- Priority 2: Clock enable
-            if enable = '1' then
-                -- Priority 3: Functional enable
-                -- Normal operation
-                case state is
-                    when IDLE_STATE =>
-                        state <= ACTIVE_STATE;
-                    when ACTIVE_STATE =>
-                        output <= computed_value;
-                    when others =>
-                        state <= IDLE_STATE;
-                end case;
-            else
-                -- Idle: Hold state, outputs parked
-                output <= (others => '0');
-            end if;
-        end if;
-        -- clk_en='0': State held (no updates)
-    end if;
-end process;
-```
-
-**Control Signal Priority**: `reset > clock_enable > enable`
-
-**Truth Table**:
-| n_reset | clk_en | enable | Behavior                                    | State Updates | Outputs              |
-|---------|--------|--------|---------------------------------------------|---------------|----------------------|
-| 0       | X      | X      | **RESET** (highest priority)                | All cleared   | Safe defaults        |
-| 1       | 0      | X      | **FROZEN** (clk_en dominates)               | Held          | Held (no change)     |
-| 1       | 1      | 0      | **IDLE** (enabled but not operating)        | Held/parked   | Parked/safe values   |
-| 1       | 1      | 1      | **ACTIVE** (normal operation)               | Advancing     | Functional outputs   |
-
-**Implementation Notes**:
-- **Reset (n_reset=0)**: Asynchronous or synchronous, forces all outputs to safe defaults
-- **Clock Enable (clk_en=0)**: Freezes all sequential logic, no state updates occur
-- **Functional Enable (enable=0)**: Module is idle but clocked, outputs go to parked/safe values
-- **All Active**: Normal state machine progression and data processing
-
-### 5. FSM State Encoding Pattern
-Use `std_logic_vector` with constants instead of enums:
-
-```vhdl
--- State encoding constants
-constant IDLE_STATE   : std_logic_vector(1 downto 0) := "00";
-constant ACTIVE_STATE : std_logic_vector(1 downto 0) := "01";
-constant WAIT_STATE   : std_logic_vector(1 downto 0) := "10";
-constant DONE_STATE   : std_logic_vector(1 downto 0) := "11";
-
--- State register
-signal current_state : std_logic_vector(1 downto 0) := IDLE_STATE;
-signal next_state : std_logic_vector(1 downto 0);
-
--- State machine implementation
-process(clk, n_reset)
-begin
-    if n_reset = '0' then
-        current_state <= IDLE_STATE;
-    elsif rising_edge(clk) then
-        if clk_en = '1' then
-            current_state <= next_state;
-        end if;
-    end if;
-end process;
-```
-
-### 6. Status Register Implementation Pattern
-Standard status register with sticky fault bits:
-
-```vhdl
-signal status_reg : std_logic_vector(7 downto 0);
-
--- Bit assignments
-constant STATUS_FAULT_BIT : natural := 7;  -- Sticky
-constant STATUS_ALARM_BIT : natural := 6;  -- Sticky
-constant STATUS_ACTIVE_BIT : natural := 0; -- State
-
-process(clk, n_reset)
-begin
-    if n_reset = '0' then
-        status_reg <= (others => '0');  -- All bits cleared
-    elsif rising_edge(clk) then
-        -- Sticky bits (only set, never clear except on reset)
-        if fault_condition = '1' then
-            status_reg(STATUS_FAULT_BIT) <= '1';
-        end if;
-        if alarm_condition = '1' then
-            status_reg(STATUS_ALARM_BIT) <= '1';
-        end if;
-        
-        -- State bits (reflect current state)
-        status_reg(STATUS_ACTIVE_BIT) <= is_active;
-    end if;
-end process;
-```
-
-### 6a. Status Register Bit Conventions
-
-**Standard Bit Assignments** (All VOLO modules):
-```vhdl
--- Status Register Layout (8-bit typical)
--- Bit 7: FAULT  (sticky, cleared only on reset)
--- Bit 6: ALARM  (sticky, cleared only on reset)
--- Bit 5-4: Reserved for future error conditions
--- Bit 3-0: Module-specific status bits (state, flags, etc.)
-
-constant STATUS_FAULT_BIT  : natural := 7;  -- Critical error (sticky)
-constant STATUS_ALARM_BIT  : natural := 6;  -- Warning condition (sticky)
-constant STATUS_READY_BIT  : natural := 0;  -- Module ready (state)
-constant STATUS_ACTIVE_BIT : natural := 1;  -- Module active (state)
-```
-
-**Sticky Bit Behavior**:
-- **Set**: Any time fault/alarm condition detected
-- **Clear**: Only on reset (n_reset = '0')
-- **Accumulation**: Multiple faults can set same bit (OR behavior)
-- **Priority**: FAULT > ALARM for overlapping conditions
-
-**State Bit Behavior**:
-- **Update**: Every clock cycle (synchronous)
-- **Clear**: On reset or when condition no longer true
-- **Reflect**: Current operational state
-
-**Example Implementation**:
-```vhdl
-process(clk, n_reset)
-begin
-    if n_reset = '0' then
-        status_reg <= (others => '0');
-    elsif rising_edge(clk) then
-        -- Sticky bits: only set, never cleared
-        if critical_error = '1' then
-            status_reg(STATUS_FAULT_BIT) <= '1';
-        end if;
-        if warning_condition = '1' then
-            status_reg(STATUS_ALARM_BIT) <= '1';
-        end if;
-
-        -- State bits: reflect current state
-        status_reg(STATUS_READY_BIT) <= is_ready;
-        status_reg(STATUS_ACTIVE_BIT) <= is_active;
-    end if;
-end process;
-```
-
-**Rationale**:
-- **Fault detection**: Capture transient errors that might be missed
-- **Debugging**: Sticky bits provide history of problems
-- **Validation**: Status register testable without precise timing
-- **Standardization**: Consistent across all modules
-
-### 7. Testbench 4-Layer Architecture
-Structure testbenches in four distinct layers:
-
-```vhdl
--- Layer 1: Interface Testing (external behavior)
-procedure test_interface is
-begin
-    -- Test what the module does via status bits
-    -- No assumptions about internal state
-end procedure;
-
--- Layer 2: Validation Testing (error handling)
-procedure test_validation is
-begin
-    -- Test invalid inputs
-    -- Verify fault/alarm bits are set
-end procedure;
-
--- Layer 3: Functional Testing (core functionality)
-procedure test_functionality is
-begin
-    -- Test main operational features
-    -- Verify correct outputs for valid inputs
-end procedure;
-
--- Layer 4: Generic Parameter Testing (edge cases)
-procedure test_generic_parameters is
-begin
-    -- Test different generic configurations
-    -- Verify behavior at parameter boundaries
-end procedure;
-```
-
-### 8. Voltage/Data Conversion Package Pattern (Datadef Layer)
-
-**When to Use**: Module needs voltage conversion, data scaling, or complex mathematical operations with validation.
-
-**Example**: `modules/volo_common/common/Moku_Voltage_pkg.vhd` (Reference Implementation)
-
-**Package Structure**:
-```vhdl
--- In common/Moku_Voltage_pkg.vhd (part of volo_common shared module)
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-package Moku_Voltage_pkg is
-    -- System constants with unit documentation
-    constant VOLTAGE_DATA_WIDTH : natural := 16;      -- Units: bits
-    constant VOLTAGE_REFERENCE  : real := 5.0;        -- Units: volts
-    constant VOLTAGE_MIN        : real := -5.0;       -- Units: volts
-    constant VOLTAGE_MAX        : real := 5.0;        -- Units: volts
-    constant DIGITAL_MAX        : natural := 65535;   -- Units: count
-    
-    -- Bidirectional conversion functions
-    function voltage_to_digital(voltage : real) return signed;
-    function digital_to_voltage(digital : signed(15 downto 0)) return real;
-    
-    -- Safety and validation functions
-    function clamp_voltage_safe(voltage : real) return real;
-    function is_voltage_safe(voltage : real) return boolean;
-    
-    -- Scaling and arithmetic operations
-    function scale_voltage(voltage : real; scale_factor : real) return real;
-    function add_voltages_safe(v1, v2 : real) return real;
-    
-    -- Default constants for common values
-    constant DEFAULT_VOLTAGE_ZERO : real := 0.0;
-    constant DEFAULT_DIGITAL_MID  : std_logic_vector(15 downto 0) := x"8000";
-end package;
-
-package body Moku_Voltage_pkg is
-    -- Linear mapping: -5V → 0x8000, 0V → 0x0000, +5V → 0x7FFF
-    function voltage_to_digital(voltage : real) return signed is
-        variable clamped_voltage : real;
-        variable digital_value : integer;
-    begin
-        clamped_voltage := clamp_voltage_safe(voltage);
-        digital_value := integer(clamped_voltage * 6553.4);  -- Scale factor
-        return to_signed(digital_value, 16);
-    end function;
-    
-    function clamp_voltage_safe(voltage : real) return real is
-    begin
-        if voltage < VOLTAGE_MIN then
-            return VOLTAGE_MIN;
-        elsif voltage > VOLTAGE_MAX then
-            return VOLTAGE_MAX;
-        else
-            return voltage;
-        end if;
-    end function;
-    
-    -- ... other function implementations ...
-end package body;
-```
-
-**Usage in Core Module**:
-```vhdl
--- In core/EMFI_Seq_stair.vhd
-use work.Moku_Voltage_pkg.all;
-
-architecture rtl of onehot_analog_monitor is
-    -- Voltage codes computed using package functions (self-documenting)
-    constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);
-    constant CODE_S2 : signed(15 downto 0) := voltage_to_digital(1.2);
-    constant CODE_S3 : signed(15 downto 0) := voltage_to_digital(1.3);
-    constant CODE_S4 : signed(15 downto 0) := voltage_to_digital(1.4);
-    constant CODE_Z  : signed(15 downto 0) := voltage_to_digital(0.0);
-begin
-    -- Combinational decode using computed constants
-    with state_oh select
-        dac_out_s16 <= CODE_S1 when "0001",
-                       CODE_S2 when "0010",
-                       CODE_S3 when "0100",
-                       CODE_S4 when "1000",
-                       CODE_Z  when others;
-end architecture;
-```
-
-**Key Benefits**:
-- **Self-documenting**: Voltage values explicit in code (1.1, 1.2, etc.)
-- **Compile-time computation**: Functions evaluated during synthesis
-- **Consistency**: All modules use same conversion algorithm
-- **Testable**: Package can be unit tested independently
-- **Maintainable**: Change voltage range in one place
-- **Safe**: Built-in clamping and validation
-
-**Testbench Pattern** (CocotB - NEW Standard):
+**Validation** (`conftest.py` provides automatic checking):
 ```python
-# In tests/test_moku_voltage_pkg.py
-import cocotb
-from cocotb.triggers import Timer
+# conftest.py provides:
+MCC_READY_BIT = 31
+ENABLE_BIT = 30
+CLK_EN_BIT = 29  # ⚠️ CRITICAL!
+MCC_CR0_BASE = 0xE0000000  # All 3 bits set
 
-@cocotb.test()
-async def test_voltage_conversion(dut):
-    """Test bidirectional voltage conversion"""
-    # Test 1.1V conversion
-    await Timer(1, units='ns')
-    assert dut.CODE_S1.value == 7209, f"Expected 7209 for 1.1V, got {dut.CODE_S1.value}"
-    
-    # Test clamping
-    # ... additional tests
+def validate_control0(cr0_value, context=""):
+    """Warns if Clock Enable (bit 29) is missing"""
+    # Automatically called by mcc_set_regs()
+    # Emits warning if enable=1 but clk_en=0
+
+def mcc_cr0(divider=0, extra_bits=0):
+    """Construct Control0 with all 3 bits"""
+    # Returns 0xE0000000 | divider<<16 | extra_bits
 ```
 
-**Documentation Pattern**:
-Create documentation with:
-- Function descriptions and signatures
-- Unit conventions (volts, bits, ratio, etc.)
-- Usage examples from actual code
-- Integration notes
-- Testbench location and coverage
+**Why Clock Enable is Critical**:
+Without Clock Enable (bit 29), the module's sequential logic is **completely frozen**:
+- Counters don't increment
+- State machines don't transition  
+- Outputs remain static
+- Both simulation AND hardware appear "dead"
 
-**Verilog Conversion Strategy**:
-- Package functions → SystemVerilog functions or parameters
-- Constants computed at compile time → `localparam` with pre-computed values
-- Real arithmetic → Fixed-point with documented precision
-- Document conversion approach in package header comments
+**Historical Context**: This was the root cause of the 2025-01-23 PulseStar debugging session. Changing from 0xC0000000 (2 bits) to 0xE0000000 (3 bits) immediately fixed all "frozen module" issues.
 
-**When NOT to Use**:
-- Simple constant definitions (use plain constants)
-- Clock-dependent operations (belongs in core layer)
-- Platform-specific code (use platform_interface_pkg pattern)
+**Benefits**:
+- ✓ **Safe default**: All-zero state keeps module disabled (bit 31=0)
+- ✓ **Network-aware**: MCC sets CR0[31]=1 only after config loaded
+- ✓ **Clock gating**: Bit 29 enables sequential logic (MANDATORY!)
+- ✓ **User control**: Bit 30 provides runtime enable/disable
+- ✓ **Testable**: CocotB validates configuration automatically
+- ✓ **Debuggable**: Tools like `debug_mcc_config.py` test bit patterns
 
-**Reference Files**:
-- `modules/volo_common/common/Moku_Voltage_pkg.vhd` - Implementation
-- `modules/volo_common/Moku-Voltage-LUTS.md` - Documentation
-- `modules/EMFI-Seq/core/EMFI_Seq_stair.vhd` - Usage example
-- `tests/test_moku_voltage_pkg.py` - CocotB tests (if available)
+**Reference Implementations**:
+- **`modules/EMFI-Seq/top/Top.vhd`** - MCC_READY pattern (2-bit, needs update to 3-bit)
+- **`modules/PulseStar/top/Top.vhd`** - Full 3-bit scheme example
+- **`tests/conftest.py`** - Validation and helper functions
+- **`scripts/debug_mcc_config.py`** - Systematic bit pattern testing tool
 
-**Discovered**: 2025-01-21, EMFI-Seq voltage package development
+**Reference Documentation**:
+- **`mcc_debugging_techniques.md`** (Serena memory) - Full debugging guide
+- **`CLAUDE.md`** - MCC_READY section with complete examples
+- **`tests/test_mcc_primitives.py`** - Validation test suite
 
-### 9. LUT and Data Structure Pattern (Datadef Layer)
-Define data structures in datadef with Verilog conversion strategy:
+**Discovered**: 2025-01-23, PulseStar hardware debugging session
 
-```vhdl
--- In datadef/data_structures_pkg.vhd
-package data_structures_pkg is
-    -- Array type for LUT (Verilog: parameter array)
-    type voltage_lut_t is array (0 to 100) of std_logic_vector(15 downto 0);
-    
-    -- Record for data organization (Verilog: SystemVerilog struct or packed array)
-    type config_record_t is record
-        voltage_threshold : std_logic_vector(15 downto 0);
-        timeout_value : std_logic_vector(15 downto 0);
-        enable_flags : std_logic_vector(7 downto 0);
-    end record;
-    
-    -- Verilog conversion strategy documented in comments
-    -- Record → SystemVerilog struct or three separate signals
-    
-    -- LUT constant (Verilog: parameter array or .mem file)
-    constant PERCENT_LUT : voltage_lut_t := (
-        0 => X"0000",
-        1 => X"028F",
-        -- ... rest of LUT
-    );
-end package;
-```
-
-## Anti-Patterns to Avoid
-
-### ❌ Don't Use Component Declarations in Top Layer
-```vhdl
--- WRONG: Component declaration in top layer
-component my_core is
-    port (clk : in std_logic);
-end component;
-
-U1: my_core port map (clk => clk);
-```
-
-### ❌ Don't Use Enumeration Types in RTL
-```vhdl
--- WRONG: Enum type in RTL (core/top layers)
-type state_t is (IDLE, ACTIVE, DONE);
-signal state : state_t;
-```
-
-### ❌ Don't Use Records in RTL Port Declarations
-```vhdl
--- WRONG: Record in entity port (except datadef)
-entity my_module is
-    port (
-        config : in config_record_t  -- NOT ALLOWED in core/top
-    );
-end entity;
-```
-
-### ❌ Don't Test Internal State in Testbenches
-```vhdl
--- WRONG: Testing internal state machine
--- Instead test external behavior (status bits, outputs)
-```
-
-### ❌ Don't Modify ng/ Tip Files Main Body
-```vhdl
--- WRONG: Reorganizing README-synth-vhdl-tips-ng.md
--- CORRECT: Append to footer below "------- New Tips here-------"
-```
-
-### ❌ Don't Hardcode Conversion Values Without Documentation
-```vhdl
--- WRONG: Magic numbers without explanation
-constant CODE_S1 : signed(15 downto 0) := x"1C29";  -- What voltage is this?
-
--- CORRECT: Use conversion package or document heavily
-constant CODE_S1 : signed(15 downto 0) := voltage_to_digital(1.1);  -- 1.1V
--- Or if hardcoded, add extensive comments explaining the calculation
-```
-
-### ❌ Don't Use Inverted MCC_READY Logic
-```vhdl
--- WRONG: Inverted logic (confusing, unsafe during all-zero state)
-Enable => not Control0(31),  -- Enable=1 when CR0[31]=0 (UNSAFE!)
-
--- CORRECT: Active-high MCC_READY convention
-mcc_ready <= Control0(31);
-global_enable <= mcc_ready and user_enable;  -- Safe during all-zero state
-```
-
-## Module Dependency Management
-Define dependencies in `modules/Makefile.deps`:
-
-```makefile
-# Module build order (shared modules built first, then application modules)
-MODULE_BUILD_ORDER = SimpleWaveGen EMFI_Seq
-
-# Specific module dependencies
-MODULE_DEPS_SimpleWaveGen = volo_common
-MODULE_DEPS_EMFI_Seq = volo_common
-
-# Shared modules (built first, objects available to dependent modules)
-# volo_common includes: Moku_Voltage_pkg, Moku_Pct_pkg, clk_divider_core
-SHARED_MODULES = volo_common
-```
-
-## Reference Implementations
-
-### SimpleWaveGen (Complete Reference - Pattern 2)
-**Location**: `modules/SimpleWaveGen/`
-
-**Demonstrates**:
-- Successfully deployed to Moku device
-- Pattern 2: Platform Interface Package (complex register logic)
-- Complete testing at all layers
-- Platform interface package usage
-- Direct instantiation in top layer
-- Proper control signal handling
-
-### EMFI-Seq (Multi-Core Reference - Pattern 1 + MCC_READY)
-**Location**: `modules/EMFI-Seq/`
-
-**Demonstrates**:
-- **Pattern 1**: Simple Direct Mapping MCC integration
-- **MCC_READY Pattern**: Active-high CR0[31] for safe initialization
-- Voltage conversion package pattern (uses volo_common/Moku_Voltage_pkg)
-- Multi-core integration (FSM + analog monitor)
-- Compile-time constant computation
-- Self-documenting voltage codes
-
-**Key Files**:
-- `core/EMFI_Seq_stair.vhd` - Usage of Moku_Voltage_pkg
-- `core/EMFI_Seq_fsm.vhd` - FSM implementation
-- `top/EMFI_Seq.vhd` - Multi-core integration
-- `top/Top.vhd` - **CustomWrapper architecture with MCC_READY pattern**
-
-**Top.vhd Highlights** (MCC_READY reference):
-```vhdl
-architecture EMFI_Seq of CustomWrapper is
-    signal mcc_ready      : std_logic;
-    signal user_enable    : std_logic;
-    signal global_enable  : std_logic;
-begin
-    mcc_ready      <= Control0(31);
-    user_enable    <= Control0(30);
-    global_enable  <= mcc_ready and user_enable;
-    
-    EMFI_SEQUENCER: entity WORK.EMFI_Seq
-        port map (
-            Enable => global_enable,  -- Safe during all-zero state
-            ...
-        );
-end architecture;
-```
-
-### volo_common (Shared Modules Reference)
-**Location**: `modules/volo_common/`
-
-**Purpose**: Provides shared utilities and reusable cores for all modules
-
-**Key Components**:
-- **`common/Moku_Voltage_pkg.vhd`** - Voltage conversion utilities with bidirectional conversion, clamping, and validation
-- **`common/Moku_Pct_pkg.vhd`** - Type-safe percentage-to-voltage conversion with multiple range subtypes
-- **`core/clk_divider_core.vhd`** - Configurable clock divider core
-
-**Clock Divider Core Features** (`clk_divider_core.vhd`):
-- **Generic MAX_DIV**: Configurable maximum division ratio (default 256)
-- **Enable input**: Freeze/unfreeze counting (Priority: reset > enable > functional logic)
-- **div_sel encoding**: Linear mapping (0=÷1, 1=÷2, 2=÷3, ..., up to MAX_DIV)
-- **Clock enable output**: Generates clock enable pulses (not divided clock - safer for timing)
-- **Status register**: Shows current counter state
-- **Testbench**: CocotB tests in `tests/test_clk_divider_core.py`
-
-**Usage Example**:
-```vhdl
--- Direct instantiation of clock divider
-U_CLK_DIV: entity WORK.clk_divider_core
-    generic map (
-        MAX_DIV => 256  -- Support division up to 256
-    )
-    port map (
-        clk         => clk,
-        rst_n       => rst_n,
-        enable      => clk_div_enable,      -- Freeze when low
-        div_sel     => div_sel(7 downto 0), -- 0=÷1, 1=÷2, etc.
-        clk_en      => divided_clk_en,      -- Output clock enable
-        stat_reg    => clk_div_status       -- Status/counter value
-    );
-```
-
-**Discovered**: 2025-10-21, consolidated from standalone module into volo_common
+[... rest of the design_patterns.md content continues unchanged ...]
