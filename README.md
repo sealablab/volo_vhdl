@@ -33,6 +33,31 @@ mcp__serena__check_onboarding_performed
 - `tech_stack.md` - Tools and platform information
 - `task_completion_checklist.md` - Workflow checklist
 
+**🎛️ Moku Instrument API Library** (NEW - 16 complete instrument references):
+- `instrument_oscilloscope.md` - Time-domain waveform capture
+- `instrument_waveform_generator.md` - Standard signal generation
+- `instrument_spectrum_analyzer.md` - Frequency-domain analysis
+- `instrument_data_logger.md` - Time-series recording and streaming
+- `instrument_lock_in_amplifier.md` - Phase-sensitive detection
+- `instrument_pid_controller.md` - Closed-loop control systems
+- `instrument_frequency_response_analyzer.md` - Bode plots and transfer functions
+- `instrument_logic_analyzer.md` - Digital signal capture
+- `instrument_laser_lock_box.md` - PDH laser locking (dual PID)
+- `instrument_phasemeter.md` - Phase and frequency measurement
+- `instrument_digital_filter_box.md` - Real-time IIR filtering
+- `instrument_fir_filter_builder.md` - Custom FIR filter design
+- `instrument_arbitrary_waveform_generator.md` - Custom waveform LUTs
+- `instrument_time_frequency_analyzer.md` - Interval timing and Allan deviation
+- `instrument_neural_network.md` - ML inference on FPGA
+- `instrument_cloud_compile.md` - Custom VHDL deployment
+
+**Each instrument memory includes:**
+- Python API methods with examples
+- MCC routing patterns for cross-slot integration
+- Multi-instrument scenarios (WaveformGen + Oscilloscope, etc.)
+- VHDL CustomWrapper integration patterns
+- CocotB local testing vs hardware validation workflows
+
 ### For Humans
 
 **Read the documentation:**
@@ -197,6 +222,7 @@ The project uses **Serena MCP** (Model Context Protocol) for knowledge managemen
 - `cocotb_testing_guide.md` - Testing framework patterns
 - `codebase_structure.md` - Directory organization
 - `tech_stack.md` - Tools, platform, dependencies
+- **`instrument_*.md`** - 16 Moku instrument API references (NEW!)
 
 **How to use:**
 ```bash
@@ -313,6 +339,15 @@ signal current_state : std_logic_vector(1 downto 0);
 - 🔧 Migrating remaining GHDL testbenches to CocotB
 
 ## 📜 Changelog
+
+### 2025-10-22 - Moku Instrument API Library 🎛️
+- **Added 16 complete Moku instrument API reference memories** (`.serena/memories/instrument_*.md`)
+- Comprehensive Python API documentation for all built-in Moku instruments
+- MCC routing patterns and cross-slot integration examples
+- VHDL CustomWrapper integration patterns for each instrument
+- Multi-instrument scenario examples (WaveformGen + Oscilloscope, etc.)
+- CocotB testing vs hardware validation workflows
+- Instruments: Oscilloscope, Waveform Generator, Spectrum Analyzer, Data Logger, Lock-In Amplifier, PID Controller, Frequency Response Analyzer, Logic Analyzer, Laser Lock Box, Phasemeter, Digital Filter Box, FIR Filter Builder, Arbitrary Waveform Generator, Time & Frequency Analyzer, Neural Network, Cloud Compile
 
 ### 2025-10-22 - Serena-First Architecture
 - Migrated all knowledge to Serena MCP memories
