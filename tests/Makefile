@@ -38,6 +38,13 @@ ifeq ($(TEST_MODULE),clk_divider_core)
     COCOTB_TEST_MODULES = test_clk_divider_core
 endif
 
+# edge_detector test
+ifeq ($(TEST_MODULE),edge_detector)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_edge_detector.vhd
+    TOPLEVEL = edge_detector
+    COCOTB_TEST_MODULES = test_edge_detector
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
