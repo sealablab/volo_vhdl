@@ -224,9 +224,20 @@ def test_2_observe_state_transition_idle_to_loading(mcc, osc):
     print(f"\n[ACTION] Setting buffer length = 8...")
     mcc.set_control(1, 8 << 16)  # Buffer length in upper 16 bits
     print(f"  Control1 = 0x{(8 << 16):08X}")
-    time.sleep(0.2)  # Give more time for hardware to respond
 
-    # Observe new state
+    # Poll oscilloscope multiple times to catch transition
+    print("\nPolling oscilloscope for state change...")
+    for i in range(10):
+        time.sleep(0.1)
+        data = osc.get_data()
+        voltage = data['ch1'][len(data['ch1']) // 2]
+        status = decode_view_0_status_summary(voltage)
+        print(f"  Poll {i}: {status['state_name']}")
+        if status['state_name'] == "LOADING":
+            print("  → Transition detected!")
+            break
+
+    # Final check
     data = osc.get_data()
     voltage = data['ch1'][len(data['ch1']) // 2]
     status_after = decode_view_0_status_summary(voltage)
