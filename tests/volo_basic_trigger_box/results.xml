@@ -1,0 +1,41 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1761281744" />
+    <testcase name="test_reset_behavior" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="39" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_zero_delay" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="59" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_one_cycle_delay" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="93" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_ten_cycle_delay" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="131" time="0.0007989406585693359" sim_time_ns="270.0" ratio_time="337947.5022381379">
+      <failure error_type="AssertionError" error_msg="Trigger should have fired, got -1" />
+    </testcase>
+    <testcase name="test_large_delay" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="154" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_busy_flag_timing" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="177" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_ignore_overlapping_triggers" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="214" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_enable_control" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="250" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_cycles_remaining_debug" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="275" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_multiple_sequential_triggers" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="303" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_max_delay" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="332" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_pulse_width" classname="test_volo_basic_trigger_box_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_basic_trigger_box/test_volo_basic_trigger_box_core.py" lineno="363" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+  </testsuite>
+</testsuites>
