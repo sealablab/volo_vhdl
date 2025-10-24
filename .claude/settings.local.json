@@ -18,7 +18,10 @@
       "mcp__serena__check_onboarding_performed",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "mcp__serena__write_memory"
+      "mcp__serena__write_memory",
+      "Bash(mkdir:*)",
+      "Bash(python3:*)",
+      "Bash(uv run:*)"
     ],
     "deny": [],
     "ask": []

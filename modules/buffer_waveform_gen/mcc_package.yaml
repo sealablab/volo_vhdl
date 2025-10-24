@@ -1,0 +1,67 @@
+name: buffer_waveform_gen
+description: MCC buffer loading demonstration - waveform playback from pre-loaded buffer
+version: 1.0.0
+author: Claude Code
+date: 2025-01-23
+
+files:
+  core:
+    - core/buffer_waveform_gen_core.vhd
+  top:
+    - top/Top.vhd
+
+dependencies:
+  - module: volo_common
+    files:
+      - common/mcc_loader_pkg.vhd
+      - core/crc32_core.vhd
+      - core/mcc_buffer_loader.vhd
+      - core/clk_divider_core.vhd
+
+control_registers:
+  - register: 0
+    bits:
+      - {range: "31", name: "MCC_READY", type: "auto", description: "Set by MCC after deployment"}
+      - {range: "30", name: "User Enable", type: "user", description: "1=play waveform, 0=stop"}
+      - {range: "29", name: "Clock Enable", type: "user", description: "1=enabled, 0=frozen"}
+      - {range: "28", name: "LOAD_COMPLETE", type: "auto", description: "Python sets when buffer loading done"}
+      - {range: "27", name: "LOAD_STROBE", type: "auto", description: "Python pulses per chunk"}
+      - {range: "23:16", name: "Clock Divider", type: "user", description: "Playback rate (0-255)"}
+  - register: 1
+    bits:
+      - {range: "31:16", name: "Buffer Length", type: "auto", description: "Words to load (max 1024) - LOADING phase only"}
+  - register: 2
+    bits:
+      - {range: "31:0", name: "Expected CRC32", type: "auto", description: "Buffer validation - LOADING phase only"}
+  - register: "3-10"
+    bits:
+      - {range: "31:0", name: "Data Chunk", type: "auto", description: "8 words per transfer - LOADING phase only"}
+
+outputs:
+  - port: OutputA
+    description: "Waveform samples (16-bit signed, from buffer)"
+  - port: OutputB
+    description: "Unused (0)"
+  - port: OutputC
+    description: "Unused (0)"
+  - port: OutputD
+    description: "Debug/status - Bit[15]=load_fault, [14]=buffer_valid, [13:11]=load_state, [10:0]=read_addr"
+
+example_code: |
+  import math
+  from moku.instruments import MultiInstrument, CloudCompile
+
+  # Connect and deploy bitstream
+  m = MultiInstrument('192.168.1.100', platform_id=2, force_connect=True)
+  mcc = m.set_instrument(1, CloudCompile, bitstream="buffer_waveform_gen.tar.gz")
+
+  # STEP 1: Load buffer (256-sample sine wave)
+  # Note: This requires custom Python helper (see tests/conftest.py::mcc_load_buffer)
+  # For manual loading, see docs/MCC_BUFFER_LOADING.md
+
+  # STEP 2: Enable module for playback
+  # Control0[31:29] = 111 (MCC_READY + Enable + ClkEn)
+  # Control0[23:16] = Clock divider (100 = slow playback)
+  mcc.set_control(0, 0xE0640000)  # 0xE0 = all 3 bits, 0x64 = 100 divider
+
+  # Module now plays back waveform in a loop!

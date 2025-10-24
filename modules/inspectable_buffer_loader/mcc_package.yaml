@@ -1,0 +1,153 @@
+name: inspectable_buffer_loader
+description: MCC buffer loader with maximum hardware debuggability - dual-channel oscilloscope debug with 8 selectable views
+version: 1.0.0
+author: Claude Code
+date: 2025-10-24
+
+files:
+  core:
+    - core/debug_mux.vhd
+    - core/inspectable_buffer_loader_core.vhd
+  top:
+    - top/Top.vhd
+
+dependencies:
+  - module: volo_common
+    files:
+      - common/Moku_Voltage_pkg.vhd
+      - common/mcc_loader_pkg.vhd
+      - core/crc32_core.vhd
+      - core/clk_divider_core.vhd
+
+control_registers:
+  - register: 0
+    bits:
+      - {range: "31", name: "MCC_READY", type: "auto", description: "Auto-set by MCC after deployment"}
+      - {range: "30", name: "User Enable", type: "user", description: "Enable/disable module"}
+      - {range: "29", name: "Clock Enable", type: "user", description: "Enable sequential logic (MANDATORY!)"}
+      - {range: "28", name: "LOAD_COMPLETE", type: "user", description: "Python signals done sending chunks"}
+      - {range: "27", name: "LOAD_STROBE", type: "user", description: "Pulse per chunk to trigger latch"}
+      - {range: "26:24", name: "DEBUG_SELECT_A", type: "user", description: "OutputA debug view (0-7)"}
+      - {range: "23:21", name: "DEBUG_SELECT_B", type: "user", description: "OutputB debug view (0-7)"}
+      - {range: "20:16", name: "Playback Divider", type: "user", description: "Clock division for waveform playback"}
+      - {range: "15:0", name: "Context/Address", type: "user", description: "Used by debug views (e.g., BRAM readback address)"}
+
+  - register: 1
+    bits:
+      - {range: "31:16", name: "Buffer Length", type: "user", description: "Words to load (max 65535)"}
+      - {range: "15:0", name: "Reserved", type: "reserved", description: "Unused"}
+
+  - register: 2
+    bits:
+      - {range: "31:0", name: "Expected CRC32", type: "user", description: "IEEE 802.3 CRC32 checksum"}
+
+  - register: "3-10"
+    bits:
+      - {range: "31:0", name: "Data Chunk", type: "auto", description: "8 words per transfer"}
+
+outputs:
+  - port: OutputA
+    description: "Waveform playback OR Debug View A (16-bit signed with voltage guard bands)"
+  - port: OutputB
+    description: "Debug View B (16-bit signed with voltage guard bands)"
+
+debug_views_documentation:
+  - view: 0
+    name: "Status Summary"
+    description: "State machine + fault + valid + buffer address"
+    fields: "state[15:13], fault[12], valid[11], addr[10:0] (all left-shifted by 2)"
+
+  - view: 1
+    name: "CRC Comparison"
+    description: "Expected CRC vs Computed CRC (low 16 bits)"
+    usage: "OutputA=expected, OutputB=computed - should match at VALIDATING state"
+
+  - view: 2
+    name: "Write Activity"
+    description: "Chunk word index + write pointer"
+    fields: "chunk_idx[15:11] << 3, write_ptr[10:0] << 2"
+
+  - view: 3
+    name: "Chunk Data Snapshot"
+    description: "First and last word of current chunk"
+    usage: "OutputA=chunk[0], OutputB=chunk[7] - verify data integrity"
+
+  - view: 4
+    name: "BRAM Readback"
+    description: "Read BRAM contents at selected address"
+    usage: "Control0[10:0] = address, OutputB = bram[address] - ground truth check"
+
+  - view: 5
+    name: "Timing Diagnostics"
+    description: "STROBE protocol timing"
+    fields: "strobe_edge[15], strobe_ack[14], load_complete[13], words_written[12:0] << 2"
+
+  - view: 6
+    name: "Error Diagnostics"
+    description: "Persistent error capture"
+    fields: "error_code[15:13] << 2, error_state[12:8] << 3, error_details[7:0]"
+
+  - view: 7
+    name: "Reserved"
+    description: "Future use"
+
+example_code: |
+  from conftest import mcc_set_regs, mcc_load_buffer, mcc_cr0
+
+  # Step 1: Load buffer with debug monitoring
+  buffer_data = [0x12345678, 0xABCDEF00, ...]  # Up to 1024 words
+
+  # Set debug views BEFORE loading (View 0 = Status Summary)
+  await mcc_set_regs(dut, {
+      0: mcc_cr0() | (0 << 24) | (0 << 21),  # DEBUG_A=0, DEBUG_B=0
+  }, set_mcc_ready=True)
+
+  # Load buffer (automatically uses Control1/2 for metadata, Control3-10 for chunks)
+  await mcc_load_buffer(dut, buffer_data=buffer_data)
+
+  # Step 2: Monitor oscilloscope during load
+  # - OutputB shows state progression (IDLE → LOADING → WRITING → VALIDATING → READY)
+  # - If fault occurs, switch to View 1 or 6 for details
+
+  # Step 3: If CRC error, switch to View 1 (CRC Comparison)
+  await mcc_set_regs(dut, {
+      0: mcc_cr0() | (1 << 24) | (1 << 21),  # DEBUG_A=1, DEBUG_B=1
+  }, set_mcc_ready=True)
+  # - OutputA = expected_crc[15:0] << 2
+  # - OutputB = computed_crc[15:0] << 2
+  # - Compare on oscilloscope!
+
+  # Step 4: Verify buffer contents with View 4 (BRAM Readback)
+  for addr in range(0, 10):  # Check first 10 words
+      await mcc_set_regs(dut, {
+          0: mcc_cr0() | (4 << 21) | addr,  # DEBUG_B=4, address=addr
+      }, set_mcc_ready=True)
+      await ClockCycles(dut.Clk, 1)
+      # OutputB now shows bram[addr] << 2
+
+  # Step 5: Enable waveform playback
+  await mcc_set_regs(dut, {
+      0: mcc_cr0(divider=240) | (0 << 24) | (5 << 21),  # Playback @ div=240
+  }, set_mcc_ready=True)
+  # - OutputA = waveform playback (or debug view if needed)
+  # - OutputB = Timing diagnostics (View 5)
+
+notes: |
+  ## Voltage Guard Bands
+  All debug values are left-shifted by 2-3 bits to create voltage spacing
+  between adjacent values. This prevents ADC quantization noise from making
+  values indistinguishable on oscilloscope.
+
+  Example: state=3 → output=0x000C (not 0x0003)
+  Voltage difference: 4× larger (~3.2mV instead of ~0.8mV)
+
+  ## Decoding Oscilloscope Data
+  Use the voltage_decode helpers in test_inspectable_buffer_loader_hardware.py
+  to convert oscilloscope voltages back to digital values.
+
+  ## Debug Workflow
+  1. Start with View 0 (Status Summary) - see state progression
+  2. If fault occurs, check View 6 (Error Diagnostics) for error code
+  3. If CRC error, use View 1 (CRC Comparison) to compare values
+  4. If data corruption, use View 4 (BRAM Readback) to verify contents
+  5. If timing issues, use View 5 (Timing Diagnostics)
