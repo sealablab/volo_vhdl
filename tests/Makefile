@@ -249,6 +249,16 @@ ifeq ($(TEST_MODULE),inspectable_buffer_loader_oscilloscope_only)
     COCOTB_TEST_MODULES = test_inspectable_buffer_loader_oscilloscope_only
 endif
 
+# fsm_example test (FSM Observer pattern validation)
+ifeq ($(TEST_MODULE),fsm_example)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(VOLO_COMMON)/observer/fsm_observer.vhd \
+                   $(MODULES_DIR)/fsm_example/core/fsm_example_core.vhd \
+                   $(MODULES_DIR)/fsm_example/top/fsm_example_top.vhd
+    TOPLEVEL = fsm_example_top
+    COCOTB_TEST_MODULES = test_fsm_example
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
