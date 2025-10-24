@@ -94,6 +94,13 @@ ifeq ($(TEST_MODULE),mux)
     COCOTB_TEST_MODULES = test_mux
 endif
 
+# pwm test
+ifeq ($(TEST_MODULE),pwm)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_pwm.vhd
+    TOPLEVEL = volo_pwm
+    COCOTB_TEST_MODULES = test_pwm
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
