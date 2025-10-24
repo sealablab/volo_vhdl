@@ -1,0 +1,558 @@
+rm -f results.xml
+"/Library/Developer/CommandLineTools/usr/bin/make" -f Makefile results.xml
+mkdir -p sim_build
+\
+	/opt/homebrew/bin/ghdl -i --std=08 --workdir=work   --workdir=sim_build --work=work ../modules/volo_common/common/mcc_loader_pkg.vhd ../modules/volo_common/core/crc32_core.vhd ../modules/volo_common/core/mcc_buffer_loader.vhd ../modules/volo_common/core/clk_divider_core.vhd ../modules/buffer_waveform_gen/core/buffer_waveform_gen_core.vhd ../mcc_templates/CustomWrapper_test_stub.vhd ../modules/buffer_waveform_gen/top/Top.vhd && \
+	/opt/homebrew/bin/ghdl -m --std=08 --workdir=work   --workdir=sim_build -Psim_build --work=work customwrapper 
+/opt/homebrew/bin/ghdl:warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+/opt/homebrew/bin/ghdl:warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../mcc_templates/CustomWrapper_test_stub.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/volo_common/common/mcc_loader_pkg.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/volo_common/core/crc32_core.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/volo_common/core/mcc_buffer_loader.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/volo_common/core/clk_divider_core.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/buffer_waveform_gen/core/buffer_waveform_gen_core.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+analyze ../modules/buffer_waveform_gen/top/Top.vhd
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+elaborate customwrapper
+warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+rm -f results.xml
+COCOTB_TEST_MODULES=test_buffer_waveform_gen COCOTB_TESTCASE= COCOTB_TEST_FILTER= COCOTB_TOPLEVEL=customwrapper TOPLEVEL_LANG=vhdl \
+	 /opt/homebrew/bin/ghdl -r --std=08 --workdir=work   --workdir=sim_build -Psim_build --work=work customwrapper  --vpi=/Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb/libs/libcocotbvpi_ghdl.so --wave=dump.ghw  
+/opt/homebrew/bin/ghdl:warning: directory 'work' set by --workdir= does not exist [-Wlibrary]
+loading VPI module '/Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb/libs/libcocotbvpi_ghdl.so'
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:94   in _embed_init_python              Using Python 3.12.10 interpreter at /Users/johnycsh/volo_codes/volo_vhdl/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+VPI module loaded!
+     0.00ns INFO     cocotb                             Running on GHDL version 5.0.1 (4.1.0.r602.g37ad91899) [Dunoon edition]
+     0.00ns WARNING  gpi                                vpi_iterate returned NULL for type vpiInstance for object NULL
+     0.00ns INFO     cocotb                             Seeding Python random module with 1761316503
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.0 from /Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.regression                  pytest not found, install it to enable better AssertionError messages
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_buffer_waveform_gen.test_buffer_loading (1/6)
+                                                            Test 1: Load buffer and verify CRC validation
+     0.00ns INFO     cocotb.customwrapper               ======================================================================
+     0.00ns INFO     cocotb.customwrapper               Test 1: Basic Buffer Loading with CRC Validation
+     0.00ns INFO     cocotb.customwrapper               ======================================================================
+     0.00ns WARNING  py.warnings                        /Users/johnycsh/volo_codes/volo_vhdl/tests/conftest.py:189: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          clock = cocotb.start_soon(Clock(clk, period_ns, units="ns").start())
+     0.00ns INFO     cocotb.customwrapper               ✓ Clock started on 'Clk' (10ns period = 100.0MHz)
+    20.00ns INFO     cocotb.customwrapper               ✓ Reset complete (active-high, 2 cycles)
+    20.00ns INFO     cocotb.customwrapper               Loading 64 words...
+    20.00ns INFO     cocotb.customwrapper               📦 MCC Buffer Loading: 64 words in 8 chunks
+    20.00ns INFO     cocotb.customwrapper                 CRC32: 0xACD91CCB
+    20.00ns INFO     cocotb.customwrapper               ⏱  Network latency: 29.4ms
+    20.00ns WARNING  py.warnings                        /Users/johnycsh/volo_codes/volo_vhdl/tests/conftest.py:853: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          await Timer(int(delay_ms * 1_000_000), units="ns")
+29393645.00ns INFO     cocotb.customwrapper                 Metadata sent: Length=64, CRC=0xACD91CCB
+29393690.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393690.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000000
+29393690.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00000064
+29393690.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000000C8
+29393690.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000012C
+29393690.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000190
+29393690.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000001F4
+29393690.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000258
+29393690.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000002BC
+29393730.00ns INFO     cocotb.customwrapper                 Chunk 1/8 sent (words 0-7)
+29393730.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393730.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000320
+29393730.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00000384
+29393730.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000003E8
+29393730.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000044C
+29393730.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000004B0
+29393730.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00000514
+29393730.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000578
+29393730.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000005DC
+29393770.00ns INFO     cocotb.customwrapper                 Chunk 2/8 sent (words 8-15)
+29393770.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393770.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000640
+29393770.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000006A4
+29393770.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00000708
+29393770.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000076C
+29393770.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000007D0
+29393770.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00000834
+29393770.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000898
+29393770.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000008FC
+29393810.00ns INFO     cocotb.customwrapper                 Chunk 3/8 sent (words 16-23)
+29393810.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393810.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000960
+29393810.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000009C4
+29393810.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00000A28
+29393810.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00000A8C
+29393810.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000AF0
+29393810.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00000B54
+29393810.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000BB8
+29393810.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00000C1C
+29393850.00ns INFO     cocotb.customwrapper                 Chunk 4/8 sent (words 24-31)
+29393850.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393850.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000C80
+29393850.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00000CE4
+29393850.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00000D48
+29393850.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00000DAC
+29393850.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000E10
+29393850.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00000E74
+29393850.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000ED8
+29393850.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00000F3C
+29393890.00ns INFO     cocotb.customwrapper                 Chunk 5/8 sent (words 32-39)
+29393890.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393890.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000FA0
+29393890.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00001004
+29393890.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00001068
+29393890.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000010CC
+29393890.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00001130
+29393890.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00001194
+29393890.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000011F8
+29393890.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000125C
+29393930.00ns INFO     cocotb.customwrapper                 Chunk 6/8 sent (words 40-47)
+29393930.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393930.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000012C0
+29393930.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00001324
+29393930.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00001388
+29393930.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000013EC
+29393930.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00001450
+29393930.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000014B4
+29393930.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00001518
+29393930.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000157C
+29393970.00ns INFO     cocotb.customwrapper                 Chunk 7/8 sent (words 48-55)
+29393970.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+29393970.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000015E0
+29393970.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00001644
+29393970.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000016A8
+29393970.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000170C
+29393970.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00001770
+29393970.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000017D4
+29393970.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00001838
+29393970.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000189C
+29394010.00ns INFO     cocotb.customwrapper                 Chunk 8/8 sent (words 56-63)
+29394060.00ns INFO     cocotb.customwrapper                 LOAD_COMPLETE set
+29394060.00ns INFO     cocotb.customwrapper               ⏳ Waiting 1000 cycles for FPGA validation...
+29404060.00ns INFO     cocotb.customwrapper               ✓ Buffer loading complete!
+29404060.00ns INFO     cocotb.customwrapper               Loaded 64 words in 8 chunks
+29404060.00ns INFO     cocotb.customwrapper               Expected CRC: 0xACD91CCB
+29405060.00ns INFO     cocotb.customwrapper               Status: buffer_valid=1, load_fault=0, state=3
+29405060.00ns INFO     cocotb.customwrapper               ✓ Test 1 PASSED: Buffer loaded and validated successfully
+29405060.00ns INFO     cocotb.regression                  test_buffer_waveform_gen.test_buffer_loading passed
+29405060.00ns INFO     cocotb.regression                  running test_buffer_waveform_gen.test_waveform_playback (2/6)
+                                                              Test 2: Load sine wave and verify playback
+29405060.00ns INFO     cocotb.customwrapper               ======================================================================
+29405060.00ns INFO     cocotb.customwrapper               Test 2: Waveform Playback from Buffer
+29405060.00ns INFO     cocotb.customwrapper               ======================================================================
+29405060.00ns INFO     cocotb.customwrapper               ✓ Clock started on 'Clk' (10ns period = 100.0MHz)
+29405090.00ns INFO     cocotb.customwrapper               ✓ Reset complete (active-high, 2 cycles)
+29405090.00ns INFO     cocotb.customwrapper               Generated 256-sample sine wave
+29405090.00ns INFO     cocotb.customwrapper               📦 MCC Buffer Loading: 256 words in 32 chunks
+29405090.00ns INFO     cocotb.customwrapper                 CRC32: 0x47F69918
+29405090.00ns INFO     cocotb.customwrapper               ⏱  Network latency: 38.8ms
+68190477.00ns INFO     cocotb.customwrapper                 Metadata sent: Length=256, CRC=0x47F69918
+68190520.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190520.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000000
+68190520.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00000324
+68190520.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00000647
+68190520.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000096A
+68190520.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000C8B
+68190520.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00000FAB
+68190520.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000012C7
+68190520.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000015E1
+68190560.00ns INFO     cocotb.customwrapper                 Chunk 1/32 sent (words 0-7)
+68190560.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190560.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000018F8
+68190560.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00001C0B
+68190560.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00001F19
+68190560.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00002223
+68190560.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00002527
+68190560.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00002826
+68190560.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00002B1E
+68190560.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00002E10
+68190600.00ns INFO     cocotb.customwrapper                 Chunk 2/32 sent (words 8-15)
+68190600.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190600.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000030FB
+68190600.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000033DE
+68190600.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000036B9
+68190600.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000398C
+68190600.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00003C56
+68190600.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00003F16
+68190600.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000041CD
+68190600.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000447A
+68190640.00ns INFO     cocotb.customwrapper                 Chunk 3/32 sent (words 16-23)
+68190640.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190640.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000471C
+68190640.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000049B3
+68190640.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00004C3F
+68190640.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00004EBF
+68190640.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00005133
+68190640.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000539A
+68190640.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000055F4
+68190640.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00005842
+68190680.00ns INFO     cocotb.customwrapper                 Chunk 4/32 sent (words 24-31)
+68190680.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190680.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00005A81
+68190680.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00005CB3
+68190680.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00005ED6
+68190680.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000060EB
+68190680.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000062F1
+68190680.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000064E7
+68190680.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000066CE
+68190680.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000068A5
+68190720.00ns INFO     cocotb.customwrapper                 Chunk 5/32 sent (words 32-39)
+68190720.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190720.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00006A6C
+68190720.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00006C23
+68190720.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00006DC9
+68190720.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00006F5E
+68190720.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000070E1
+68190720.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00007254
+68190720.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000073B5
+68190720.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00007503
+68190760.00ns INFO     cocotb.customwrapper                 Chunk 6/32 sent (words 40-47)
+68190760.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190760.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00007640
+68190760.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000776B
+68190760.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00007883
+68190760.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00007989
+68190760.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00007A7C
+68190760.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00007B5C
+68190760.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00007C29
+68190760.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00007CE2
+68190800.00ns INFO     cocotb.customwrapper                 Chunk 7/32 sent (words 48-55)
+68190800.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190800.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00007D89
+68190800.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00007E1C
+68190800.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00007E9C
+68190800.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00007F08
+68190800.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00007F61
+68190800.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00007FA6
+68190800.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00007FD7
+68190800.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00007FF5
+68190840.00ns INFO     cocotb.customwrapper                 Chunk 8/32 sent (words 56-63)
+68190840.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190840.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00007FFF
+68190840.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00007FF5
+68190840.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00007FD7
+68190840.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00007FA6
+68190840.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00007F61
+68190840.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00007F08
+68190840.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00007E9C
+68190840.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00007E1C
+68190880.00ns INFO     cocotb.customwrapper                 Chunk 9/32 sent (words 64-71)
+68190880.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190880.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00007D89
+68190880.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00007CE2
+68190880.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00007C29
+68190880.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00007B5C
+68190880.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00007A7C
+68190880.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00007989
+68190880.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00007883
+68190880.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000776B
+68190920.00ns INFO     cocotb.customwrapper                 Chunk 10/32 sent (words 72-79)
+68190920.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190920.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00007640
+68190920.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00007503
+68190920.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000073B5
+68190920.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00007254
+68190920.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000070E1
+68190920.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00006F5E
+68190920.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00006DC9
+68190920.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00006C23
+68190960.00ns INFO     cocotb.customwrapper                 Chunk 11/32 sent (words 80-87)
+68190960.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68190960.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00006A6C
+68190960.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000068A5
+68190960.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000066CE
+68190960.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000064E7
+68190960.00ns INFO     cocotb.customwrapper                 Control7 ← 0x000062F1
+68190960.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000060EB
+68190960.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00005ED6
+68190960.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00005CB3
+68191000.00ns INFO     cocotb.customwrapper                 Chunk 12/32 sent (words 88-95)
+68191000.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191000.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00005A81
+68191000.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00005842
+68191000.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000055F4
+68191000.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000539A
+68191000.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00005133
+68191000.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00004EBF
+68191000.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00004C3F
+68191000.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000049B3
+68191040.00ns INFO     cocotb.customwrapper                 Chunk 13/32 sent (words 96-103)
+68191040.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191040.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000471C
+68191040.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000447A
+68191040.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000041CD
+68191040.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00003F16
+68191040.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00003C56
+68191040.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000398C
+68191040.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000036B9
+68191040.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000033DE
+68191080.00ns INFO     cocotb.customwrapper                 Chunk 14/32 sent (words 104-111)
+68191080.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191080.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000030FB
+68191080.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00002E10
+68191080.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00002B1E
+68191080.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00002826
+68191080.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00002527
+68191080.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00002223
+68191080.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00001F19
+68191080.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00001C0B
+68191120.00ns INFO     cocotb.customwrapper                 Chunk 15/32 sent (words 112-119)
+68191120.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191120.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000018F8
+68191120.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000015E1
+68191120.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000012C7
+68191120.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00000FAB
+68191120.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000C8B
+68191120.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000096A
+68191120.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00000647
+68191120.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00000324
+68191160.00ns INFO     cocotb.customwrapper                 Chunk 16/32 sent (words 120-127)
+68191160.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191160.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000000
+68191160.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000FCDC
+68191160.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000F9B9
+68191160.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000F696
+68191160.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000F375
+68191160.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000F055
+68191160.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000ED39
+68191160.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000EA1F
+68191200.00ns INFO     cocotb.customwrapper                 Chunk 17/32 sent (words 128-135)
+68191200.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191200.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000E708
+68191200.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000E3F5
+68191200.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000E0E7
+68191200.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000DDDD
+68191200.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000DAD9
+68191200.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000D7DA
+68191200.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000D4E2
+68191200.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000D1F0
+68191240.00ns INFO     cocotb.customwrapper                 Chunk 18/32 sent (words 136-143)
+68191240.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191240.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000CF05
+68191240.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000CC22
+68191240.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000C947
+68191240.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000C674
+68191240.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000C3AA
+68191240.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000C0EA
+68191240.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000BE33
+68191240.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000BB86
+68191280.00ns INFO     cocotb.customwrapper                 Chunk 19/32 sent (words 144-151)
+68191280.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191280.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000B8E4
+68191280.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000B64D
+68191280.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000B3C1
+68191280.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000B141
+68191280.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000AECD
+68191280.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000AC66
+68191280.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000AA0C
+68191280.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000A7BE
+68191320.00ns INFO     cocotb.customwrapper                 Chunk 20/32 sent (words 152-159)
+68191320.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191320.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000A57F
+68191320.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000A34D
+68191320.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000A12A
+68191320.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00009F15
+68191320.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00009D0F
+68191320.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00009B19
+68191320.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00009932
+68191320.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000975B
+68191360.00ns INFO     cocotb.customwrapper                 Chunk 21/32 sent (words 160-167)
+68191360.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191360.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00009594
+68191360.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000093DD
+68191360.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00009237
+68191360.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000090A2
+68191360.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00008F1F
+68191360.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00008DAC
+68191360.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00008C4B
+68191360.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00008AFD
+68191400.00ns INFO     cocotb.customwrapper                 Chunk 22/32 sent (words 168-175)
+68191400.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191400.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000089C0
+68191400.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00008895
+68191400.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000877D
+68191400.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00008677
+68191400.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00008584
+68191400.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000084A4
+68191400.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000083D7
+68191400.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000831E
+68191440.00ns INFO     cocotb.customwrapper                 Chunk 23/32 sent (words 176-183)
+68191440.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191440.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00008277
+68191440.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000081E4
+68191440.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00008164
+68191440.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000080F8
+68191440.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000809F
+68191440.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000805A
+68191440.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00008029
+68191440.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000800B
+68191480.00ns INFO     cocotb.customwrapper                 Chunk 24/32 sent (words 184-191)
+68191480.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191480.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00008001
+68191480.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000800B
+68191480.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00008029
+68191480.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000805A
+68191480.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000809F
+68191480.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000080F8
+68191480.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00008164
+68191480.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000081E4
+68191520.00ns INFO     cocotb.customwrapper                 Chunk 25/32 sent (words 192-199)
+68191520.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191520.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00008277
+68191520.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000831E
+68191520.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000083D7
+68191520.00ns INFO     cocotb.customwrapper                 Control6 ← 0x000084A4
+68191520.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00008584
+68191520.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00008677
+68191520.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000877D
+68191520.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00008895
+68191560.00ns INFO     cocotb.customwrapper                 Chunk 26/32 sent (words 200-207)
+68191560.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191560.00ns INFO     cocotb.customwrapper                 Control3 ← 0x000089C0
+68191560.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00008AFD
+68191560.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00008C4B
+68191560.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00008DAC
+68191560.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00008F1F
+68191560.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000090A2
+68191560.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00009237
+68191560.00ns INFO     cocotb.customwrapper                 Control10 ← 0x000093DD
+68191600.00ns INFO     cocotb.customwrapper                 Chunk 27/32 sent (words 208-215)
+68191600.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191600.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00009594
+68191600.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000975B
+68191600.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00009932
+68191600.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00009B19
+68191600.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00009D0F
+68191600.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00009F15
+68191600.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000A12A
+68191600.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000A34D
+68191640.00ns INFO     cocotb.customwrapper                 Chunk 28/32 sent (words 216-223)
+68191640.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191640.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000A57F
+68191640.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000A7BE
+68191640.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000AA0C
+68191640.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000AC66
+68191640.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000AECD
+68191640.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000B141
+68191640.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000B3C1
+68191640.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000B64D
+68191680.00ns INFO     cocotb.customwrapper                 Chunk 29/32 sent (words 224-231)
+68191680.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191680.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000B8E4
+68191680.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000BB86
+68191680.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000BE33
+68191680.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000C0EA
+68191680.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000C3AA
+68191680.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000C674
+68191680.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000C947
+68191680.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000CC22
+68191720.00ns INFO     cocotb.customwrapper                 Chunk 30/32 sent (words 232-239)
+68191720.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191720.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000CF05
+68191720.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000D1F0
+68191720.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000D4E2
+68191720.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000D7DA
+68191720.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000DAD9
+68191720.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000DDDD
+68191720.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000E0E7
+68191720.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000E3F5
+68191760.00ns INFO     cocotb.customwrapper                 Chunk 31/32 sent (words 240-247)
+68191760.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68191760.00ns INFO     cocotb.customwrapper                 Control3 ← 0x0000E708
+68191760.00ns INFO     cocotb.customwrapper                 Control4 ← 0x0000EA1F
+68191760.00ns INFO     cocotb.customwrapper                 Control5 ← 0x0000ED39
+68191760.00ns INFO     cocotb.customwrapper                 Control6 ← 0x0000F055
+68191760.00ns INFO     cocotb.customwrapper                 Control7 ← 0x0000F375
+68191760.00ns INFO     cocotb.customwrapper                 Control8 ← 0x0000F696
+68191760.00ns INFO     cocotb.customwrapper                 Control9 ← 0x0000F9B9
+68191760.00ns INFO     cocotb.customwrapper                 Control10 ← 0x0000FCDC
+68191800.00ns INFO     cocotb.customwrapper                 Chunk 32/32 sent (words 248-255)
+68191850.00ns INFO     cocotb.customwrapper                 LOAD_COMPLETE set
+68191850.00ns INFO     cocotb.customwrapper               ⏳ Waiting 1000 cycles for FPGA validation...
+68201850.00ns INFO     cocotb.customwrapper               ✓ Buffer loading complete!
+68201850.00ns INFO     cocotb.customwrapper               Buffer loaded: 32 chunks, CRC=0x47F69918
+68201850.00ns INFO     cocotb.customwrapper                 Control0 ← 0x600A0000
+68201870.00ns INFO     cocotb.customwrapper               ✓ MCC_READY asserted (CR0 = 0xE00A0000)
+68202090.00ns INFO     cocotb.customwrapper               ✓ Module settled (20 cycles after MCC_READY)
+68202090.00ns INFO     cocotb.customwrapper               Module enabled with clock_div=10
+68202240.00ns WARNING  .._playback.test_waveform_playback Can't convert LogicArray to int: it contains non-0/1 values
+                                                          Traceback (most recent call last):
+                                                            File "/Users/johnycsh/volo_codes/volo_vhdl/tests/test_buffer_waveform_gen.py", line 120, in test_waveform_playback
+                                                              sample = int(dut.OutputA.value)
+                                                                       ^^^^^^^^^^^^^^^^^^^^^^
+                                                            File "/Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb/types/_logic_array.py", line 777, in __int__
+                                                              return self.to_unsigned()
+                                                                     ^^^^^^^^^^^^^^^^^^
+                                                            File "/Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb/types/_logic_array.py", line 645, in to_unsigned
+                                                              return self._get_int()
+                                                                     ^^^^^^^^^^^^^^^
+                                                            File "/Users/johnycsh/volo_codes/volo_vhdl/.venv/lib/python3.12/site-packages/cocotb/types/_logic_array.py", line 294, in _get_int
+                                                              raise ValueError(
+                                                          ValueError: Can't convert LogicArray to int: it contains non-0/1 values
+68202240.00ns WARNING  cocotb.regression                  test_buffer_waveform_gen.test_waveform_playback failed
+68202240.00ns INFO     cocotb.regression                  running test_buffer_waveform_gen.test_buffer_wraparound (3/6)
+                                                              Test 3: Verify buffer wraps around correctly
+68202240.00ns INFO     cocotb.customwrapper               ======================================================================
+68202240.00ns INFO     cocotb.customwrapper               Test 3: Buffer Wrap-Around
+68202240.00ns INFO     cocotb.customwrapper               ======================================================================
+68202240.00ns INFO     cocotb.customwrapper               ✓ Clock started on 'Clk' (10ns period = 100.0MHz)
+68202270.00ns INFO     cocotb.customwrapper               ✓ Reset complete (active-high, 2 cycles)
+68202270.00ns INFO     cocotb.customwrapper               📦 MCC Buffer Loading: 16 words in 2 chunks
+68202270.00ns INFO     cocotb.customwrapper                 CRC32: 0xD458DD5B
+68202270.00ns INFO     cocotb.customwrapper                 Metadata sent: Length=16, CRC=0xD458DD5B
+68202320.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68202320.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00000000
+68202320.00ns INFO     cocotb.customwrapper                 Control4 ← 0x000003E8
+68202320.00ns INFO     cocotb.customwrapper                 Control5 ← 0x000007D0
+68202320.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00000BB8
+68202320.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00000FA0
+68202320.00ns INFO     cocotb.customwrapper                 Control8 ← 0x00001388
+68202320.00ns INFO     cocotb.customwrapper                 Control9 ← 0x00001770
+68202320.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00001B58
+68202360.00ns INFO     cocotb.customwrapper                 Chunk 1/2 sent (words 0-7)
+68202360.00ns INFO     cocotb.customwrapper                 Control0 ← 0x08000000
+68202360.00ns INFO     cocotb.customwrapper                 Control3 ← 0x00001F40
+68202360.00ns INFO     cocotb.customwrapper                 Control4 ← 0x00002328
+68202360.00ns INFO     cocotb.customwrapper                 Control5 ← 0x00002710
+68202360.00ns INFO     cocotb.customwrapper                 Control6 ← 0x00002AF8
+68202360.00ns INFO     cocotb.customwrapper                 Control7 ← 0x00002EE0
+68202360.00ns INFO     cocotb.customwrapper                 Control8 ← 0x000032C8
+68202360.00ns INFO     cocotb.customwrapper                 Control9 ← 0x000036B0
+68202360.00ns INFO     cocotb.customwrapper                 Control10 ← 0x00003A98
+68202400.00ns INFO     cocotb.customwrapper                 Chunk 2/2 sent (words 8-15)
+68202410.00ns WARNING  cocotb.regression                  test_buffer_waveform_gen.test_buffer_wraparound failed
+68202410.00ns WARNING  cocotb.regression                  test_buffer_waveform_gen.test_buffer_readback failed
+68202410.00ns WARNING  cocotb.regression                  test_buffer_waveform_gen.test_crc_error failed
+68202410.00ns WARNING  cocotb.regression                  test_buffer_waveform_gen.test_all_passed failed
+68202410.00ns INFO     cocotb.regression                  *********************************************************************************************************
+                                                          ** TEST                                             STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                          *********************************************************************************************************
+                                                          ** test_buffer_waveform_gen.test_buffer_loading      PASS    29405060.00           9.62    3057591.91  **
+                                                          ** test_buffer_waveform_gen.test_waveform_playback   FAIL    38797180.00          12.63    3071052.16  **
+                                                          ** test_buffer_waveform_gen.test_buffer_wraparound   FAIL         170.00           0.00     156675.83  **
+                                                          ** test_buffer_waveform_gen.test_buffer_readback     FAIL           0.00           0.00           nan  **
+                                                          ** test_buffer_waveform_gen.test_crc_error           FAIL           0.00           0.00           nan  **
+                                                          ** test_buffer_waveform_gen.test_all_passed          FAIL           0.00           0.00           nan  **
+                                                          *********************************************************************************************************
+                                                          ** TESTS=6 PASS=1 FAIL=5 SKIP=0                              68202410.00          22.25    3064669.00  **
+                                                          *********************************************************************************************************
+../../src/ieee2008/numeric_std-body.vhdl:1873:7:@0ms:(assertion warning): NUMERIC_STD."=": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1265:7:@0ms:(assertion warning): NUMERIC_STD.">": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:2025:7:@20ns:(assertion warning): NUMERIC_STD."/=": metavalue detected, returning TRUE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393750ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393790ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393830ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393870ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393910ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393950ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+../../src/ieee2008/numeric_std-body.vhdl:1320:7:@29393990ns:(assertion warning): NUMERIC_STD."<": metavalue detected, returning FALSE
+./customwrapper:error: bound check failure at ../modules/volo_common/core/mcc_buffer_loader.vhd:236
+  instance: .customwrapper(buffer_waveform_gen).u_buffer_loader@mcc_buffer_loader(rtl).P2
+./customwrapper:error: simulation failed
+make[1]: *** [results.xml] Error 1
+make: *** [sim] Error 2

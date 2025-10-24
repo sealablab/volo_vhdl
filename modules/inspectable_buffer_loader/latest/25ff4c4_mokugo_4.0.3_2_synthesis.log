@@ -1,0 +1,636 @@
+#-----------------------------------------------------------
+# Vivado v2022.2_AR000035739_AR000034905 (64-bit)
+# SW Build 3671981 on Fri Oct 14 04:59:54 MDT 2022
+# IP Build 3669848 on Fri Oct 14 08:30:02 MDT 2022
+# Start of session at: Fri Oct 24 19:24:26 2025
+# Process ID: 747165
+# Current directory: /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/output
+# Command line: vivado -log synthesis.log -nojournal -mode batch -source /deps/compile/scripts/tcl/synth.tcl -tclargs /deps/compile 40 xc7z020clg400-1 mokugo /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores 2 3 0 4 4 5 3 2 0
+# Log file: /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/output/synthesis.log
+# Journal file: 
+# Running On: mcc-workers-7446cfdb8d-knzqr, OS: Linux, CPU Frequency: 3311.998 MHz, CPU Physical cores: 8, Host memory: 25189 MB
+#-----------------------------------------------------------
+source /deps/compile/scripts/tcl/synth.tcl
+# set TOP_DIR [lindex $argv 0]
+# set HW_VER [lindex $argv 1]
+# set HG_PART [lindex $argv 2]
+# set HG_BOARD [lindex $argv 3]
+# set SRC_DIR [lindex $argv 4]
+# set LIB_DIR [lindex $argv 5]
+# set IP_DCP_DIR [lindex $argv 6]
+# set NUM_INS [lindex $argv 7]
+# set NUM_OUTS [lindex $argv 8]
+# set NUM_MONS [lindex $argv 9]
+# set IN_LANES [lindex $argv 10]
+# set OUT_LANES [lindex $argv 11]
+# set NUM_SLOT_INS [lindex $argv 12]
+# set NUM_SLOT_OUTS [lindex $argv 13]
+# set NUM_CBUFS [lindex $argv 14]
+# set VARIANT [lindex $argv 15]
+# set_part $HG_PART
+INFO: [Coretcl 2-1500] The part has been set to 'xc7z020clg400-1' for the current project only. Run set_part -help for more details. To evaluate different speed grades in the current design, use the set_speed_grade command, or use the open_checkpoint -part command to change the part used by an existing checkpoint design.
+# read_vhdl -vhdl2008 [glob $LIB_DIR/Instrument.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/AXITypes.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/InterlacingSupport.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/MemoryMapSPI.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/InstrumentCC.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/MercurySupport.vhd]
+# read_vhdl -vhdl2008 [glob $LIB_DIR/MokuSupport.vhd]
+# set INCLUDE_ENTITY_DEFN 1
+# source $TOP_DIR/utilities/utilities.tcl
+## proc findFiles { basedir pattern } {
+## 
+##     # Fix the directory name, this ensures the directory name is in the
+##     # native format for the platform and contains a final directory seperator
+##     set basedir [string trimright [file join [file normalize $basedir] { }]]
+##     set fileList {}
+## 
+##     # Look in the current directory for matching files, -type {f r}
+##     # means ony readable normal files are looked at, -nocomplain stops
+##     # an error being thrown if the returned list is empty
+##     foreach fileName [glob -nocomplain -type {f r} -path $basedir $pattern] {
+##         lappend fileList $fileName
+##     }
+## 
+##     # Now look for any sub direcories in the current directory
+##     foreach dirName [glob -nocomplain -type {d  r} -path $basedir *] {
+##         # Recusively call the routine on the sub directory and append any
+##         # new files to the results
+##         set subDirList [findFiles $dirName $pattern]
+##         if { [llength $subDirList] > 0 } {
+##             foreach subDirFile $subDirList {
+##                 lappend fileList $subDirFile
+##             }
+##         }
+##     }
+##     return $fileList
+##  }
+# set VHDL_SRC [findFiles $SRC_DIR "*.vhd"]
+# if {[llength $VHDL_SRC] > 0} {
+#     # Prevent re-definition of CustomWrapper; 
+#     # without this check, Vivado or this suite of 
+#     # scripts will not report any errors and will 
+#     # still generate the deployable bitstream.
+#     # see https://liquidinstruments.atlassian.net/browse/SW-398
+#     foreach VHDL_FILE $VHDL_SRC {
+#         if {[catch {exec grep -qi "entity CustomWrapper is" $VHDL_FILE} result] == 0} {
+#             puts "Error: The entity 'CustomWrapper' is already defined in the library."
+#             exit 1
+#         }
+#     }
+#     read_vhdl -vhdl2008 $VHDL_SRC
+# }
+# set VERILOG_SRC [findFiles $SRC_DIR "*.v"]
+# if {[llength $VERILOG_SRC] > 0} {
+#     read_verilog $VERILOG_SRC
+#     set_property file_type {SystemVerilog} [get_files $VERILOG_SRC]
+#     foreach V_FILE $VERILOG_SRC {
+#         if {[catch {exec grep -qi "module CustomWrapper" $V_FILE} result] == 0} {
+#             set INCLUDE_ENTITY_DEFN 0
+#         }
+#     }
+# }
+# if {$INCLUDE_ENTITY_DEFN == 1} {
+#     read_vhdl -vhdl2008 [glob $LIB_DIR/CustomWrapper.vhd]
+# }
+# set ip_dcps [glob -nocomplain $IP_DCP_DIR/*.dcp *.dcp]
+# puts $ip_dcps
+/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/AddSubtract_16.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/CIC_Dec_3Ordx8.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/Cordic_Translate_16.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/Counter_32.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_1024.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_65536.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FIR_Filter_7coef.dcp /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/SineGen_48.dcp
+# foreach dcp $ip_dcps {
+# 	read_checkpoint $dcp
+# }
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/AddSubtract_16.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/CIC_Dec_3Ordx8.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/Cordic_Translate_16.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/Counter_32.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_1024.dcp
+CRITICAL WARNING: [Vivado 12-5469] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_1024.dcp' was generated for an IP by an out of context synthesis run and should not directly be used as a source in a Vivado flow. It is strongly recommended that that the original IP source file (.xci) be used.
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_65536.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FIR_Filter_7coef.dcp
+Command: read_checkpoint /workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/SineGen_48.dcp
+CRITICAL WARNING: [Vivado 12-5469] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/SineGen_48.dcp' was generated for an IP by an out of context synthesis run and should not directly be used as a source in a Vivado flow. It is strongly recommended that that the original IP source file (.xci) be used.
+# set_property library Moku [get_files -all -of_objects [get_filesets sources_1]]
+# set_property top Instrument [current_fileset]
+# set_property top_lib xil_defaultlib [current_fileset]
+# set_property top_arch Custom [current_fileset]
+# set_property top_file Top [current_fileset]
+# set_property generic "HW_VER=$HW_VER NUM_INS=$NUM_INS NUM_OUTS=$NUM_OUTS NUM_MONS=$NUM_MONS IN_LANES=$IN_LANES OUT_LANES=$OUT_LANES NUM_SLOT_INS=$NUM_SLOT_INS NUM_SLOT_OUTS=$NUM_SLOT_OUTS NUM_CBUFS=$NUM_CBUFS VARIANT=$VARIANT" [current_fileset]
+# synth_design -mode out_of_context -flatten_hierarchy rebuilt
+Command: synth_design -mode out_of_context -flatten_hierarchy rebuilt
+Starting synth_design
+Using part: xc7z020clg400-1
+Top: Instrument
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z020'
+INFO: [Device 21-403] Loading part xc7z020clg400-1
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 747188
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/opt/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2456.988 ; gain = 365.719 ; free physical = 10345 ; free virtual = 82090
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3450.160; parent = 2456.992; children = 993.168
+---------------------------------------------------------------------------------
+CRITICAL WARNING: [Synth 8-9871] overwriting existing primary unit 'scaleoffset2' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MokuSupport.vhd:391]
+WARNING: [Synth 8-9963] re-analyze unit 'behavioral' since unit 'scaleoffset2' is overwritten or removed [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MercurySupport.vhd:932]
+INFO: [Synth 8-638] synthesizing module 'Instrument' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:7]
+	Parameter HW_VER bound to: 40 - type: integer 
+	Parameter NUM_INS bound to: 2 - type: integer 
+	Parameter NUM_OUTS bound to: 3 - type: integer 
+	Parameter NUM_MONS bound to: 0 - type: integer 
+	Parameter IN_LANES bound to: 4 - type: integer 
+	Parameter OUT_LANES bound to: 4 - type: integer 
+	Parameter NUM_SLOT_INS bound to: 5 - type: integer 
+	Parameter NUM_SLOT_OUTS bound to: 3 - type: integer 
+	Parameter NUM_CBUFS bound to: 2 - type: integer 
+	Parameter VARIANT bound to: 0 - type: integer 
+INFO: [Synth 8-638] synthesizing module 'InstrumentPortAdapter' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/Instrument.vhd:84]
+	Parameter HW_VER bound to: 40 - type: integer 
+	Parameter IN_LANES bound to: 4 - type: integer 
+	Parameter OUT_LANES bound to: 4 - type: integer 
+	Parameter NUM_SLOT_INS bound to: 5 - type: integer 
+	Parameter NUM_SLOT_OUTS bound to: 3 - type: integer 
+	Parameter NUM_CBUFS bound to: 2 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'InstrumentPortAdapter' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/Instrument.vhd:84]
+INFO: [Synth 8-638] synthesizing module 'MemoryMapSPI' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:33]
+	Parameter NUM_REGS bound to: 17 - type: integer 
+	Parameter NUM_META_REGS bound to: 2 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'MemoryMapSPI' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:33]
+INFO: [Synth 8-638] synthesizing module 'CustomWrapper' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:7]
+INFO: [Synth 8-638] synthesizing module 'inspectable_buffer_loader_core' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/inspectable_buffer_loader_core.vhd:67]
+	Parameter BUFFER_SIZE bound to: 1024 - type: integer 
+INFO: [Synth 8-638] synthesizing module 'clk_divider_core' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/clk_divider_core.vhd:33]
+	Parameter MAX_DIV bound to: 256 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'clk_divider_core' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/clk_divider_core.vhd:33]
+INFO: [Synth 8-638] synthesizing module 'debug_mux' [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/debug_mux.vhd:82]
+INFO: [Synth 8-226] default block is never used [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/debug_mux.vhd:166]
+INFO: [Synth 8-256] done synthesizing module 'debug_mux' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/debug_mux.vhd:82]
+INFO: [Synth 8-256] done synthesizing module 'inspectable_buffer_loader_core' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/src/inspectable_buffer_loader_core.vhd:67]
+INFO: [Synth 8-256] done synthesizing module 'CustomWrapper' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:7]
+INFO: [Synth 8-256] done synthesizing module 'Instrument' (0#1) [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:7]
+WARNING: [Synth 8-6014] Unused sequential element StatusWriteStrobe_reg was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:174]
+WARNING: [Synth 8-6014] Unused sequential element StatusWriteStrobeDly_reg was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:176]
+WARNING: [Synth 8-6014] Unused sequential element StatusValue_reg[0] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:181]
+WARNING: [Synth 8-3848] Net Control[0][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[1][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[2][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[3][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[4][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[5][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[6][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[7][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[8][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[9][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[10][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[11][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[12][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[13][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[14][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[15][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net Control[16][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:23]
+WARNING: [Synth 8-3848] Net MetaControl[0][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:24]
+WARNING: [Synth 8-3848] Net MetaControl[1][ReadStrobe] in module/entity MemoryMapSPI does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/MemoryMapSPI.vhd:24]
+WARNING: [Synth 8-3848] Net OutputInterpA in module/entity CustomWrapper does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:25]
+WARNING: [Synth 8-3848] Net OutputInterpB in module/entity CustomWrapper does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:26]
+WARNING: [Synth 8-3848] Net OutputInterpC in module/entity CustomWrapper does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:27]
+WARNING: [Synth 8-3848] Net OutputInterpD in module/entity CustomWrapper does not have driver. [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/CustomWrapper.vhd:28]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[0][Data][1] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[0][Data][2] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[0][Data][3] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[0][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[1][Data][1] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[1][Data][2] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[1][Data][3] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[1][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[2][Data][1] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[2][Data][2] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[2][Data][3] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[2][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[3][Data][1] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[3][Data][2] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[3][Data][3] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element AInSelect_reg[3][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:82]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOutDly_reg[3][Data] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:136]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOutDly_reg[3][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:136]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOut_reg[1][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:102]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOut_reg[2][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:102]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOutDly_reg[1][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:136]
+WARNING: [Synth 8-6014] Unused sequential element WrapperOutDly_reg[2][Valid] was removed.  [/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/lib/InstrumentCC.vhd:136]
+WARNING: [Synth 8-7129] Port expected_crc[31] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[30] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[29] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[28] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[27] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[26] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[25] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[24] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[23] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[22] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[21] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[20] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[19] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[18] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[17] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[16] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[1] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port expected_crc[0] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[31] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[30] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[29] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[28] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[27] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[26] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[25] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[24] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[23] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[22] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[21] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[20] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[19] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[18] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[17] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[16] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[15] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[14] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[13] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[12] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[11] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[10] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[9] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[8] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[7] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[6] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[5] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[4] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[3] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[2] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[1] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port computed_crc[0] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[31] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[30] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[29] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[28] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[27] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[26] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[25] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[24] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[23] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[22] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[21] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[20] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[19] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[18] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[17] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[16] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[1] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_first[0] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[31] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[30] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[29] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[28] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[27] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[26] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[25] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[24] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[23] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[22] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[21] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[20] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[19] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[18] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[17] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[16] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[15] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[14] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[13] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[12] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[11] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[10] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[9] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[8] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[7] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[6] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[5] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[4] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[3] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[2] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[1] in module debug_mux is either unconnected or has no load
+WARNING: [Synth 8-7129] Port chunk_data_last[0] in module debug_mux is either unconnected or has no load
+INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 2533.957 ; gain = 442.688 ; free physical = 10422 ; free virtual = 82168
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3527.129; parent = 2533.961; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 2551.770 ; gain = 460.500 ; free physical = 10422 ; free virtual = 82168
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3544.941; parent = 2551.773; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 2551.770 ; gain = 460.500 ; free physical = 10422 ; free virtual = 82167
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3544.941; parent = 2551.773; children = 993.168
+---------------------------------------------------------------------------------
+CRITICAL WARNING: [Project 1-840] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_1024.dcp' was generated for an IP by an out of context synthesis run and should not be used directly as a source in a Vivado flow. Constraints and other files related to the IP are only stored in the xci/xcix, not the checkpoint. It is strongly recommended that the original IP source file (.xci/.xcix) be used.
+CRITICAL WARNING: [Project 1-840] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/SineGen_48.dcp' was generated for an IP by an out of context synthesis run and should not be used directly as a source in a Vivado flow. Constraints and other files related to the IP are only stored in the xci/xcix, not the checkpoint. It is strongly recommended that the original IP source file (.xci/.xcix) be used.
+Netlist sorting complete. Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.02 . Memory (MB): peak = 2551.770 ; gain = 0.000 ; free physical = 10420 ; free virtual = 82165
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2695.508 ; gain = 0.000 ; free physical = 10341 ; free virtual = 82086
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Constraint Validation Runtime : Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 2695.508 ; gain = 0.000 ; free physical = 10340 ; free virtual = 82085
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/opt/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10398 ; free virtual = 82144
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z020clg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10398 ; free virtual = 82144
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10398 ; free virtual = 82144
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg_reg' in module 'inspectable_buffer_loader_core'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+         load_state_idle |                          0000001 |                              000
+      load_state_loading |                          0000010 |                              001
+load_state_writing_chunk |                          0000100 |                              101
+   load_state_validating |                          0001000 |                              010
+        load_state_ready |                          0010000 |                              011
+      load_state_running |                          0100000 |                              100
+        load_state_error |                          1000000 |                              111
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg_reg' using encoding 'one-hot' in module 'inspectable_buffer_loader_core'
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:11 ; elapsed = 00:00:13 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10385 ; free virtual = 82132
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   18 Bit       Adders := 9     
+	   2 Input   18 Bit       Adders := 3     
+	   2 Input   16 Bit       Adders := 1     
+	   2 Input   13 Bit       Adders := 1     
+	   2 Input   11 Bit       Adders := 2     
+	   2 Input    8 Bit       Adders := 2     
+	   2 Input    5 Bit       Adders := 1     
+	   2 Input    4 Bit       Adders := 1     
++---XORs : 
+	   2 Input     32 Bit         XORs := 1     
++---Registers : 
+	               32 Bit    Registers := 27    
+	               24 Bit    Registers := 1     
+	               17 Bit    Registers := 2     
+	               16 Bit    Registers := 19    
+	               13 Bit    Registers := 1     
+	               11 Bit    Registers := 1     
+	                8 Bit    Registers := 2     
+	                5 Bit    Registers := 1     
+	                4 Bit    Registers := 1     
+	                3 Bit    Registers := 2     
+	                2 Bit    Registers := 5     
+	                1 Bit    Registers := 21    
++---RAMs : 
+	              32K Bit	(1024 X 32 bit)          RAMs := 1     
++---Muxes : 
+	   2 Input   32 Bit        Muxes := 7     
+	   3 Input   32 Bit        Muxes := 1     
+	   8 Input   32 Bit        Muxes := 1     
+	   7 Input   32 Bit        Muxes := 1     
+	   2 Input   17 Bit        Muxes := 1     
+	   2 Input   16 Bit        Muxes := 13    
+	   7 Input   13 Bit        Muxes := 1     
+	   2 Input   11 Bit        Muxes := 1     
+	   7 Input   11 Bit        Muxes := 2     
+	   2 Input    8 Bit        Muxes := 3     
+	   7 Input    8 Bit        Muxes := 1     
+	   7 Input    7 Bit        Muxes := 1     
+	   2 Input    7 Bit        Muxes := 3     
+	   7 Input    4 Bit        Muxes := 1     
+	   7 Input    3 Bit        Muxes := 1     
+	   2 Input    2 Bit        Muxes := 1     
+	   3 Input    1 Bit        Muxes := 2     
+	   2 Input    1 Bit        Muxes := 8     
+	   5 Input    1 Bit        Muxes := 19    
+	   7 Input    1 Bit        Muxes := 10    
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 220 (col length:60)
+BRAMs: 280 (col length: RAMB18 60 RAMB36 30)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:15 ; elapsed = 00:00:17 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10359 ; free virtual = 82111
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2041.136; parent = 1780.259; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Distributed RAM: Preliminary Mapping Report (see note below)
++------------+------------------------------+-----------+----------------------+--------------+
+|Module Name | RTL Object                   | Inference | Size (Depth x Width) | Primitives   | 
++------------+------------------------------+-----------+----------------------+--------------+
+|Instrument  | DUT/U_CORE/buffer_memory_reg | Implied   | 1 K x 16             | RAM64M x 96  | 
++------------+------------------------------+-----------+----------------------+--------------+
+
+Note: The table above is a preliminary report that shows the Distributed RAMs at the current stage of the synthesis flow. Some Distributed RAMs may be reimplemented as non Distributed RAM primitives later in the synthesis flow. Multiple instantiated RAMs are reported only once.
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:20 ; elapsed = 00:00:22 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10258 ; free virtual = 82010
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2150.464; parent = 1890.739; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:20 ; elapsed = 00:00:22 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10258 ; free virtual = 82010
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2150.671; parent = 1890.946; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Distributed RAM: Final Mapping Report
++------------+------------------------------+-----------+----------------------+--------------+
+|Module Name | RTL Object                   | Inference | Size (Depth x Width) | Primitives   | 
++------------+------------------------------+-----------+----------------------+--------------+
+|Instrument  | DUT/U_CORE/buffer_memory_reg | Implied   | 1 K x 16             | RAM64M x 96  | 
++------------+------------------------------+-----------+----------------------+--------------+
+
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:20 ; elapsed = 00:00:22 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10247 ; free virtual = 81999
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.167; parent = 1893.442; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.472; parent = 1893.747; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.472; parent = 1893.747; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.554; parent = 1893.829; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.554; parent = 1893.829; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.554; parent = 1893.829; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.569; parent = 1893.845; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+---------+------+
+|      |Cell     |Count |
++------+---------+------+
+|1     |CARRY4   |    17|
+|2     |LUT1     |     1|
+|3     |LUT2     |    27|
+|4     |LUT3     |    56|
+|5     |LUT4     |    70|
+|6     |LUT5     |   121|
+|7     |LUT6     |   209|
+|8     |MUXF7    |    50|
+|9     |RAM64M   |    80|
+|10    |RAM64X1D |    16|
+|11    |FDCE     |    95|
+|12    |FDPE     |     1|
+|13    |FDRE     |   565|
++------+---------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10245 ; free virtual = 81997
+Synthesis current peak Physical Memory [PSS] (MB): peak = 2153.601; parent = 1893.876; children = 260.877
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3656.664; parent = 2663.496; children = 993.168
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 302 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 2695.508 ; gain = 460.500 ; free physical = 10307 ; free virtual = 82059
+Synthesis Optimization Complete : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 2695.508 ; gain = 604.238 ; free physical = 10305 ; free virtual = 82057
+INFO: [Project 1-571] Translating synthesized netlist
+CRITICAL WARNING: [Project 1-840] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/FFT_1024.dcp' was generated for an IP by an out of context synthesis run and should not be used directly as a source in a Vivado flow. Constraints and other files related to the IP are only stored in the xci/xcix, not the checkpoint. It is strongly recommended that the original IP source file (.xci/.xcix) be used.
+CRITICAL WARNING: [Project 1-840] The design checkpoint file '/workspace/c4e5d4a0-af14-40f3-9da0-e91d28284916/ipcores/SineGen_48.dcp' was generated for an IP by an out of context synthesis run and should not be used directly as a source in a Vivado flow. Constraints and other files related to the IP are only stored in the xci/xcix, not the checkpoint. It is strongly recommended that the original IP source file (.xci/.xcix) be used.
+Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2695.508 ; gain = 0.000 ; free physical = 10393 ; free virtual = 82145
+INFO: [Netlist 29-17] Analyzing 163 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2695.508 ; gain = 0.000 ; free physical = 10338 ; free virtual = 82090
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 96 instances were transformed.
+  RAM64M => RAM64M (RAMD64E(x4)): 80 instances
+  RAM64X1D => RAM64X1D (RAMD64E(x2)): 16 instances
+
+Synth Design complete, checksum: c5d9e37e
+INFO: [Common 17-83] Releasing license: Synthesis
+34 Infos, 150 Warnings, 5 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:32 ; elapsed = 00:00:34 . Memory (MB): peak = 2695.508 ; gain = 969.004 ; free physical = 10551 ; free virtual = 82303
+# write_edif -force custom.edf
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2695.508 ; gain = 0.000 ; free physical = 10551 ; free virtual = 82303
+INFO: [Common 17-206] Exiting Vivado at Fri Oct 24 19:25:10 2025...

@@ -1,0 +1,18 @@
+name: bram_test_minimal
+version: 1.0.0
+description: Minimal BRAM synthesis test - debugging helper
+author: Claude Code
+platform: MokuGo
+tier: 1
+
+files:
+  core:
+    - core/bram_test_core.vhd
+
+  top:
+    - top/Top.vhd
+
+dependencies: []
+
+synthesis:
+  generic_map: {}
