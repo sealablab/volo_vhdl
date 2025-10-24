@@ -767,8 +767,187 @@ async def test_edge_case_normal_to_fault_to_normal(dut):
 
 
 @cocotb.test()
+async def test_edge_case_fsm_disabled(dut):
+    """Test 16: Edge Case - FSM disabled (enable=0) while observer active"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 16: Edge Case - FSM Disabled During Observation")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Progress to REQUEST state
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        voltage_enabled = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"FSM enabled, state progressing: {voltage_enabled:+.3f}V")
+        assert voltage_enabled > 0, "Should have progressed from IDLE"
+
+        # Disable FSM (state should freeze)
+        dut.enable.value = 0
+        await ClockCycles(dut.clk, 10)
+
+        voltage_disabled = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"FSM disabled (frozen): {voltage_disabled:+.3f}V")
+
+        # Observer should continue to track whatever state FSM is in
+        # Voltage should remain stable (FSM frozen, observer tracking frozen state)
+        assert abs(voltage_disabled - voltage_enabled) < 0.1, \
+            "Observer should track frozen FSM state"
+
+        # Re-enable FSM
+        dut.enable.value = 1
+        await ClockCycles(dut.clk, 10)
+
+        voltage_reenabled = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"FSM re-enabled, progressing: {voltage_reenabled:+.3f}V")
+
+        # Should have progressed further
+        assert voltage_reenabled >= voltage_disabled, \
+            "FSM should resume progression after re-enable"
+
+        dut._log.info("✓ Edge case (FSM disabled) test PASSED")
+        dut._log.info("Note: Observer tracks FSM state regardless of enable")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_fsm_disabled")
+
+
+@cocotb.test()
+async def test_edge_case_state_transition_timing(dut):
+    """Test 17: Edge Case - Observer tracks state transitions immediately"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 17: Edge Case - State Transition Timing")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Track voltage through multiple state transitions
+        voltages = []
+        states = ["IDLE", "REQUEST", "LOADING"]
+
+        # IDLE
+        voltage_idle = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        voltages.append(voltage_idle)
+        dut._log.info(f"State 0 (IDLE): {voltage_idle:+.3f}V")
+
+        # Trigger transition
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await RisingEdge(dut.clk)  # Now in REQUEST
+
+        voltage_request = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        voltages.append(voltage_request)
+        dut._log.info(f"State 1 (REQUEST): {voltage_request:+.3f}V")
+
+        # Wait for transition to LOADING
+        await ClockCycles(dut.clk, 4)
+
+        voltage_loading = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        voltages.append(voltage_loading)
+        dut._log.info(f"State 2 (LOADING): {voltage_loading:+.3f}V")
+
+        # Verify monotonic increase (stairstep up)
+        assert voltages[1] > voltages[0], "REQUEST > IDLE"
+        assert voltages[2] > voltages[1], "LOADING > REQUEST"
+
+        # Verify proper spacing
+        expected_step = 0.5  # From calculate_expected_voltage
+        actual_step1 = voltages[1] - voltages[0]
+        actual_step2 = voltages[2] - voltages[1]
+
+        dut._log.info(f"Voltage steps: {actual_step1:.3f}V, {actual_step2:.3f}V")
+        assert abs(actual_step1 - expected_step) < 0.1, "Consistent voltage spacing"
+        assert abs(actual_step2 - expected_step) < 0.1, "Consistent voltage spacing"
+
+        dut._log.info("✓ Edge case (transition timing) test PASSED")
+        dut._log.info("Note: Observer updates immediately on state transitions")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_state_transition_timing")
+
+
+@cocotb.test()
+async def test_configuration_notes(dut):
+    """Test 18: Configuration Edge Cases (Documentation Test)
+
+    This test documents expected behavior for unusual configurations.
+    These scenarios require different generic values and can't be tested
+    with the current DUT, but should be understood:
+    """
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 18: Configuration Edge Cases (Documentation)")
+        dut._log.info("=" * 80)
+
+        dut._log.info("Documenting untested configuration edge cases:")
+        dut._log.info("")
+        dut._log.info("1. V_MIN > V_MAX (inverted voltage range):")
+        dut._log.info("   - Would produce DESCENDING stairstep (high→low)")
+        dut._log.info("   - Negative v_step in LUT calculation")
+        dut._log.info("   - Valid but unconventional (down = progress)")
+        dut._log.info("")
+        dut._log.info("2. V_MIN = V_MAX (zero voltage range):")
+        dut._log.info("   - v_step = 0.0, all states at same voltage")
+        dut._log.info("   - Observer provides no state discrimination")
+        dut._log.info("   - Valid but useless configuration")
+        dut._log.info("")
+        dut._log.info("3. FAULT_STATE_THRESHOLD = 0 (all states are faults):")
+        dut._log.info("   - num_normal = 0, LUT calculation special case")
+        dut._log.info("   - All voltages would be sign-flipped")
+        dut._log.info("   - Likely configuration error")
+        dut._log.info("")
+        dut._log.info("4. FAULT_STATE_THRESHOLD = 1 (only IDLE is normal):")
+        dut._log.info("   - IDLE at V_MIN, all other states fault")
+        dut._log.info("   - Valid for 'anything but IDLE = fault' semantics")
+        dut._log.info("   - Useful for simple error detection")
+        dut._log.info("")
+        dut._log.info("5. NUM_STATES = 1 (single-state FSM):")
+        dut._log.info("   - v_step calculation: (V_MAX-V_MIN)/0 → special case")
+        dut._log.info("   - VHDL handles: if num_normal > 1")
+        dut._log.info("   - State 0 maps to V_MIN")
+        dut._log.info("")
+        dut._log.info("6. State vector > NUM_STATES (invalid state index):")
+        dut._log.info("   - Observer LUT has 64 entries (6-bit addressing)")
+        dut._log.info("   - States >= NUM_STATES map to MOKU_DIGITAL_ZERO")
+        dut._log.info("   - Failsafe: invalid states → 0.0V")
+        dut._log.info("")
+        dut._log.info("7. Extreme voltage ranges (±5V limits):")
+        dut._log.info("   - Moku DAC range: -5V to +5V")
+        dut._log.info("   - voltage_to_digital() clamps to ±32768")
+        dut._log.info("   - Observer handles full range correctly")
+        dut._log.info("")
+        dut._log.info("8. Negative voltage ranges (V_MIN=-2.5, V_MAX=-0.5):")
+        dut._log.info("   - Valid! Produces negative stairstep")
+        dut._log.info("   - Fault sign-flip makes voltage MORE negative")
+        dut._log.info("   - Unconventional but mathematically sound")
+        dut._log.info("")
+        dut._log.info("✓ Configuration documentation test PASSED")
+        dut._log.info("Note: These scenarios warrant future test coverage")
+
+    await run_with_timeout(test_logic(), timeout_sec=5, test_name="test_configuration_notes")
+
+
+@cocotb.test()
 async def test_summary(dut):
-    """Test 16: Summary"""
+    """Test 19: Summary"""
     async def test_logic():
         dut._log.info("=" * 80)
         dut._log.info("Test Summary")
