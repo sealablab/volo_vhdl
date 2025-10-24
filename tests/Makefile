@@ -213,6 +213,36 @@ ifeq ($(TEST_MODULE),simpleserial_v2_tx)
     COCOTB_TEST_MODULES = test_simpleserial_v2_tx
 endif
 
+# inspectable_buffer_loader_core test (Buffer loader with debug views)
+ifeq ($(TEST_MODULE),inspectable_buffer_loader_core)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
+                   inspectable_buffer_loader_core_tb_wrapper.vhd
+    TOPLEVEL = inspectable_buffer_loader_core_tb_wrapper
+    COCOTB_TEST_MODULES = test_inspectable_buffer_loader_core
+endif
+
+# inspectable_buffer_loader_minimal_debug test (Minimal debug)
+ifeq ($(TEST_MODULE),inspectable_buffer_loader_minimal_debug)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
+                   inspectable_buffer_loader_core_tb_wrapper.vhd
+    TOPLEVEL = inspectable_buffer_loader_core_tb_wrapper
+    COCOTB_TEST_MODULES = test_inspectable_buffer_minimal_debug
+endif
+
+# inspectable_buffer_loader_oscilloscope_only test (Oscilloscope observation only)
+ifeq ($(TEST_MODULE),inspectable_buffer_loader_oscilloscope_only)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
+                   $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
+                   inspectable_buffer_loader_core_tb_wrapper.vhd
+    TOPLEVEL = inspectable_buffer_loader_core_tb_wrapper
+    COCOTB_TEST_MODULES = test_inspectable_buffer_loader_oscilloscope_only
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
