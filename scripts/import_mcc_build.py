@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 """
-Import MCC CloudCompile build results from Downloads folder.
+Import MCC CloudCompile build results from module's incoming/ folder.
 
 Usage:
     python scripts/import_mcc_build.py modules/buffer_waveform_gen
 
+Workflow:
+1. After CloudCompile synthesis, download files to ~/Downloads/
+2. Move them to modules/<module>/incoming/
+3. Run this script to import them into modules/<module>/latest/
+
 This script:
-1. Scans ~/Downloads/ for newest 25ff*_synthesis.log and 25ff*_bitstreams.tar
+1. Scans modules/<module>/incoming/ for 25ff*_synthesis.log and 25ff*_bitstreams.tar
 2. Moves them to modules/<module>/latest/
 3. Creates BUILD_INFO.txt linking manifest to bitstream
-4. Shows summary of what was imported
+4. Cleans up incoming/ folder
+
+Benefits of incoming/ folder pattern:
+- No ambiguity about which build to import
+- Can stage multiple builds before deciding which to use
+- Clear separation: incoming = staging, latest = active
 
 Author: Claude Code
 Date: 2025-10-24
@@ -23,9 +33,9 @@ from pathlib import Path
 from datetime import datetime
 
 
-def find_latest_mcc_files(downloads_dir):
-    """Find newest MCC build files in Downloads directory."""
-    pattern = os.path.join(downloads_dir, "25ff*_mokugo_*")
+def find_mcc_files_in_incoming(incoming_dir):
+    """Find MCC build files in module's incoming/ directory."""
+    pattern = os.path.join(incoming_dir, "25ff*_mokugo_*")
 
     synthesis_logs = glob.glob(f"{pattern}_synthesis.log")
     bitstreams = glob.glob(f"{pattern}_bitstreams.tar")
@@ -96,13 +106,21 @@ def main():
     # Resolve paths
     repo_root = Path(__file__).parent.parent
     module_dir = repo_root / module_path
+    incoming_dir = module_dir / "incoming"
     latest_dir = module_dir / "latest"
     cloudcompile_dir = module_dir / "cloudcompile_package"
-    downloads_dir = os.path.expanduser("~/Downloads")
 
     # Validate module directory
     if not module_dir.exists():
         print(f"❌ Module directory not found: {module_dir}")
+        sys.exit(1)
+
+    # Check if incoming/ directory exists
+    if not incoming_dir.exists():
+        print(f"❌ incoming/ directory not found: {incoming_dir}")
+        print(f"\nCreate it and place your CloudCompile files there:")
+        print(f"  mkdir -p {incoming_dir}")
+        print(f"  mv ~/Downloads/25ff*_mokugo_* {incoming_dir}/")
         sys.exit(1)
 
     # Create latest/ directory if needed
@@ -113,13 +131,15 @@ def main():
     print("=" * 70)
     print()
 
-    # Find latest MCC files
-    print(f"🔍 Scanning {downloads_dir}...")
-    log_file, bitstream_file = find_latest_mcc_files(downloads_dir)
+    # Find MCC files in incoming/
+    print(f"🔍 Scanning {incoming_dir}/...")
+    log_file, bitstream_file = find_mcc_files_in_incoming(incoming_dir)
 
     if not log_file or not bitstream_file:
-        print("❌ No MCC build files found in Downloads/")
+        print(f"❌ No MCC build files found in {incoming_dir}/")
         print("   Looking for: 25ff*_mokugo_*_synthesis.log and 25ff*_mokugo_*_bitstreams.tar")
+        print(f"\nPlace your CloudCompile files in incoming/:")
+        print(f"  mv ~/Downloads/25ff*_mokugo_* {incoming_dir}/")
         sys.exit(1)
 
     job_id = extract_mcc_job_id(log_file)
@@ -155,7 +175,17 @@ def main():
     print(f"  ✓ Created: {info_path}")
     print()
 
+    # Clean up incoming/ directory (files have been moved)
+    print(f"🧹 Cleaning up incoming/ directory...")
+    # incoming/ should now be empty or contain only other unrelated files
+    remaining_files = list(incoming_dir.glob("25ff*_mokugo_*"))
+    if not remaining_files:
+        print(f"  ✓ incoming/ directory cleaned")
+    else:
+        print(f"  ⚠ {len(remaining_files)} other build file(s) remain in incoming/")
+
     # Show summary
+    print()
     print("=" * 70)
     print("✅ Import Complete!")
     print("=" * 70)
@@ -165,10 +195,16 @@ def main():
     print("Next steps:")
     print(f"  1. Test on hardware:")
     print(f"     cd tests")
-    print(f"     python test_{module_name}_hardware.py --ip <IP_ADDRESS>")
+    print(f"     uv run python test_{module_name}_mokubench.py \\")
+    print(f"       --ip <IP_ADDRESS> \\")
+    print(f"       --bitstream {dest_bitstream}")
     print()
     print(f"  2. View build info:")
     print(f"     cat {info_path}")
+    print()
+    print(f"  3. Next iteration:")
+    print(f"     mv ~/Downloads/25ff*_mokugo_* {incoming_dir}/")
+    print(f"     python scripts/import_mcc_build.py {module_path}")
     print()
 
 
