@@ -1,0 +1,81 @@
+# DS1120A EMFI Probe - Basic Characterization Configuration
+#
+# Hardware Setup:
+#   - Riscure DS1120A probe with 4mm positive tip
+#   - Moku:Go for control and measurement
+#   - 24V DC power supply (external)
+#   - 3× SMA cables (50Ω)
+#
+# Safety: Start at minimum power (5%), no target device
+
+platform:
+  name: Moku:Go
+  model: MokuGo
+  serial: null  # Auto-discover or specify
+  ip: 192.168.13.159
+
+slots:
+  1:
+    instrument: DataLogger
+    settings:
+      sample_rate: 1.25e9  # 1.25 GSa/s (max for Moku:Go)
+      channels:
+        - coil_current
+      duration_ms: 1.0  # 1ms capture window
+      trigger_source: Input1  # Trigger on coil_current edge
+      trigger_level: -0.1  # -100mV threshold
+      trigger_edge: falling  # Negative-going pulse
+      coupling: AC  # AC coupling for transient pulse
+      impedance: 50ohm
+      input_range: 5V  # ±5V range
+
+external_hardware:
+  - device_type: riscure_ds1120a
+    name: DS1120A Probe
+    connections:
+      - probe: digital_glitch
+        moku: OutputA
+        signal_type: digital
+      - probe: pulse_amplitude
+        moku: DACOut1
+        signal_type: analog
+      - probe: coil_current
+        moku: InputA
+        signal_type: analog
+    settings:
+      probe_tip: 4mm_positive
+      external_psu_voltage: 24  # Volts DC
+      initial_power_percent: 5  # Start at minimum safe power
+
+connections:
+  - source: OutputA
+    destination: DS1120A.digital_glitch
+    notes: Trigger pulse (0-3.3V TTL)
+  - source: DACOut1
+    destination: DS1120A.pulse_amplitude
+    notes: Power control (0-3.3V analog)
+  - source: DS1120A.coil_current
+    destination: InputA
+    notes: Current monitor (-1.4V to 0V transient)
+
+metadata:
+  name: DS1120A Basic Characterization
+  version: 1.0
+  author: Volo VHDL Project
+  description: |
+    Safe characterization procedure for Riscure DS1120A EMFI probe.
+    Tests probe timing, power mapping, and current monitor feedback.
+    No target device - probe fires into air for safety.
+
+  safety_notes:
+    - Start at 5% power only
+    - Verify current monitor signal before increasing power
+    - No target device connected (fire into air)
+    - External 24V PSU must be stable and clean
+    - AC coupling required for transient pulse measurement
+
+  expected_behavior:
+    trigger_to_coil_delay: 50ns ± 10%
+    pulse_width: 50ns  # Fixed in hardware
+    peak_current_4mm: -1.4V ± 10%  # At 100% power
+    power_range: 5-100%  # Below 5% unreliable
