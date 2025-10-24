@@ -66,6 +66,13 @@ ifeq ($(TEST_MODULE),delay_line)
     COCOTB_TEST_MODULES = test_delay_line
 endif
 
+# comparator test
+ifeq ($(TEST_MODULE),comparator)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_comparator.vhd
+    TOPLEVEL = volo_comparator
+    COCOTB_TEST_MODULES = test_comparator
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
