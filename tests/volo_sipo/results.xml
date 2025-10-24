@@ -1,0 +1,23 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1761279511" />
+    <testcase name="test_reset_behavior" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="42" time="0.0004420280456542969" sim_time_ns="20.0" ratio_time="45245.9978425027" />
+    <testcase name="test_shift_single_byte_pattern1" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="62" time="0.00033211708068847656" sim_time_ns="120.0" ratio_time="361318.3632447954" />
+    <testcase name="test_shift_single_byte_pattern2" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="93" time="0.00025391578674316406" sim_time_ns="120.0" ratio_time="472597.6338028169" />
+    <testcase name="test_clear_function" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="119" time="0.00026226043701171875" sim_time_ns="140.0" ratio_time="533820.509090909" />
+    <testcase name="test_bit_counter" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="150" time="0.0004229545593261719" sim_time_ns="190.0" ratio_time="449220.83427282976" />
+    <testcase name="test_done_flag" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="178" time="0.0002951622009277344" sim_time_ns="190.0" ratio_time="643713.8610662358" />
+    <testcase name="test_all_zeros" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="213" time="0.0002276897430419922" sim_time_ns="120.0" ratio_time="527032.9633507853" />
+    <testcase name="test_all_ones" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="234" time="0.0002200603485107422" sim_time_ns="120.0" ratio_time="545304.9620801733" />
+    <testcase name="test_alternating_bits" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="255" time="0.00036406517028808594" sim_time_ns="120.0" ratio_time="329611.3163064833">
+      <failure error_type="AssertionError" error_msg="Expected 0xAA, got 0x55" />
+    </testcase>
+    <testcase name="test_multiple_bytes" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="277" time="0.0003418922424316406" sim_time_ns="140.0" ratio_time="409485.74616457464">
+      <failure error_type="AssertionError" error_msg="Expected 0x12, got 0x48" />
+    </testcase>
+    <testcase name="test_partial_shift" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="314" time="0.00020575523376464844" sim_time_ns="80.0" ratio_time="388811.49478563154" />
+    <testcase name="test_continuous_shifting" classname="test_volo_sipo_core" file="/Users/johnycsh/volo_codes/volo_vhdl/tests/volo_sipo/test_volo_sipo_core.py" lineno="343" time="0.0003230571746826172" sim_time_ns="140.0" ratio_time="433359.8228782288">
+      <failure error_type="AssertionError" error_msg="Expected 0xD5 (after wrap), got 0xab" />
+    </testcase>
+  </testsuite>
+</testsuites>
