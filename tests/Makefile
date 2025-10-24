@@ -80,6 +80,13 @@ ifeq ($(TEST_MODULE),synchronizer)
     COCOTB_TEST_MODULES = test_synchronizer
 endif
 
+# debouncer test
+ifeq ($(TEST_MODULE),debouncer)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_debouncer.vhd
+    TOPLEVEL = volo_debouncer
+    COCOTB_TEST_MODULES = test_debouncer
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
