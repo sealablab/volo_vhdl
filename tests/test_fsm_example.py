@@ -596,8 +596,179 @@ async def test_edge_case_multiple_consecutive_faults(dut):
 
 
 @cocotb.test()
+async def test_edge_case_fault_threshold_boundary(dut):
+    """Test 13: Edge Case - States exactly at FAULT_STATE_THRESHOLD boundary"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 13: Edge Case - Fault Threshold Boundary (State 5 vs 6)")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # FAULT_STATE_THRESHOLD = 6 means:
+        # States 0-5: Normal (positive voltage)
+        # States 6-7: Fault (sign-flip)
+
+        # Progress to RUNNING (state 5 = last normal state)
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 20)
+        assert dut.is_running.value == 1, "Should reach RUNNING (state 5)"
+
+        voltage_state5 = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"State 5 (RUNNING, last normal): {voltage_state5:+.3f}V")
+        assert voltage_state5 > 0, "State 5 should be POSITIVE (normal state)"
+        assert dut.is_fault.value == 0, "State 5 should NOT be fault"
+
+        # Now inject ERROR (state 6 = first fault state)
+        dut.inject_error.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        voltage_state6 = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"State 6 (ERROR, first fault): {voltage_state6:+.3f}V")
+        assert voltage_state6 < 0, "State 6 should be NEGATIVE (fault state)"
+        assert dut.is_fault.value == 1, "State 6 should BE fault"
+
+        dut._log.info("✓ Edge case (fault threshold boundary) test PASSED")
+        dut._log.info(f"Note: Threshold at {6} correctly separates normal/fault states")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_fault_threshold_boundary")
+
+
+@cocotb.test()
+async def test_edge_case_recovery_from_fault(dut):
+    """Test 14: Edge Case - Recovery from fault to normal state (reset required)"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 14: Edge Case - Recovery from Fault")
+        dut._log.info("=" * 80)
+
+        # Setup and enter fault state
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Progress to LOADING then fault
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 5)
+
+        dut.inject_error.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        # Verify in fault
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"In fault state: {voltage_fault:+.3f}V")
+        assert voltage_fault < 0, "Should be in fault (negative voltage)"
+        assert dut.is_fault.value == 1, "is_fault should be high"
+
+        # Attempt to clear fault by removing inject signals (won't work - sticky)
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await ClockCycles(dut.clk, 10)
+
+        voltage_still_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"After waiting (no reset): {voltage_still_fault:+.3f}V")
+        assert dut.is_fault.value == 1, "Fault should be sticky (no clear without reset)"
+
+        # Now reset to recover
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        voltage_recovered = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"After reset: {voltage_recovered:+.3f}V")
+        assert abs(voltage_recovered) < 0.1, "Should recover to IDLE (0.0V)"
+        assert dut.is_fault.value == 0, "is_fault should clear after reset"
+        assert dut.is_idle.value == 1, "Should return to IDLE"
+
+        dut._log.info("✓ Edge case (fault recovery) test PASSED")
+        dut._log.info("Note: Faults are sticky - only reset clears them")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_recovery_from_fault")
+
+
+@cocotb.test()
+async def test_edge_case_normal_to_fault_to_normal(dut):
+    """Test 15: Edge Case - Full cycle: normal → fault → reset → normal"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 15: Edge Case - Complete Fault/Recovery Cycle")
+        dut._log.info("=" * 80)
+
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+
+        # Cycle 1: Start in normal state
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Progress to VALIDATING (state 3)
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 12)  # Enough to reach VALIDATING
+
+        voltage_normal = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"Phase 1 - Normal state: {voltage_normal:+.3f}V")
+        assert voltage_normal > 0, "Should be in normal state (positive)"
+
+        # Cycle 2: Enter fault
+        dut.inject_fault.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_fault.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"Phase 2 - Fault state: {voltage_fault:+.3f}V")
+        assert voltage_fault < 0, "Should be in fault state (negative)"
+
+        # Cycle 3: Reset and return to normal
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        voltage_recovered = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"Phase 3 - Recovered: {voltage_recovered:+.3f}V")
+        assert abs(voltage_recovered) < 0.1, "Should recover to IDLE"
+
+        # Cycle 4: Progress again to verify normal operation restored
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 5)
+
+        voltage_final = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"Phase 4 - Normal operation: {voltage_final:+.3f}V")
+        assert voltage_final > 0.3, "Should progress normally after recovery"
+
+        dut._log.info("✓ Edge case (full cycle) test PASSED")
+        dut._log.info("Note: FSM observer correctly tracks full lifecycle")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_normal_to_fault_to_normal")
+
+
+@cocotb.test()
 async def test_summary(dut):
-    """Test 13: Summary"""
+    """Test 16: Summary"""
     async def test_logic():
         dut._log.info("=" * 80)
         dut._log.info("Test Summary")
