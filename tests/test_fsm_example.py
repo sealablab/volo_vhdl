@@ -407,8 +407,197 @@ async def test_fault_is_sticky(dut):
 
 
 @cocotb.test()
+async def test_edge_case_zero_voltage_from_fault(dut):
+    """Test 9: Edge Case - Sign-flip when previous state was 0.0V (IDLE)"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 9: Edge Case - Sign-Flip from 0.0V State")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Verify we're in IDLE (0.0V)
+        voltage_idle = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        assert abs(voltage_idle) < 0.1, "Should start at IDLE (0.0V)"
+        dut._log.info(f"IDLE voltage: {voltage_idle:+.3f}V")
+
+        # Inject ERROR from IDLE (edge case: sign-flip of 0.0V)
+        dut.inject_error.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        # Check fault state
+        assert dut.is_fault.value == 1, "Should be in fault state"
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"ERROR from IDLE: {voltage_fault:+.3f}V")
+
+        # Edge case: -0.0V is still 0.0V (sign-flip of zero is zero)
+        assert abs(voltage_fault) < 0.2, \
+            f"Sign-flip of 0.0V should still be ~0.0V, got {voltage_fault:+.3f}V"
+
+        dut._log.info("✓ Edge case (zero voltage fault) test PASSED")
+        dut._log.info("Note: Sign-flip of 0.0V = 0.0V (expected behavior)")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_zero_voltage_from_fault")
+
+
+@cocotb.test()
+async def test_edge_case_max_voltage_fault(dut):
+    """Test 10: Edge Case - Sign-flip from maximum voltage state (RUNNING = 2.5V)"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 10: Edge Case - Sign-Flip from V_MAX State")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Progress to RUNNING state (state 5 = V_MAX = 2.5V)
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+
+        # Wait for RUNNING state
+        # REQUEST: 3 cycles, LOADING: 5, VALIDATING: 3, READY: 2 = ~15 cycles
+        await ClockCycles(dut.clk, 20)
+        assert dut.is_running.value == 1, "Should reach RUNNING state"
+
+        # Capture voltage before fault (should be V_MAX = 2.5V)
+        voltage_before = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"RUNNING voltage: {voltage_before:+.3f}V")
+        assert abs(voltage_before - 2.5) < 0.1, "Should be at V_MAX (2.5V)"
+
+        # Inject FAULT from RUNNING
+        dut.inject_fault.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_fault.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        # Check sign-flip: should be -2.5V (negative V_MAX)
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"FAULT from RUNNING: {voltage_fault:+.3f}V")
+
+        assert voltage_fault < 0, "Fault voltage should be negative"
+        assert abs(abs(voltage_fault) - 2.5) < 0.2, \
+            f"Should be -2.5V (sign-flip of V_MAX), got {voltage_fault:+.3f}V"
+
+        dut._log.info("✓ Edge case (max voltage fault) test PASSED")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_max_voltage_fault")
+
+
+@cocotb.test()
+async def test_edge_case_rapid_fault_entry(dut):
+    """Test 11: Edge Case - Rapid entry into fault without settling in normal state"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 11: Edge Case - Rapid Fault Entry")
+        dut._log.info("=" * 80)
+
+        # Setup
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+
+        # Immediately inject fault after reset (within 1 cycle)
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        # Should fault from IDLE (prev_voltage should be IDLE = 0.0V)
+        assert dut.is_fault.value == 1, "Should be in fault state"
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"Rapid fault entry: {voltage_fault:+.3f}V")
+
+        # Should be near 0V (faulted from IDLE)
+        assert abs(voltage_fault) < 0.2, \
+            f"Rapid fault should capture IDLE (0.0V), got {voltage_fault:+.3f}V"
+
+        dut._log.info("✓ Edge case (rapid fault entry) test PASSED")
+        dut._log.info("Note: prev_voltage register captures state before fault")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_rapid_fault_entry")
+
+
+@cocotb.test()
+async def test_edge_case_multiple_consecutive_faults(dut):
+    """Test 12: Edge Case - Transition between fault states (ERROR → FAULT)"""
+    async def test_logic():
+        dut._log.info("=" * 80)
+        dut._log.info("Test 12: Edge Case - Multiple Consecutive Faults")
+        dut._log.info("=" * 80)
+
+        # Setup and progress to LOADING state
+        await setup_clock(dut)
+        dut.enable.value = 1
+        dut.start.value = 0
+        dut.inject_error.value = 0
+        dut.inject_fault.value = 0
+        await reset_active_low(dut, rst_signal="n_reset")
+        await ClockCycles(dut.clk, 2)
+
+        # Progress to LOADING (state 2)
+        dut.start.value = 1
+        await RisingEdge(dut.clk)
+        dut.start.value = 0
+        await ClockCycles(dut.clk, 5)
+
+        # Capture LOADING voltage
+        voltage_loading = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"LOADING voltage: {voltage_loading:+.3f}V")
+
+        # Enter ERROR state (fault state 6)
+        dut.inject_error.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_error.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        voltage_error = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"ERROR state: {voltage_error:+.3f}V")
+        assert voltage_error < 0, "ERROR should have negative voltage"
+
+        # Now transition to FAULT state (fault state 7)
+        # This is fault → fault transition
+        dut.inject_fault.value = 1
+        await RisingEdge(dut.clk)
+        dut.inject_fault.value = 0
+        await ClockCycles(dut.clk, 2)
+
+        voltage_fault = digital_to_voltage(int(dut.voltage_out.value.to_signed()))
+        dut._log.info(f"FAULT state (from ERROR): {voltage_fault:+.3f}V")
+
+        # Should preserve the same voltage (prev_voltage not updated in fault states)
+        assert abs(voltage_fault - voltage_error) < 0.1, \
+            "Fault→Fault transition should preserve voltage"
+
+        dut._log.info("✓ Edge case (consecutive faults) test PASSED")
+        dut._log.info("Note: prev_voltage only updates in NORMAL states")
+
+    await run_with_timeout(test_logic(), timeout_sec=10, test_name="test_edge_case_multiple_consecutive_faults")
+
+
+@cocotb.test()
 async def test_summary(dut):
-    """Test 8: Summary"""
+    """Test 13: Summary"""
     async def test_logic():
         dut._log.info("=" * 80)
         dut._log.info("Test Summary")
