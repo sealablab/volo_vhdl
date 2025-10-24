@@ -139,6 +139,17 @@ ifeq ($(TEST_MODULE),simpleserial_v1_tx)
     COCOTB_TEST_MODULES = test_simpleserial_v1_tx
 endif
 
+# simpleserial_v2_tx test (ChipWhisperer V2 protocol with COBS)
+ifeq ($(TEST_MODULE),simpleserial_v2_tx)
+    VHDL_SOURCES = $(VOLO_COMMON)/common/volo_uart_pkg.vhd \
+                   $(VOLO_COMMON)/common/volo_cobs_pkg.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_baud_gen.vhd \
+                   $(VOLO_COMMON)/core/volo_uart_tx_core.vhd \
+                   $(VOLO_COMMON)/core/volo_simpleserial_v2_tx.vhd
+    TOPLEVEL = simpleserial_v2_tx
+    COCOTB_TEST_MODULES = test_simpleserial_v2_tx
+endif
+
 
 # CocotB configuration
 export COCOTB_REDUCED_LOG_FMT=1
