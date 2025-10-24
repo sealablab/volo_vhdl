@@ -73,6 +73,13 @@ ifeq ($(TEST_MODULE),comparator)
     COCOTB_TEST_MODULES = test_comparator
 endif
 
+# synchronizer test
+ifeq ($(TEST_MODULE),synchronizer)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_synchronizer.vhd
+    TOPLEVEL = volo_synchronizer
+    COCOTB_TEST_MODULES = test_synchronizer
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
