@@ -45,6 +45,27 @@ ifeq ($(TEST_MODULE),edge_detector)
     COCOTB_TEST_MODULES = test_edge_detector
 endif
 
+# pulse_generator test
+ifeq ($(TEST_MODULE),pulse_generator)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_pulse_generator.vhd
+    TOPLEVEL = pulse_generator
+    COCOTB_TEST_MODULES = test_pulse_generator
+endif
+
+# counter_nbit test
+ifeq ($(TEST_MODULE),counter_nbit)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_counter_nbit.vhd
+    TOPLEVEL = counter_nbit
+    COCOTB_TEST_MODULES = test_counter_nbit
+endif
+
+# delay_line test
+ifeq ($(TEST_MODULE),delay_line)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_delay_line.vhd
+    TOPLEVEL = delay_line
+    COCOTB_TEST_MODULES = test_delay_line
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
