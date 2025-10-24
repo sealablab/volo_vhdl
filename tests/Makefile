@@ -87,6 +87,13 @@ ifeq ($(TEST_MODULE),debouncer)
     COCOTB_TEST_MODULES = test_debouncer
 endif
 
+# mux test
+ifeq ($(TEST_MODULE),mux)
+    VHDL_SOURCES = $(VOLO_COMMON)/core/volo_mux.vhd
+    TOPLEVEL = volo_mux
+    COCOTB_TEST_MODULES = test_mux
+endif
+
 # moku_voltage_pkg test
 ifeq ($(TEST_MODULE),moku_voltage_pkg)
     VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
