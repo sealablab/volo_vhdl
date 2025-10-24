@@ -16,6 +16,11 @@
 --   This creates distinct voltage steps between adjacent values, making them
 --   reliably distinguishable on oscilloscope despite quantization noise.
 --
+-- Voltage Scaling (Moku Platform - see Moku_Voltage_pkg.vhd):
+--   - Output range: ±5.0V full scale (16-bit signed DAC)
+--   - Digital scaling: 6553.6 digital units per volt (32768 / 5.0V)
+--   - Oscilloscope decoding: voltage * 6553.6 = digital value
+--
 -- Debug Views:
 --   View 0: Status Summary (state + fault + valid + buffer_addr)
 --   View 1: CRC Comparison (expected_crc vs computed_crc)
@@ -32,6 +37,10 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+
+-- Moku platform voltage scaling reference
+-- (Package provides ±5V full-scale conversion utilities)
+use work.Moku_Voltage_pkg.all;
 
 entity debug_mux is
     port (

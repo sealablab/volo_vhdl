@@ -44,8 +44,10 @@ def voltage_to_digital(voltage: float) -> int:
     """
     Convert oscilloscope voltage to 16-bit signed digital value.
 
-    Oscilloscope range: -1.0V to +1.0V (typically)
-    Digital range: -32768 to +32767 (16-bit signed)
+    Moku platform specification (from modules/volo_common/common/Moku_Voltage_pkg.vhd):
+    - Digital range: -32768 to +32767 (16-bit signed)
+    - Voltage range: -5.0V to +5.0V (full-scale analog)
+    - Scaling: 32768 / 5.0V = 6553.6 digital per volt
 
     Args:
         voltage: Voltage reading from oscilloscope (V)
@@ -53,9 +55,8 @@ def voltage_to_digital(voltage: float) -> int:
     Returns:
         16-bit signed integer
     """
-    # Assuming oscilloscope is configured for ±1V range
-    # Adjust if your scope has different range
-    digital = int((voltage / 1.0) * 32768)
+    # Use Moku's ±5V full scale (not ±1V!)
+    digital = int((voltage / 5.0) * 32768)
     return max(-32768, min(32767, digital))
 
 

@@ -215,7 +215,9 @@ endif
 
 # inspectable_buffer_loader_core test (Buffer loader with debug views)
 ifeq ($(TEST_MODULE),inspectable_buffer_loader_core)
-    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(VOLO_COMMON)/core/clk_divider_core.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
                    inspectable_buffer_loader_core_tb_wrapper.vhd
@@ -225,7 +227,9 @@ endif
 
 # inspectable_buffer_loader_minimal_debug test (Minimal debug)
 ifeq ($(TEST_MODULE),inspectable_buffer_loader_minimal_debug)
-    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(VOLO_COMMON)/core/clk_divider_core.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
                    inspectable_buffer_loader_core_tb_wrapper.vhd
@@ -235,7 +239,9 @@ endif
 
 # inspectable_buffer_loader_oscilloscope_only test (Oscilloscope observation only)
 ifeq ($(TEST_MODULE),inspectable_buffer_loader_oscilloscope_only)
-    VHDL_SOURCES = $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+    VHDL_SOURCES = $(VOLO_COMMON)/common/Moku_Voltage_pkg.vhd \
+                   $(VOLO_COMMON)/common/mcc_loader_pkg.vhd \
+                   $(VOLO_COMMON)/core/clk_divider_core.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/debug_mux.vhd \
                    $(MODULES_DIR)/inspectable_buffer_loader/core/inspectable_buffer_loader_core.vhd \
                    inspectable_buffer_loader_core_tb_wrapper.vhd

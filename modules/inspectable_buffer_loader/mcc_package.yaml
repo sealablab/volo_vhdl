@@ -14,6 +14,7 @@ files:
 dependencies:
   - module: volo_common
     files:
+      - common/Moku_Voltage_pkg.vhd
       - common/mcc_loader_pkg.vhd
       - core/crc32_core.vhd
       - core/clk_divider_core.vhd

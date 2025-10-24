@@ -38,9 +38,17 @@ VIEW_RESERVED = 7
 # ============================================================================
 
 def voltage_to_digital(voltage: float) -> int:
-    """Convert oscilloscope voltage to 16-bit signed digital value"""
-    # Assuming ±1V full scale = ±32768 digital
-    digital = int((voltage / 1.0) * 32768)
+    """Convert oscilloscope voltage to 16-bit signed digital value
+
+    Moku platform specification (from modules/volo_common/common/Moku_Voltage_pkg.vhd):
+    - Digital range: -32768 to +32767 (16-bit signed)
+    - Voltage range: -5.0V to +5.0V (full-scale analog)
+    - Scaling: 32768 / 5.0V = 6553.6 digital per volt
+
+    This matches the Moku hardware ADC/DAC specification.
+    """
+    # Use Moku's ±5V full scale (not ±1V!)
+    digital = int((voltage / 5.0) * 32768)
     return max(-32768, min(32767, digital))
 
 
@@ -160,7 +168,8 @@ async def test_1_reset_observed_on_oscilloscope(dut):
     await ClockCycles(dut.clk, 2)
 
     # Read oscilloscope channel A
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    # In simulation, convert digital to fake voltage matching Moku's ±5V scale
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0 * 5.0
     status = decode_view_0_status_summary(osc_voltage)
 
     dut._log.info(f"Oscilloscope View 0: {status}")
@@ -192,7 +201,8 @@ async def test_2_observe_state_transition_idle_to_loading(dut):
     await ClockCycles(dut.clk, 2)
 
     # Observe initial state
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    # In simulation, convert digital to fake voltage matching Moku's ±5V scale
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0 * 5.0
     status_before = decode_view_0_status_summary(osc_voltage)
     dut._log.info(f"Before: {status_before['state_name']}")
 
@@ -201,7 +211,7 @@ async def test_2_observe_state_transition_idle_to_loading(dut):
     await ClockCycles(dut.clk, 2)
 
     # Observe new state
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
     status_after = decode_view_0_status_summary(osc_voltage)
     dut._log.info(f"After: {status_after['state_name']}")
 
@@ -246,7 +256,7 @@ async def test_3_monitor_chunk_writing_progress(dut):
     for cycle in range(10):
         await ClockCycles(dut.clk, 1)
 
-        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
         write_activity = decode_view_2_write_activity(osc_voltage)
 
         dut._log.info(f"  Cycle {cycle}: chunk_word_idx={write_activity['chunk_word_idx']}, "
@@ -261,7 +271,7 @@ async def test_3_monitor_chunk_writing_progress(dut):
     set_debug_views(dut, VIEW_STATUS_SUMMARY)
     await ClockCycles(dut.clk, 1)
 
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
     status = decode_view_0_status_summary(osc_voltage)
 
     assert status['state_name'] != "WRITING_CHUNK", \
@@ -311,7 +321,7 @@ async def test_4_complete_buffer_load_oscilloscope_only(dut):
     for cycle in range(30):
         await ClockCycles(dut.clk, 1)
 
-        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
         status = decode_view_0_status_summary(osc_voltage)
 
         dut._log.info(f"  Cycle {cycle}: State={status['state_name']}, "
@@ -322,7 +332,7 @@ async def test_4_complete_buffer_load_oscilloscope_only(dut):
             break
 
     # Final verification using oscilloscope only
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
     final_status = decode_view_0_status_summary(osc_voltage)
 
     dut._log.info(f"Final oscilloscope reading: {final_status}")
@@ -374,7 +384,7 @@ async def test_5_detect_checksum_mismatch_via_oscilloscope(dut):
     for cycle in range(30):
         await ClockCycles(dut.clk, 1)
 
-        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+        osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
         status = decode_view_0_status_summary(osc_voltage)
 
         dut._log.info(f"  Cycle {cycle}: State={status['state_name']}, Fault={status['fault']}")
@@ -384,7 +394,7 @@ async def test_5_detect_checksum_mismatch_via_oscilloscope(dut):
             break
 
     # Verify error detected via oscilloscope
-    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0
+    osc_voltage = float(dut.debug_out_a.value.signed_integer) / 32768.0 * 5.0
     final_status = decode_view_0_status_summary(osc_voltage)
 
     assert final_status['state_name'] == "ERROR", \
