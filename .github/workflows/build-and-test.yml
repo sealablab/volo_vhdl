@@ -35,11 +35,9 @@ jobs:
         uv sync --no-install-project
 
     - name: Build all modules
-      working-directory: modules
       run: |
-        echo "Starting full build with dependency resolution..."
-        make clean
-        make compile
+        echo "Building all VHDL modules..."
+        uv run python scripts/build_vhdl.py
         echo "Build completed successfully!"
 
     - name: List available test modules

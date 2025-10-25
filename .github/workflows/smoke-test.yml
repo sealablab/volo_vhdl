@@ -19,33 +19,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ghdl
 
-    - name: Smoke test - Build shared modules
-      working-directory: modules
+    - name: Smoke test - Build all modules
       run: |
-        echo "Quick smoke test: Building shared modules only..."
-        make clean
-
-        # Build just the core dependencies
-        echo "Compiling MCC template..."
-        ghdl -a --std=08 ../mcc_templates/mcc-Top.vhd
-
-        echo "Building volo_common (core dependency)..."
-        if [ -n "$(ls shared/volo_common/common/*.vhd 2>/dev/null)" ]; then
-          ghdl -a --std=08 shared/volo_common/common/*.vhd
-        fi
-        if [ -n "$(ls shared/volo_common/core/*.vhd 2>/dev/null)" ]; then
-          ghdl -a --std=08 shared/volo_common/core/*.vhd
-        fi
-
-        echo "✅ Smoke test passed - core modules compile!"
-
-    - name: Verify GHDL work library
-      working-directory: modules
-      run: |
-        if [ -f work-obj08.cf ]; then
-          echo "✅ GHDL work library created successfully"
-          ls -lh work-obj08.cf
-        else
-          echo "❌ GHDL work library not found"
-          exit 1
-        fi
+        echo "Quick smoke test: Building all modules..."
+        uv run python scripts/build_vhdl.py
+        echo "✅ Smoke test passed - all modules compile!"

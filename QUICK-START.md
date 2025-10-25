@@ -42,11 +42,14 @@ uv run python tests/run.py volo_clk_divider --no-waves
 
 ### Build VHDL
 ```bash
-# Build all modules
-cd modules && make clean && make compile
+# Build all modules (from anywhere!)
+uv run python scripts/build_vhdl.py
 
-# Build single module (after module reorganization)
-cd modules && make compile-single-module MODULE_NAME=SimpleWaveGen
+# Build specific entity (from anywhere!)
+uv run python scripts/build_vhdl.py --entity volo_clk_divider
+
+# Clean build artifacts
+uv run python scripts/build_vhdl.py --clean
 ```
 
 ### Pre-Push Validation
