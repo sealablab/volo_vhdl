@@ -6,6 +6,11 @@
 #   - 24V DC power supply (external)
 #   - 3× SMA cables (50Ω)
 #
+# Physical Wiring (VERIFIED 2025-10-24):
+#   - Moku Output1 → Probe 'digital_glitch' (trigger input)
+#   - Moku Output2 → Probe 'pulse_amplitude' (power control input)
+#   - Probe 'coil_current' → Moku Input1 (current monitor output)
+#
 # Safety: Start at minimum power (5%), no target device
 
 platform:
@@ -34,13 +39,13 @@ external_hardware:
     name: DS1120A Probe
     connections:
       - probe: digital_glitch
-        moku: OutputA
+        moku: Output1
         signal_type: digital
       - probe: pulse_amplitude
-        moku: DACOut1
+        moku: Output2
         signal_type: analog
       - probe: coil_current
-        moku: InputA
+        moku: Input1
         signal_type: analog
     settings:
       probe_tip: 4mm_positive
@@ -48,14 +53,14 @@ external_hardware:
       initial_power_percent: 5  # Start at minimum safe power
 
 connections:
-  - source: OutputA
+  - source: Output1
     destination: DS1120A.digital_glitch
     notes: Trigger pulse (0-3.3V TTL)
-  - source: DACOut1
+  - source: Output2
     destination: DS1120A.pulse_amplitude
     notes: Power control (0-3.3V analog)
   - source: DS1120A.coil_current
-    destination: InputA
+    destination: Input1
     notes: Current monitor (-1.4V to 0V transient)
 
 metadata:

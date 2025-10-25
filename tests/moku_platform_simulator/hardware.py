@@ -1,14 +1,14 @@
 """
-Hardware Backend (MokuBench - Phase 3)
+Hardware Backend
 
 MCC API-based hardware backend for deploying to real Moku devices.
-Implements full MultiInstrument Mode deployment with CloudCompile bitstreams.
 """
 
-from typing import Any, Dict, Union, Optional
+from typing import Any
 import time
 from .backend import Backend
-from .config import BenchConfig
+from models.moku.platform_config import MokuPlatformConfig
+from models.bench.benchbench import BenchBench
 
 # Import Moku API
 try:
@@ -42,41 +42,35 @@ except ImportError:
 
 class HardwareBackend(Backend):
     """
-    Hardware backend using Moku MCC Multi-Instrument Mode API.
+    Hardware backend using Moku MCC MultiInstrument Mode API.
 
-    Deploys BenchConfig to real Moku hardware:
-    - Connects to Moku device via IP
-    - Deploys CloudCompile bitstreams to slots
-    - Configures instruments (Oscilloscope, WaveformGenerator, etc.)
-    - Establishes signal routing
-    - Collects data from real instruments
-
-    Usage:
-        bench = HardwareBackend.from_config(config, ip='192.168.1.100')
-        bench.setup()  # Deploy to hardware
-        data = bench.run(duration_ms=100)  # Capture data
+    Deploys MokuPlatformConfig to real Moku hardware.
     """
 
-    def __init__(self, config: BenchConfig, ip_address: str, platform_id: int = 2):
+    def __init__(self, config: MokuPlatformConfig, bench: BenchBench):
         """
         Initialize hardware backend.
 
         Args:
-            config: BenchConfig instance
-            ip_address: IP address of Moku device (e.g., '192.168.1.100')
-            platform_id: Platform ID (1=Moku:Lab, 2=Moku:Go, 3=Moku:Pro)
+            config: MokuPlatformConfig instance (what to deploy)
+            bench: BenchBench instance (where to deploy - has IP address)
         """
         super().__init__(config)
 
         if not MOKU_AVAILABLE:
-            raise ImportError(
-                "Moku Python API not available. Install with: uv add moku\n"
-                "Or run: pip install moku"
-            )
+            raise ImportError("Moku Python API not available. Install: uv add moku")
 
-        self.ip_address = ip_address
-        self.platform_id = platform_id
-        self.multi_instrument: Optional[MultiInstrument] = None
+        self.bench = bench
+        self.ip_address = bench.get_moku_ip()
+
+        if not self.ip_address:
+            raise ValueError(f"Bench {bench.bench_id} has no Moku IP address")
+
+        # Determine platform_id from Moku model
+        platform_map = {'Moku:Go': 2, 'Moku:Lab': 1, 'Moku:Pro': 3}
+        self.platform_id = platform_map.get(bench.moku.name, 2)
+
+        self.multi_instrument: MultiInstrument | None = None
 
         # Map instrument type names to Moku classes
         self.instrument_classes = {
@@ -97,78 +91,42 @@ class HardwareBackend(Backend):
             'LaserLockBox': LaserLockBox,
         }
 
-    @classmethod
-    def from_config(cls, config: Union[BenchConfig, str, Dict], ip_address: str, platform_id: int = 2) -> 'HardwareBackend':
-        """
-        Create HardwareBackend from config.
-
-        Args:
-            config: BenchConfig instance, path to config file, or config dict
-            ip_address: IP address of Moku device
-            platform_id: Platform ID (1=Moku:Lab, 2=Moku:Go, 3=Moku:Pro)
-
-        Returns:
-            HardwareBackend instance
-        """
-        if isinstance(config, str):
-            raise NotImplementedError("Loading from file not implemented yet")
-        elif isinstance(config, dict):
-            config = BenchConfig.from_dict(config)
-        elif not isinstance(config, BenchConfig):
-            raise TypeError(f"config must be BenchConfig, str, or dict, got {type(config)}")
-
-        return cls(config, ip_address, platform_id)
 
     async def setup(self) -> None:
-        """
-        Setup hardware backend: connect, deploy instruments, configure routing.
+        """Setup hardware: connect, deploy instruments, configure routing."""
+        print(f"[HardwareBackend] Connecting to {self.bench.moku} at {self.ip_address}...")
 
-        Steps:
-        1. Connect to Moku device via IP
-        2. Initialize MultiInstrument mode
-        3. Deploy instruments to each slot (CloudCompile bitstreams, etc.)
-        4. Configure instrument settings
-        5. Establish signal routing via set_connections()
-        6. Apply control registers to CloudCompile slots
-
-        Raises:
-            ConnectionError: If Moku device unreachable
-            ValueError: If configuration invalid
-            RuntimeError: If deployment fails
-        """
-        print(f"[MokuBench] Connecting to Moku at {self.ip_address}...")
-
-        # Step 1: Connect to Moku device
+        # Connect to Moku
         try:
             self.multi_instrument = MultiInstrument(
                 self.ip_address,
                 platform_id=self.platform_id,
                 force_connect=True
             )
-            print(f"[MokuBench] ✓ Connected to Moku (platform_id={self.platform_id})")
+            print(f"[HardwareBackend] ✓ Connected (platform_id={self.platform_id})")
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Moku at {self.ip_address}: {e}")
+            raise ConnectionError(f"Failed to connect to {self.ip_address}: {e}")
 
-        # Step 2: Validate configuration
-        connection_errors = self.config.validate_connections()
-        if connection_errors:
-            raise ValueError(f"Configuration validation failed:\n" + "\n".join(connection_errors))
+        # Validate routing
+        routing_errors = self.config.validate_routing()
+        if routing_errors:
+            raise ValueError(f"Routing validation failed:\n" + "\n".join(routing_errors))
 
-        # Step 3: Deploy instruments to slots
-        print("[MokuBench] Deploying instruments to slots...")
+        # Deploy instruments
+        print("[HardwareBackend] Deploying instruments...")
         for slot_num, slot_config in self.config.slots.items():
             await self._deploy_instrument(slot_num, slot_config)
 
-        # Step 4: Establish signal routing
-        print("[MokuBench] Configuring signal routing...")
+        # Setup routing
+        print("[HardwareBackend] Configuring MCC routing...")
         await self._setup_routing()
 
-        # Step 5: Apply control registers to CloudCompile slots
-        print("[MokuBench] Applying control registers...")
+        # Apply control registers
+        print("[HardwareBackend] Applying control registers...")
         await self._apply_control_registers()
 
         self._setup_complete = True
-        print("[MokuBench] ✓ Setup complete - ready to run!")
+        print("[HardwareBackend] ✓ Setup complete!")
 
     async def _deploy_instrument(self, slot_num: int, slot_config) -> None:
         """
@@ -224,7 +182,7 @@ class HardwareBackend(Backend):
             print(f"✗ Failed")
             raise RuntimeError(f"Failed to deploy {instrument_type} to slot {slot_num}: {e}")
 
-    async def _apply_instrument_settings(self, instrument: Any, settings: Dict, instrument_type: str) -> None:
+    async def _apply_instrument_settings(self, instrument: Any, settings: dict, instrument_type: str) -> None:
         """
         Apply settings to deployed instrument.
 
@@ -298,19 +256,12 @@ class HardwareBackend(Backend):
                     )
 
     async def _setup_routing(self) -> None:
-        """
-        Establish signal routing between slots/ports.
+        """Establish MCC routing."""
+        if not self.config.routing:
+            return
 
-        Translates BenchConfig connections to MCC set_connections() format.
-        """
-        if not self.config.connections:
-            return  # No routing needed
-
-        # Convert BenchConfig connections to MCC format
-        mcc_connections = [
-            {'source': conn.source, 'destination': conn.destination}
-            for conn in self.config.connections
-        ]
+        # Convert to MCC format
+        mcc_connections = [conn.to_dict() for conn in self.config.routing]
 
         try:
             self.multi_instrument.set_connections(connections=mcc_connections)
@@ -332,22 +283,11 @@ class HardwareBackend(Backend):
                     instrument.set_control(reg_num, value)
                     print(f"  Slot {slot_num} Control{reg_num} = 0x{value:08X}")
 
-    async def run(self, duration_ms: float) -> Dict[str, Any]:
-        """
-        Run hardware testbench and collect data.
-
-        Args:
-            duration_ms: Duration to run in milliseconds
-
-        Returns:
-            Dictionary mapping slot numbers to instrument data
-
-        Raises:
-            RuntimeError: If run() called before setup()
-        """
+    async def run(self, duration_ms: float) -> dict[str, Any]:
+        """Run hardware for specified duration and collect data."""
         self.validate_setup()
 
-        print(f"[MokuBench] Running for {duration_ms} ms...")
+        print(f"[HardwareBackend] Running for {duration_ms} ms...")
 
         # Wait for specified duration
         time.sleep(duration_ms / 1000.0)
@@ -407,22 +347,11 @@ class HardwareBackend(Backend):
                 data[slot_num] = phase_data  # Contains phase, frequency, amplitude arrays
                 print(f"  ✓ Captured phasemeter data (slot {slot_num})")
 
-        print(f"[MokuBench] ✓ Run complete")
+        print(f"[HardwareBackend] ✓ Run complete")
         return data
 
-    def get_instrument(self, slot_or_name: Union[int, str]) -> Any:
-        """
-        Get hardware instrument instance by slot number or type name.
-
-        Args:
-            slot_or_name: Slot number (int) or instrument type name (str)
-
-        Returns:
-            Moku instrument API object
-
-        Raises:
-            KeyError: If slot/instrument not found
-        """
+    def get_instrument(self, slot_or_name: int | str) -> Any:
+        """Get hardware instrument by slot number or type name."""
         if isinstance(slot_or_name, int):
             if slot_or_name not in self.instruments:
                 raise KeyError(f"No instrument in slot {slot_or_name}")
@@ -439,18 +368,13 @@ class HardwareBackend(Backend):
             raise TypeError(f"slot_or_name must be int or str, got {type(slot_or_name)}")
 
     async def teardown(self) -> None:
-        """
-        Clean up hardware resources.
-
-        - Relinquish ownership of Moku device
-        - Close MultiInstrument connection
-        """
+        """Clean up hardware resources."""
         if self.multi_instrument:
-            print("[MokuBench] Disconnecting from Moku...")
+            print("[HardwareBackend] Disconnecting...")
             try:
                 self.multi_instrument.relinquish_ownership()
-                print("[MokuBench] ✓ Disconnected")
+                print("[HardwareBackend] ✓ Disconnected")
             except Exception as e:
-                print(f"[MokuBench] Warning: Teardown error: {e}")
+                print(f"[HardwareBackend] Warning: {e}")
             finally:
                 self.multi_instrument = None

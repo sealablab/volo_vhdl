@@ -24,7 +24,13 @@
       "Bash(uv run:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(python test_probe_catalog.py:*)"
+      "Bash(python test_probe_catalog.py:*)",
+      "Bash(uv pip show:*)",
+      "Read(//Users/johnycsh/miniforge3/lib/python3.10/site-packages/moku/**)",
+      "Bash(touch:*)",
+      "Bash(git tag:*)",
+      "Bash(git mv:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,17 @@
 """
+OLD BenchConfig - ARCHIVED
+
+Replaced by:
+- models/moku/platform_config.py (MokuPlatformConfig)
+- models/bench/benchbench.py (BenchBench for physical benches)
+
+Date archived: 2025-10-24
+Reason: Split into validated models with clear separation:
+  - Physical bench reality (BenchBench)
+  - Platform deployment config (MokuPlatformConfig)
+
+Original docstring below:
+---
 Bench Configuration Data Models
 
 Pydantic models for declarative multi-instrument testbench configuration.
