@@ -10,7 +10,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.Moku_Voltage_pkg.all;
+use work.volo_voltage_pkg.all;
 
 entity fsm_example_top is
     port (

@@ -34,7 +34,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.Moku_Voltage_pkg.all;
+use work.volo_voltage_pkg.all;
 
 entity fsm_observer is
     generic (
@@ -111,7 +111,7 @@ architecture rtl of fsm_observer is
 
         -- Unused states → failsafe (0.0V)
         for i in num_normal to 63 loop
-            lut(i) := MOKU_DIGITAL_ZERO;
+            lut(i) := VOLO_DIGITAL_ZERO;
         end loop;
 
         return lut;
@@ -150,7 +150,7 @@ begin
         process(clk, reset)
         begin
             if reset = '0' then
-                prev_voltage <= MOKU_DIGITAL_ZERO;
+                prev_voltage <= VOLO_DIGITAL_ZERO;
             elsif rising_edge(clk) then
                 -- Update previous voltage only when in normal (non-fault) state
                 if not is_fault_state then

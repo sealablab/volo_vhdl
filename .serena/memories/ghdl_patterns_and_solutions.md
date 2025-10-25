@@ -7,59 +7,255 @@ This memory consolidates all GHDL compilation patterns, testbench best practices
 - Moku_Pct_pkg CocotB migration patterns (2025-10-22)
 - Legacy GHDL testbench patterns (archived 2025-01-22, 2025-10-22)
 - Counter reliability patterns from volo_common module development (2025-10-23)
+- GHDL Build Modernization (2025-01-25) ⭐ NEW
 
-**Last Updated:** 2025-10-23
+**Last Updated:** 2025-10-25
 
 **Note**: GHDL testbenches are deprecated. Use CocotB framework in `tests/` directory for all new tests. See `cocotb_testing_guide.md` memory for current testing standards.
 
 ---
 
 ## Table of Contents
-1. [Compilation Settings](#compilation-settings)
-2. [Common Compilation Errors](#common-compilation-errors)
-3. [Counter Patterns and Metavalue Issues](#counter-patterns-and-metavalue-issues) ⭐ NEW
-4. [CocotB/GHDL Simulation Timing Quirks](#cocotbghdl-simulation-timing-quirks) ⭐ NEW
-5. [Direct Instantiation Patterns](#direct-instantiation-patterns)
-6. [Legacy Testbench Patterns](#legacy-testbench-patterns) (Deprecated - Use CocotB)
-7. [Debugging Techniques](#debugging-techniques)
-8. [Success Patterns](#success-patterns)
+1. [Build System](#build-system) ⭐ UPDATED
+2. [Compilation Settings](#compilation-settings)
+3. [Common Compilation Errors](#common-compilation-errors)
+4. [Counter Patterns and Metavalue Issues](#counter-patterns-and-metavalue-issues)
+5. [CocotB/GHDL Simulation Timing Quirks](#cocotbghdl-simulation-timing-quirks)
+6. [Direct Instantiation Patterns](#direct-instantiation-patterns)
+7. [Legacy Testbench Patterns](#legacy-testbench-patterns) (Deprecated - Use CocotB)
+8. [Debugging Techniques](#debugging-techniques)
+9. [Success Patterns](#success-patterns)
+
+---
+
+## Build System
+
+⭐ **MODERNIZED (2025-01-25):** No more Makefiles! GHDL automatically determines compilation order.
+
+### New Build System (Python Script)
+
+**Location:** `scripts/build_vhdl.py`
+
+**Key Innovation:** GHDL natively resolves dependencies by analyzing VHDL `use` statements. Zero manual tracking needed!
+
+**Features:**
+- Auto-discovers all VHDL files in `modules/` (49+ files)
+- GHDL native dependency resolution (no manual `Makefile.deps`)
+- Works from any directory (finds project root automatically)
+- Skips testbenches, wrappers, and build artifacts
+- Colored output with clear status messages
+- Comprehensive error handling
+
+### New Build Commands
+
+```bash
+# Build all modules (import all sources to work library)
+uv run python scripts/build_vhdl.py
+
+# Build specific entity (elaborate and link)
+uv run python scripts/build_vhdl.py --entity volo_clk_divider
+
+# Clean build artifacts
+uv run python scripts/build_vhdl.py --clean
+
+# Show help
+uv run python scripts/build_vhdl.py --help
+```
+
+**All commands work from ANY directory** - script finds project root automatically.
+
+### How It Works
+
+1. **Discovery Phase:**
+   - Searches `modules/shared/`, `modules/instruments/`, `modules/examples/`, `modules/experimental/`
+   - Finds all `.vhd` files (excluding testbenches and wrappers)
+   - Example: Found 49 VHDL source files across all categories
+
+2. **Import Phase (Build All):**
+   ```bash
+   ghdl -i --std=08 --workdir=work/ --work=work <all discovered files>
+   ```
+   - Single command imports all files
+   - GHDL builds internal dependency graph from `use` statements
+   - No manual compilation order needed!
+
+3. **Elaborate Phase (Build Entity):**
+   ```bash
+   ghdl -m --std=08 --workdir=work/ --work=work <entity_name>
+   ```
+   - Links entity and all dependencies
+   - Creates executable binary
+
+4. **Clean Phase:**
+   - Removes `work/` directory
+   - Removes `*.o` and `*.cf` files
+
+### Benefits Over Old Makefile System
+
+- ✅ **Zero manual dependency tracking** - GHDL does it automatically!
+- ✅ **Works from any directory** - finds project root via `pyproject.toml`
+- ✅ **Auto-discovers files** - survives module reorganization
+- ✅ **Consistent with test runner** - both use `uv run python`
+- ✅ **74% less CI/CD YAML** - 31 lines → 8 lines
+- ✅ **No shell scripting loops** - pure Python
+- ✅ **Backward compatible** - old Makefiles still work (but deprecated)
+
+### Directory Structure
+
+```
+modules/
+├── shared/           # Shared modules (volo_common, etc.)
+├── instruments/      # Instrument modules (EMFI-Seq, SimpleWaveGen, etc.)
+├── examples/         # Example modules
+├── experimental/     # Experimental modules
+└── work/            # GHDL work library (auto-generated)
+```
+
+**Note:** Module categories are for organization only. GHDL uses a single unified `work` library.
+
+### What Files Are Built
+
+**Included:**
+- All `.vhd` files in `modules/shared/`, `modules/instruments/`, `modules/examples/`, `modules/experimental/`
+- Files in `common/`, `datadef/`, `core/`, `top/` subdirectories
+- MCC integration files (`Top.vhd`, `*_customwrapper.vhd`)
+
+**Excluded (Automatically Skipped):**
+- Testbenches (`/tb/` directories)
+- Test wrappers (`*wrapper*.vhd` in test contexts)
+- Build artifacts (`cloudcompile_package/`, `incoming/`)
+- Generated files (`work/`, `*.o`, `*.cf`)
+
+### Common Build Issues
+
+**Issue 1: "cannot find entity"**
+```
+error: cannot find entity or configuration foo
+```
+**Solution:** Run full import first:
+```bash
+uv run python scripts/build_vhdl.py  # Import all sources
+uv run python scripts/build_vhdl.py --entity foo  # Then elaborate
+```
+
+**Issue 2: Missing dependencies**
+```
+error: no declaration for "some_package"
+```
+**Solution:** Check `use` statements in VHDL files. GHDL resolves dependencies automatically, but files must have correct `use` clauses.
+
+**Issue 3: Build from wrong directory**
+No problem! Script finds project root automatically:
+```bash
+cd /Users/johnycsh/volo_codes/volo_vhdl/modules/instruments/EMFI-Seq
+uv run python ../../../scripts/build_vhdl.py  # Works!
+```
+
+### CI/CD Integration
+
+**Before (Complex Makefile):**
+```yaml
+- name: Build all modules
+  working-directory: modules
+  run: |
+    echo "Starting full build with dependency resolution..."
+    make clean
+    make compile
+    echo "Build completed successfully!"
+```
+
+**After (Simple Python Script):**
+```yaml
+- name: Build all modules
+  run: |
+    echo "Building all VHDL modules..."
+    uv run python scripts/build_vhdl.py
+    echo "Build completed successfully!"
+```
+
+**Improvement:** 80% less YAML, no manual working directory management.
+
+### Migration from Old Makefile System
+
+**Old commands (deprecated but still work):**
+```bash
+cd modules/
+make clean
+make compile
+make compile-single-module MODULE_NAME=SimpleWaveGen
+```
+
+**New commands (recommended):**
+```bash
+uv run python scripts/build_vhdl.py --clean
+uv run python scripts/build_vhdl.py
+uv run python scripts/build_vhdl.py --entity SimpleWaveGen
+```
+
+**No code changes needed!** The new system uses the same GHDL under the hood.
+
+### Reference Documentation
+
+- `scripts/build_vhdl.py` - Build script source code
+- `docs/GHDL-BUILD-MODERNIZATION-COMPLETE.md` - Complete modernization summary
+- `docs/GHDL-MODERNIZATION-IMPACT.md` - Workflow impact analysis
+- `QUICK-START.md` - Updated build commands
 
 ---
 
 ## Compilation Settings
 
 ### Standard GHDL Invocation
-Always use VHDL-2008 standard for this project:
+The build script uses VHDL-2008 standard:
 ```bash
-ghdl -a --std=08 --work=work <file.vhd>  # Analyze (compile)
-ghdl -e --std=08 --work=work <entity>    # Elaborate
-ghdl -r --std=08 --work=work <entity>    # Run
+ghdl -i --std=08 --workdir=work/ --work=work <files>   # Import (analyze)
+ghdl -m --std=08 --workdir=work/ --work=work <entity>  # Make (elaborate)
+ghdl -r --std=08 --work=work <entity>                  # Run
+```
+
+**Note:** Build script handles `-i` (import) and `-m` (make) automatically. Use `-r` (run) manually for executables.
+
+### Manual Compilation (Advanced)
+
+If you need manual control (not recommended):
+```bash
+# Import files (order doesn't matter!)
+ghdl -i --std=08 --workdir=work/ --work=work file1.vhd file2.vhd file3.vhd
+
+# Elaborate entity (GHDL resolves dependencies)
+ghdl -m --std=08 --workdir=work/ --work=work entity_name
+
+# Run
+ghdl -r --std=08 --work=work entity_name
 ```
 
 ### Relaxed Mode (Avoid Unless Necessary)
 ```bash
 ghdl -a --std=08 -frelaxed <file.vhd>  # Turns some errors into warnings
 ```
-**Note**: Always fix the code properly instead of using `-frelaxed`.
+**Note:** Always fix the code properly instead of using `-frelaxed`.
 
-### Compilation Order
-Always compile in dependency order:
+### Compilation Order (AUTOMATIC)
+
+GHDL determines compilation order automatically by analyzing `use` statements:
+
+```vhdl
+-- GHDL sees these dependencies and builds in correct order:
+use IEEE.std_logic_1164.all;          -- Built-in library
+use work.Moku_Voltage_pkg.all;        -- Compiles Moku_Voltage_pkg first
+use work.platform_interface_pkg.all;  -- Then platform_interface_pkg
+```
+
+**Old manual order (no longer needed):**
 ```bash
-# 1. Packages (declarations and bodies)
+# ❌ OLD: Manual compilation order
 ghdl -a --std=08 datadef/Moku_Voltage_pkg.vhd
-
-# 2. Core entities
 ghdl -a --std=08 core/EMFI_Seq_stair.vhd
-
-# 3. Top-level modules
 ghdl -a --std=08 top/EMFI_Seq.vhd
-
-# 4. Testbenches (use CocotB instead for new tests)
 ghdl -a --std=08 tb/core/tb_EMFI_Seq_stair.vhd
 
-# 5. Elaborate and run
-ghdl -e --std=08 tb_EMFI_Seq_stair
-ghdl -r --std=08 tb_EMFI_Seq_stair
+# ✅ NEW: Automatic dependency resolution
+uv run python scripts/build_vhdl.py
 ```
 
 ---
@@ -158,7 +354,7 @@ sine_output <= sine_lut(to_integer(sine_phase));
 
 ---
 
-### Error 4: Compilation Order Dependencies
+### Error 4: Compilation Order Dependencies (OBSOLETE)
 
 **GHDL Message:**
 ```
@@ -167,7 +363,13 @@ error: architecture "test" of "entity" is obsoleted by entity "other_entity"
 
 **Problem:** Recompiling entities that other files depend on without recompiling dependents.
 
-**Solution:** Always recompile in dependency order (see [Compilation Order](#compilation-order) above).
+**Solution (OLD):** Manually recompile in dependency order.
+
+**Solution (NEW):** Use build script - GHDL handles this automatically!
+```bash
+uv run python scripts/build_vhdl.py --clean  # Clean everything
+uv run python scripts/build_vhdl.py         # Rebuild all
+```
 
 ---
 
@@ -622,7 +824,7 @@ DC_SEQUENCER: entity WORK.DCSequencer
 1. **Reduced Code Verbosity** - Eliminates component declarations
 2. **Better Error Detection** - Port mismatches caught at analysis time
 3. **Library Flexibility** - Can specify any library explicitly
-4. **Compilation Order Benefits** - Automatic dependency resolution
+4. **Compilation Order Benefits** - GHDL automatic dependency resolution works better
 
 ### When to Use Direct Instantiation
 
@@ -748,7 +950,7 @@ U1: entity WORK.DCSequencer
 2. **Include all required ports** in the port map
 3. **Use explicit type conversions** when needed (e.g., `signed()`, `unsigned()`)
 4. **Verify library paths** are correct (usually `WORK` for current project)
-5. **Check compilation order** - entities must be compiled before architectures that use them
+5. **Let GHDL handle compilation order** - build script does this automatically
 
 ---
 
@@ -831,6 +1033,33 @@ if 'x' in str(dut.counter.value).lower() or 'u' in str(dut.counter.value).lower(
     dut._log.error("Counter has metavalues!")
 ```
 
+### 5. Build System Debugging
+
+**Issue: Files not being discovered**
+```bash
+# Run build script with verbose output
+uv run python scripts/build_vhdl.py
+# Look for "Found X VHDL source files" - should match expected count
+```
+
+**Issue: Dependency resolution failing**
+```bash
+# Clean and rebuild
+uv run python scripts/build_vhdl.py --clean
+uv run python scripts/build_vhdl.py
+
+# Check for missing 'use' statements in VHDL files
+```
+
+**Issue: Entity not found during elaboration**
+```bash
+# Import all sources first
+uv run python scripts/build_vhdl.py
+
+# Then elaborate specific entity
+uv run python scripts/build_vhdl.py --entity my_entity
+```
+
 ---
 
 ## Success Patterns
@@ -911,6 +1140,17 @@ status_reg(30 downto 28) <= (others => '0');
 status_reg(27 downto 24) <= current_state;
 ```
 
+#### 6. Use Build Script (AUTOMATIC DEPENDENCIES)
+
+```bash
+# ✅ CORRECT: Let GHDL resolve dependencies automatically
+uv run python scripts/build_vhdl.py
+
+# ❌ OLD: Manual compilation order (error-prone)
+cd modules/
+make clean && make compile
+```
+
 ### Module Reliability Hierarchy
 
 Based on 45 tests across 9 modules (2025-10-23 session):
@@ -945,23 +1185,33 @@ Based on 45 tests across 9 modules (2025-10-23 session):
 5. **Clear Documentation** - Well-commented code with clear intent
 6. **Incremental Testing** - Test one feature at a time
 7. **Timing Awareness** - Account for DEPTH+1/+2 simulation delays in tests
+8. **Automatic Dependencies** - Use build script, let GHDL handle compilation order
 
 ---
 
 ## Quick Reference Commands
 
 ```bash
-# Clean compilation
-ghdl -a --std=08 dependency.vhd
-ghdl -a --std=08 entity.vhd
-ghdl -a --std=08 entity_tb.vhd
+# NEW BUILD SYSTEM (Recommended)
+uv run python scripts/build_vhdl.py              # Build all
+uv run python scripts/build_vhdl.py --entity foo # Build specific entity
+uv run python scripts/build_vhdl.py --clean      # Clean artifacts
+uv run python scripts/build_vhdl.py --help       # Show help
 
-# Elaborate and run
-ghdl -e --std=08 entity_tb
-ghdl -r --std=08 entity_tb
+# Works from any directory!
+cd modules/instruments/EMFI-Seq
+uv run python ../../../scripts/build_vhdl.py    # Still works!
 
-# Clean up artifacts
-rm -f work-obj*.cf *_tb *.o *.exe
+# OLD MAKEFILE SYSTEM (Deprecated but still works)
+cd modules/
+make clean
+make compile
+make compile-single-module MODULE_NAME=SimpleWaveGen
+
+# Manual GHDL (Advanced - rarely needed)
+ghdl -i --std=08 --workdir=work/ --work=work *.vhd  # Import
+ghdl -m --std=08 --workdir=work/ --work=work entity # Make
+ghdl -r --std=08 --work=work entity                 # Run
 ```
 
 ---
@@ -988,6 +1238,7 @@ rm -f work-obj*.cf *_tb *.o *.exe
   - Strict enforcement of protected types for shared variables
   - Better support for `std.env.stop()`
   - Improved real number handling in synthesis contexts
+  - Native dependency resolution from `use` statements
 
 ---
 
@@ -1006,3 +1257,5 @@ For CocotB testing patterns, see:
 - See `coding_standards` memory for general VHDL style guidelines
 - See `cocotb_testing_guide` memory for current testing framework
 - See `design_patterns` memory for architectural patterns
+- See `docs/GHDL-BUILD-MODERNIZATION-COMPLETE.md` for build system details
+- See `scripts/build_vhdl.py` for build script implementation
