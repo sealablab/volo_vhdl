@@ -19,8 +19,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ghdl
 
-    - name: Smoke test - Build all modules
+    - name: Smoke test - Build VHDL dependencies
       run: |
-        echo "Quick smoke test: Building all modules..."
-        uv run python scripts/build_vhdl.py
-        echo "✅ Smoke test passed - all modules compile!"
+        echo "Quick smoke test: Building VHDL dependency graph..."
+        uv run python scripts/build_vhdl_deps.py
+        echo "✅ Smoke test passed - all modules analyzed!"
