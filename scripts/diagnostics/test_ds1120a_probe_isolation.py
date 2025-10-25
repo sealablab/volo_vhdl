@@ -11,6 +11,17 @@ Usage:
 import time
 import numpy as np
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 try:
     from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator
     MOKU_AVAILABLE = True

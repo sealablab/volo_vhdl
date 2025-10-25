@@ -30,7 +30,10 @@
       "Bash(touch:*)",
       "Bash(git tag:*)",
       "Bash(git mv:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(for f in mokubench_*.py)",
+      "Bash(do git mv \"$f\" ../scripts/mokubench/)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -16,6 +16,17 @@ sys.path.insert(0, '.')  # Add current dir to path
 from bench_framework import BenchConfig, SlotConfig, ExternalHardware, ProbeConnection, MOKU_GO
 from bench_framework.visualization import generate_ascii_diagram, generate_summary
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 try:
     from moku.instruments import MultiInstrument, Oscilloscope, WaveformGenerator
     MOKU_AVAILABLE = True

@@ -1,6 +1,15 @@
 # CocotB Test Suite
 
-This directory contains Python-based CocotB testbenches for the Volo VHDL project.
+This directory contains **CocotB simulation tests ONLY** for the Volo VHDL project.
+
+## Directory Purpose
+
+**`tests/` = CocotB simulation tests**
+
+For other types of testing:
+- **`scripts/hardware/`** - Hardware deployment & validation on real Moku
+- **`scripts/diagnostics/`** - Physical connection diagnostics & debugging
+- **`scripts/mokubench/`** - Full bench integration tests
 
 **Migration Status**: Active transition from GHDL VHDL testbenches to CocotB
 **Branch**: `feature/coco_tb_transition`

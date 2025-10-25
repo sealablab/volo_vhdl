@@ -15,6 +15,17 @@ from bench_framework import BenchConfig, SlotConfig, Connection
 from bench_framework.config import MOKU_GO
 from bench_framework.hardware import HardwareBackend
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 
 async def probe_cr0(ip_address: str, bitstream_path: str):
     """Probe different CR0 configurations and observe OutputB response."""

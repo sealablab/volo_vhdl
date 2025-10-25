@@ -10,6 +10,17 @@ Usage:
 
 import time
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 # Try importing Moku API
 try:
     from moku.instruments import MultiInstrument, Datalogger

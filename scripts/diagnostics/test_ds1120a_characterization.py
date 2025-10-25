@@ -18,6 +18,17 @@ from pathlib import Path
 from bench_framework import BenchConfig
 from bench_framework.backends.moku_backend import MokuBackend
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 
 @pytest.fixture(scope="module")
 def moku_ip(request):

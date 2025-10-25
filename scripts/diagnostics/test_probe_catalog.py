@@ -43,6 +43,17 @@ from bench_framework import (
 )
 from pydantic import ValidationError
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 
 def test_probe_connection_validation():
     """Test 1: ProbeConnection validates Moku ports"""

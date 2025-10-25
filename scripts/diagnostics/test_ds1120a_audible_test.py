@@ -29,6 +29,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 from bench_framework.config import BenchConfig
 from bench_framework.visualization import generate_ascii_diagram
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 
 def load_bench_config(config_path: str) -> BenchConfig:
     """Load and parse BenchConfig from YAML file."""

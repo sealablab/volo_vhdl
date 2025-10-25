@@ -13,6 +13,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from test_inspectable_buffer_loader_hardware import *
 
+# ==================================================================================
+# NOTE: This script uses the ARCHIVED bench_framework API (now in archive/)
+#
+# TODO: Update to use new API:
+#   - BenchConfig → MokuPlatformConfig + BenchBench
+#   - Connection → MokuConnection
+#   - bench_framework → tests.moku_platform_simulator
+#
+# See: docs/MIGRATION_PLAN_MokuPlatformSimulator.md
+# ==================================================================================
+
 def investigate_fault(mcc, osc):
     """Run multiple debug views to understand what's happening"""
 
