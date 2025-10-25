@@ -1,0 +1,30 @@
+{
+  "name": "Default Oscilloscope Monitor (Slot 2)",
+  "description": "Oscilloscope in Slot 2 monitoring custom bitstream outputs from Slot 1",
+  "slots": {
+    "1": {
+      "instrument": "CloudCompile",
+      "bitstream": null
+    },
+    "2": {
+      "instrument": "Oscilloscope",
+      "settings": {
+        "timebase": [-0.005, 0.005]
+      }
+    }
+  },
+  "connections": [
+    {
+      "source": "Slot1OutA",
+      "destination": "Slot2InA"
+    },
+    {
+      "source": "Slot1OutB",
+      "destination": "Slot2InB"
+    }
+  ],
+  "metadata": {
+    "default": true,
+    "platform_compatible": ["Moku:Go", "Moku:Pro", "Moku:Lab"]
+  }
+}

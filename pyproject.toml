@@ -23,6 +23,12 @@ dependencies = [
 
     # Data Analysis (Hardware Validation)
     "numpy>=1.24.0",
+
+    # CLI Tools (moku-go deployment utility)
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "loguru>=0.7.0",
+    "zeroconf>=0.147.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +37,12 @@ dev = [
     "black>=24.0.0",
     "ruff>=0.1.0",
 ]
+
+# Note: Script entrypoints are defined but not installed
+# (project is not packaged to avoid setuptools conflicts with VHDL tree)
+# Use: uv run python tools/moku_go.py
+[project.scripts]
+moku-go = "tools.moku_go:main"
 
 [tool.uv]
 dev-dependencies = []
