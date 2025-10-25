@@ -6,6 +6,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Volo VHDL** is a VHDL-2008 project designed for **Verilog portability**, targeting FPGA development for Moku devices. The project features an AI-powered workflow, standardized module architecture, and comprehensive build/test infrastructure using GHDL.
 
+## Core Abstractions ⭐
+
+### MokuConfig - The Central Deployment Model
+
+**`MokuConfig`** is THE core Python abstraction for this project:
+
+📍 **Location**: `models/moku/platform_config.py`
+🎯 **Purpose**: Single source of truth for deployment specification
+🔄 **Dual Backend**: Works for BOTH CocotB simulation AND hardware deployment
+
+**What it does:**
+- Defines which instruments go in which slots (1-4 for Moku:Go)
+- Specifies MCC signal routing (Input/Output/Slot connections)
+- Validates configuration at creation time (type safety via Pydantic)
+- Serializes to JSON/YAML for reproducibility
+- Drives `tools/moku_go.py deploy` workflow
+
+**Quick Example:**
+```python
+from models.moku import MokuConfig, SlotConfig, MokuConnection, MOKU_GO_PLATFORM
+
+config = MokuConfig(
+    platform=MOKU_GO_PLATFORM,
+    slots={
+        2: SlotConfig(
+            instrument='CloudCompile',
+            bitstream='modules/PulseStar/latest/*.tar'
+        )
+    },
+    routing=[
+        MokuConnection(source='Slot2OutA', destination='Output1'),
+        MokuConnection(source='Slot2OutB', destination='Output2')
+    ]
+)
+
+# Deploy to hardware
+# $ moku_go.py deploy --device MokuB106 --config config.json
+
+# Use in CocotB simulation (future)
+# async def test_hardware(dut):
+#     await deploy_mokuconfig(dut, config)
+```
+
+**Key Design Principle**:
+> Write your deployment config ONCE → Use in simulation, hardware, and documentation
+
+📚 **Deep Dive**: See Serena memory `mokuconfig_core_abstraction`
+
+---
+
 ## Essential Documentation (Source of Truth)
 
 Before making changes, consult these files:
@@ -49,13 +99,16 @@ See `docs/UV_SETUP.md` for full documentation.
 - **⚠️ DO NOT**: Create new GHDL testbenches (deprecated)
 
 ### 5. Essential Serena Memories
-Read these as needed for your task:
+Read these IMMEDIATELY for any task:
+- **`mokuconfig_core_abstraction`** ⭐ - THE core deployment model (START HERE!)
 - `cocotb_testing_guide` - Testing framework (NEW standard)
 - `coding_standards` - VHDL rules and tiered system
 - `design_patterns` - Common patterns and implementations
+
+Read as needed:
 - `codebase_structure` - Module organization
 - `tech_stack` - Tools and platform info
-- `bench_config_framework` - Moku Platform Simulator (Pydantic-based multi-instrument framework)
+- `mokuconfig_and_benchbench_framework` - Infrastructure models (MokuConfig vs BenchBench)
 
 ### 6. Key Documentation Files
 - `CLAUDE.md` - This file (project overview)

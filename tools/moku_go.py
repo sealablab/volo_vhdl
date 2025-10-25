@@ -39,10 +39,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from models.moku import (
+    MokuConfig,
     MokuConnection,
     MokuDeviceCache,
     MokuDeviceInfo,
-    MokuPlatformConfig,
     SlotConfig,
     MOKU_GO_PLATFORM,
 )
@@ -243,7 +243,7 @@ def deploy(
     if config:
         console.print(f"[blue]Loading config from {config}...[/blue]")
         try:
-            deployment_config = MokuPlatformConfig.model_validate_json(config.read_text())
+            deployment_config = MokuConfig.model_validate_json(config.read_text())
         except Exception as e:
             console.print(f"[red]Failed to load config: {e}[/red]")
             raise typer.Exit(1)
@@ -253,7 +253,7 @@ def deploy(
         platform = MOKU_GO_PLATFORM.model_copy()
         platform.ip_address = ip
 
-        deployment_config = MokuPlatformConfig(
+        deployment_config = MokuConfig(
             platform=platform,
             slots={
                 slot: SlotConfig(

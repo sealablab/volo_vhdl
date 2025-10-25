@@ -10,6 +10,18 @@ This project demonstrates a modern VHDL development approach combining:
 
 ## 🚀 Quick Start
 
+### ⭐ Core Abstraction: MokuConfig
+
+**`MokuConfig`** is THE central deployment model for this project:
+
+📍 `models/moku/platform_config.py` - Single source of truth for deployment specifications
+🔄 Works for BOTH CocotB simulation AND hardware deployment
+🎯 Type-safe Pydantic validation prevents configuration errors
+
+**See**: `CLAUDE.md` for quick examples, Serena memory `mokuconfig_core_abstraction` for complete reference
+
+---
+
 ### For AI Agents (Claude Code, Cursor, etc.)
 
 **Essential files to read:**
@@ -24,6 +36,7 @@ mcp__serena__check_onboarding_performed
 ```
 
 **Available Serena memories** (read as needed):
+- **`mokuconfig_core_abstraction.md`** ⭐ - THE core deployment model (LOAD FIRST!)
 - `project_overview.md` - High-level project context
 - `codebase_structure.md` - Directory organization
 - `coding_standards.md` - VHDL rules and tiered system
@@ -31,6 +44,7 @@ mcp__serena__check_onboarding_performed
 - `ghdl_patterns_and_solutions.md` - Build and compilation tips
 - `cocotb_testing_guide.md` - Testing framework (current standard)
 - `tech_stack.md` - Tools and platform information
+- `mokuconfig_and_benchbench_framework.md` - Infrastructure models
 - `task_completion_checklist.md` - Workflow checklist
 
 **🎛️ Moku Instrument API Library** (NEW - 16 complete instrument references):
@@ -88,12 +102,10 @@ The **Moku Platform Simulator** provides a seamless abstraction for deploying VH
 **Workflow validated**: VHDL → CloudCompile → Synthesis → MokuBench → Real Hardware
 
 ```python
-# Same MokuPlatformConfig works for BOTH simulation and hardware!
-from tests.moku_platform_simulator import MokuPlatformConfig, SlotConfig
-from models.moku.routing import MokuConnection
-from models.moku.platforms.moku_go import MOKU_GO_PLATFORM
+# Same MokuConfig works for BOTH simulation and hardware!
+from models.moku import MokuConfig, SlotConfig, MokuConnection, MOKU_GO_PLATFORM
 
-config = MokuPlatformConfig(
+config = MokuConfig(
     platform=MOKU_GO_PLATFORM,
     slots={
         1: SlotConfig(instrument='CloudCompile', bitstream='simple_counter.tar.gz'),
@@ -126,7 +138,7 @@ uv run python tests/mokubench_deployment_test.py --ip 192.168.13.159
 ```
 
 **Key Features:**
-- ✅ Validated Pydantic models (`MokuPlatformConfig` + `BenchBench`)
+- ✅ Validated Pydantic models (`MokuConfig` + `BenchBench`)
 - ✅ CloudCompile bitstream deployment
 - ✅ Multi-instrument orchestration (Oscilloscope, WaveformGenerator, CloudCompile)
 - ✅ MCC signal routing configuration
@@ -136,7 +148,8 @@ uv run python tests/mokubench_deployment_test.py --ip 192.168.13.159
 
 **Documentation:**
 - `docs/MOKUBENCH_WORKFLOW.md` - Complete deployment workflow
-- `.serena/memories/bench_config_framework.md` - Full reference (updated 2025-10-25)
+- `.serena/memories/mokuconfig_core_abstraction.md` - Core deployment model
+- `.serena/memories/mokuconfig_and_benchbench_framework.md` - Infrastructure reference
 
 **Status**: Phase 1 (SimBench) ✓ | Phase 3 (MokuBench) ✓
 
@@ -282,12 +295,14 @@ The project uses **Serena MCP** (Model Context Protocol) for knowledge managemen
 - **Cross-session** - Knowledge persists across AI agent sessions
 
 **Available memories:**
+- **`mokuconfig_core_abstraction.md`** ⭐ - THE core deployment model
 - `coding_standards.md` - VHDL rules, tiered system, portability
 - `design_patterns.md` - FSMs, control signals, register interfaces
 - `ghdl_patterns_and_solutions.md` - Compilation, debugging, testbenches
 - `cocotb_testing_guide.md` - Testing framework patterns
 - `codebase_structure.md` - Directory organization
 - `tech_stack.md` - Tools, platform, dependencies
+- `mokuconfig_and_benchbench_framework.md` - Infrastructure models
 - **`instrument_*.md`** - 16 Moku instrument API references (NEW!)
 
 **How to use:**
@@ -406,15 +421,22 @@ signal current_state : std_logic_vector(1 downto 0);
 
 ## 📜 Changelog
 
+### 2025-10-25 - MokuConfig Promotion 🌟
+- **Renamed**: `MokuPlatformConfig` → `MokuConfig` (THE core abstraction)
+- **Documentation**: Featured prominently in CLAUDE.md, AGENTS.md, README.md
+- **Serena memories**: New `mokuconfig_core_abstraction.md` (CRITICAL priority)
+- **Serena memories**: Renamed `bench_config_framework` → `mokuconfig_and_benchbench_framework`
+- **Priority loading**: Load `mokuconfig_core_abstraction` first in every context window
+- **Backward compatibility**: Alias maintains old imports during transition
+
 ### 2025-10-25 - Moku Platform Simulator - Pydantic Migration 🎯
 - **Architecture refactor**: Split monolithic `BenchConfig` into validated Pydantic models
-- **New models**: `BenchBench` (physical bench) + `MokuPlatformConfig` (deployment config)
+- **New models**: `BenchBench` (physical bench) + `MokuConfig` (deployment config)
 - **Directory rename**: `tests/bench_framework/` → `tests/moku_platform_simulator/`
 - **Physical wiring validation**: Device catalog prevents hardware mistakes (direction checking)
 - **Type safety**: Full Pydantic validation with clear error messages
 - **Documentation update**: All memories, READMEs, and guides synced to new architecture
 - **Helper scripts**: Verification and bulk update tools for future migrations
-- Tagged as `docs_and_memory_update`
 
 ### 2025-10-23 - MokuBench Framework Complete! 🎉
 - **Phase 3 complete**: Unified Moku Platform Simulator deployed to real hardware

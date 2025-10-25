@@ -2,10 +2,41 @@
 
 This file provides guidance to agents when working with code in this repository.
 
+## Core Abstractions (Load First!)
+
+### MokuConfig - Deployment Specification Model
+**THE** central Python abstraction for this project.
+
+📍 `models/moku/platform_config.py` → `MokuConfig`
+🎯 Single source of truth: Slots + Routing + Platform + Metadata
+🔄 Dual backend: CocotB simulation AND hardware deployment
+
+**Quick Commands:**
+```bash
+# Deploy from config file
+uv run python tools/moku_go.py deploy --device MokuB106 --config deploy.json
+
+# Deploy from CLI (auto-generates MokuConfig internally)
+uv run python tools/moku_go.py deploy --device MokuB106 --bitstream *.tar --slot 2
+
+# Generate reusable config
+python -c "
+from models.moku import MokuConfig, SlotConfig, MOKU_GO_PLATFORM
+config = MokuConfig(platform=MOKU_GO_PLATFORM, slots={...}, routing=[...])
+print(config.model_dump_json(indent=2))
+" > configs/my_deployment.json
+```
+
+📚 **Serena Memory**: `mokuconfig_core_abstraction` (load first!)
+
+---
+
 ## Essential Resources (Source of Truth)
-- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
+- **`Serena: mokuconfig_core_abstraction`** ⭐ - Core deployment model (START HERE!)
+- **`models/moku/platform_config.py`** - MokuConfig implementation
 - **`tests/README.md`** - CocotB testing framework (NEW - preferred for new tests)
 - **`tests/conftest.py`** - Shared CocotB utilities and fixtures
+- **`ai-workflow/ng/README-synth-vhdl-tips-ng.md`** - Synthesizable VHDL patterns
 
 ## Build/Test Commands
 

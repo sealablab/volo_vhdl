@@ -1,10 +1,10 @@
 """
-Moku Platform Configuration
+MokuConfig - THE Core Deployment Abstraction
 
-Deployment specification for Moku MultiInstrument mode.
+Single source of truth for Moku MultiInstrument deployment specifications.
 Works for BOTH simulation (behavioral models) and hardware (real Moku).
 
-This is NOT a test configuration - it's a Moku platform deployment spec.
+This is the central Python abstraction for the entire project.
 """
 
 from typing import Any
@@ -37,9 +37,12 @@ class SlotConfig(BaseModel):
         return v.strip()
 
 
-class MokuPlatformConfig(BaseModel):
+class MokuConfig(BaseModel):
     """
-    Moku MultiInstrument platform deployment configuration.
+    THE core deployment abstraction for Moku platform.
+
+    This is the single source of truth for multi-instrument deployment specifications.
+    It bridges VHDL hardware, CocotB simulation, and real Moku device deployment.
 
     Specifies which instruments to deploy to which slots and how to route
     signals between them. Works for BOTH simulation and hardware backends.
@@ -54,7 +57,7 @@ class MokuPlatformConfig(BaseModel):
         metadata: Optional metadata (test campaign, version, etc.)
 
     Example:
-        >>> config = MokuPlatformConfig(
+        >>> config = MokuConfig(
         ...     platform=MOKU_GO_PLATFORM,
         ...     slots={
         ...         1: SlotConfig(instrument='CloudCompile', bitstream='emfi_seq.bit'),
@@ -137,6 +140,10 @@ class MokuPlatformConfig(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'MokuPlatformConfig':
+    def from_dict(cls, data: dict) -> 'MokuConfig':
         """Create configuration from dictionary."""
         return cls(**data)
+
+
+# Backward compatibility alias (deprecated - use MokuConfig)
+MokuPlatformConfig = MokuConfig
