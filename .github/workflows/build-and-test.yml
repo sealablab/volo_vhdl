@@ -1,0 +1,98 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, 'feature/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install GHDL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ghdl
+        echo "GHDL version:"
+        ghdl --version
+
+    - name: Install UV (Python package manager)
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Verify UV installation
+      run: |
+        uv --version
+
+    - name: Install Python dependencies
+      run: |
+        uv sync --no-install-project
+
+    - name: Build all modules
+      working-directory: modules
+      run: |
+        echo "Starting full build with dependency resolution..."
+        make clean
+        make compile
+        echo "Build completed successfully!"
+
+    - name: List available test modules
+      run: |
+        uv run python tests/run.py --list
+
+    - name: Run CocotB test - volo_clk_divider
+      run: |
+        uv run python tests/run.py volo_clk_divider --no-waves
+
+    - name: Run CocotB test - volo_voltage_pkg
+      run: |
+        uv run python tests/run.py volo_voltage_pkg --no-waves
+
+    - name: Run CocotB test - moku_pct_pkg
+      run: |
+        uv run python tests/run.py moku_pct_pkg --no-waves
+
+    - name: Run CocotB test - emfi_seq_top
+      run: |
+        uv run python tests/run.py emfi_seq_top --no-waves
+
+    - name: Run CocotB test - mcc_primitives
+      run: |
+        uv run python tests/run.py mcc_primitives --no-waves
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: tests/results.xml
+        retention-days: 30
+
+    - name: Upload waveforms (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: waveforms-${{ github.sha }}
+        path: tests/*.ghw
+        retention-days: 7
+
+    - name: Build summary
+      if: always()
+      run: |
+        echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ All builds and tests passed!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Build or tests failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+        fi

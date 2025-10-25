@@ -13,8 +13,8 @@ GHDL_RUN = $(GHDL) -r $(GHDL_FLAGS)
 
 # Detect current directory level and module context
 CURRENT_DIR := $(shell pwd)
-# Set MODULES_ROOT to the directory containing this central Makefile
-MODULES_ROOT := /Users/johnycsh/volo_codes/volo_vhdl/modules
+# Set MODULES_ROOT dynamically (portable across environments)
+MODULES_ROOT := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 PROJECT_ROOT := $(shell dirname $(MODULES_ROOT))
 
 # Determine if we're in a specific module directory
