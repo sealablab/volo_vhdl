@@ -16,8 +16,15 @@ from typing import List
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
 MODULES = PROJECT_ROOT / "modules"
-VOLO_COMMON = MODULES / "shared/volo_common"
+INSTRUMENTS = PROJECT_ROOT / "instruments"
+EXPERIMENTAL = PROJECT_ROOT / "experimental"
 TESTS = PROJECT_ROOT / "tests"
+
+# Flattened shared module paths (new structure after 2025-10-25 reorganization)
+SHARED_CORE = MODULES / "shared/core"
+SHARED_PACKAGES = MODULES / "shared/packages"
+SHARED_OBSERVER = MODULES / "shared/observer"
+ODDBALL = MODULES / "oddball"
 
 
 @dataclass
@@ -40,8 +47,8 @@ TESTS_CONFIG = {
     "fsm_example": TestConfig(
         name="fsm_example",
         sources=[
-            VOLO_COMMON / "common/volo_voltage_pkg.vhd",
-            VOLO_COMMON / "observer/fsm_observer.vhd",
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
+            SHARED_OBSERVER / "fsm_observer.vhd",
             MODULES / "examples/fsm_example/core/fsm_example_core.vhd",
             MODULES / "examples/fsm_example/top/fsm_example_top.vhd",
         ],
@@ -54,13 +61,13 @@ TESTS_CONFIG = {
     "emfi_seq_top": TestConfig(
         name="emfi_seq_top",
         sources=[
-            VOLO_COMMON / "core/volo_clk_divider.vhd",
-            VOLO_COMMON / "common/volo_voltage_pkg.vhd",
-            MODULES / "instruments/EMFI-Seq/core/EMFI_Seq_fsm.vhd",
-            MODULES / "instruments/EMFI-Seq/core/EMFI_Seq_stair.vhd",
-            MODULES / "instruments/EMFI-Seq/top/EMFI_Seq.vhd",
+            SHARED_CORE / "volo_clk_divider.vhd",
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
+            SHARED_OBSERVER / "fsm_observer.vhd",
+            INSTRUMENTS / "EMFI-Seq/core/EMFI_Seq_fsm.vhd",
+            INSTRUMENTS / "EMFI-Seq/top/EMFI_Seq.vhd",
             PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
-            MODULES / "instruments/EMFI-Seq/top/Top.vhd",
+            INSTRUMENTS / "EMFI-Seq/top/Top.vhd",
         ],
         toplevel="customwrapper",
         test_module="test_emfi_seq_top",
@@ -70,13 +77,16 @@ TESTS_CONFIG = {
     "pulsestar": TestConfig(
         name="pulsestar",
         sources=[
-            VOLO_COMMON / "core/volo_clk_divider.vhd",
-            MODULES / "instruments/PulseStar/datadef/waveform_lut_pkg.vhd",
-            MODULES / "instruments/PulseStar/core/waveform_gen_core.vhd",
-            MODULES / "instruments/PulseStar/core/trigger_gen_core.vhd",
-            MODULES / "instruments/PulseStar/core/uart_tx_core.vhd",
+            SHARED_CORE / "volo_clk_divider.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
+            SHARED_CORE / "volo_uart_tx_core.vhd",
+            MODULES / "untested/volo_uart_pattern_tx.vhd",
+            INSTRUMENTS / "PulseStar/datadef/waveform_lut_pkg.vhd",
+            INSTRUMENTS / "PulseStar/core/waveform_gen_core.vhd",
+            INSTRUMENTS / "PulseStar/core/trigger_gen_core.vhd",
             PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
-            MODULES / "instruments/PulseStar/top/Top.vhd",
+            INSTRUMENTS / "PulseStar/top/Top.vhd",
         ],
         toplevel="customwrapper",
         test_module="test_pulsestar",
@@ -87,13 +97,13 @@ TESTS_CONFIG = {
     "mcc_primitives": TestConfig(
         name="mcc_primitives",
         sources=[
-            VOLO_COMMON / "core/volo_clk_divider.vhd",
-            VOLO_COMMON / "common/volo_voltage_pkg.vhd",
-            MODULES / "instruments/EMFI-Seq/core/EMFI_Seq_fsm.vhd",
-            MODULES / "instruments/EMFI-Seq/core/EMFI_Seq_stair.vhd",
-            MODULES / "instruments/EMFI-Seq/top/EMFI_Seq.vhd",
+            SHARED_CORE / "volo_clk_divider.vhd",
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
+            SHARED_OBSERVER / "fsm_observer.vhd",
+            INSTRUMENTS / "EMFI-Seq/core/EMFI_Seq_fsm.vhd",
+            INSTRUMENTS / "EMFI-Seq/top/EMFI_Seq.vhd",
             PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
-            MODULES / "instruments/EMFI-Seq/top/Top.vhd",
+            INSTRUMENTS / "EMFI-Seq/top/Top.vhd",
         ],
         toplevel="customwrapper",
         test_module="test_mcc_primitives",
@@ -104,8 +114,8 @@ TESTS_CONFIG = {
     "uart_baud_gen": TestConfig(
         name="uart_baud_gen",
         sources=[
-            VOLO_COMMON / "common/volo_uart_pkg.vhd",
-            VOLO_COMMON / "core/volo_uart_baud_gen.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
         ],
         toplevel="uart_baud_gen",
         test_module="test_uart_baud_gen",
@@ -115,9 +125,9 @@ TESTS_CONFIG = {
     "uart_tx_core": TestConfig(
         name="uart_tx_core",
         sources=[
-            VOLO_COMMON / "common/volo_uart_pkg.vhd",
-            VOLO_COMMON / "core/volo_uart_baud_gen.vhd",
-            VOLO_COMMON / "core/volo_uart_tx_core.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
+            SHARED_CORE / "volo_uart_tx_core.vhd",
         ],
         toplevel="uart_tx_core",
         test_module="test_uart_tx_core",
@@ -127,10 +137,10 @@ TESTS_CONFIG = {
     "pinatatx_core": TestConfig(
         name="pinatatx_core",
         sources=[
-            VOLO_COMMON / "common/volo_uart_pkg.vhd",
-            VOLO_COMMON / "core/volo_uart_baud_gen.vhd",
-            VOLO_COMMON / "core/volo_uart_tx_core.vhd",
-            MODULES / "instruments/PinataTX/core/PinataTX_core.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
+            SHARED_CORE / "volo_uart_tx_core.vhd",
+            ODDBALL / "volo_pinata_tx/core/PinataTX_core.vhd",
         ],
         toplevel="pinatatx_core",
         test_module="test_pinatatx_core",
@@ -140,10 +150,10 @@ TESTS_CONFIG = {
     "simpleserial_v1_tx": TestConfig(
         name="simpleserial_v1_tx",
         sources=[
-            VOLO_COMMON / "common/volo_uart_pkg.vhd",
-            VOLO_COMMON / "core/volo_uart_baud_gen.vhd",
-            VOLO_COMMON / "core/volo_uart_tx_core.vhd",
-            VOLO_COMMON / "core/volo_simpleserial_v1_tx.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
+            SHARED_CORE / "volo_uart_tx_core.vhd",
+            SHARED_CORE / "volo_simpleserial_v1_tx.vhd",
         ],
         toplevel="simpleserial_v1_tx",
         test_module="test_simpleserial_v1_tx",
@@ -153,11 +163,11 @@ TESTS_CONFIG = {
     "simpleserial_v2_tx": TestConfig(
         name="simpleserial_v2_tx",
         sources=[
-            VOLO_COMMON / "common/volo_uart_pkg.vhd",
-            VOLO_COMMON / "common/volo_cobs_pkg.vhd",
-            VOLO_COMMON / "core/volo_uart_baud_gen.vhd",
-            VOLO_COMMON / "core/volo_uart_tx_core.vhd",
-            VOLO_COMMON / "core/volo_simpleserial_v2_tx.vhd",
+            SHARED_PACKAGES / "volo_uart_pkg.vhd",
+            SHARED_PACKAGES / "volo_cobs_pkg.vhd",
+            SHARED_CORE / "volo_uart_baud_gen.vhd",
+            SHARED_CORE / "volo_uart_tx_core.vhd",
+            SHARED_CORE / "volo_simpleserial_v2_tx.vhd",
         ],
         toplevel="simpleserial_v2_tx",
         test_module="test_simpleserial_v2_tx",
@@ -167,7 +177,7 @@ TESTS_CONFIG = {
     # === Volo Common - Core Components ===
     "volo_clk_divider": TestConfig(
         name="volo_clk_divider",
-        sources=[VOLO_COMMON / "core/volo_clk_divider.vhd"],
+        sources=[SHARED_CORE / "volo_clk_divider.vhd"],
         toplevel="volo_clk_divider",
         test_module="test_volo_clk_divider",
         category="volo_common",
@@ -175,7 +185,7 @@ TESTS_CONFIG = {
 
     "comparator": TestConfig(
         name="comparator",
-        sources=[VOLO_COMMON / "core/volo_comparator.vhd"],
+        sources=[SHARED_CORE / "volo_comparator.vhd"],
         toplevel="volo_comparator",
         test_module="test_comparator",
         category="volo_common",
@@ -183,7 +193,7 @@ TESTS_CONFIG = {
 
     "counter_nbit": TestConfig(
         name="counter_nbit",
-        sources=[VOLO_COMMON / "core/volo_counter_nbit.vhd"],
+        sources=[SHARED_CORE / "volo_counter_nbit.vhd"],
         toplevel="counter_nbit",
         test_module="test_counter_nbit",
         category="volo_common",
@@ -191,7 +201,7 @@ TESTS_CONFIG = {
 
     "debouncer": TestConfig(
         name="debouncer",
-        sources=[VOLO_COMMON / "core/volo_debouncer.vhd"],
+        sources=[SHARED_CORE / "volo_debouncer.vhd"],
         toplevel="volo_debouncer",
         test_module="test_debouncer",
         category="volo_common",
@@ -199,7 +209,7 @@ TESTS_CONFIG = {
 
     "delay_line": TestConfig(
         name="delay_line",
-        sources=[VOLO_COMMON / "core/volo_delay_line.vhd"],
+        sources=[SHARED_CORE / "volo_delay_line.vhd"],
         toplevel="delay_line",
         test_module="test_delay_line",
         category="volo_common",
@@ -207,7 +217,7 @@ TESTS_CONFIG = {
 
     "edge_detector": TestConfig(
         name="edge_detector",
-        sources=[VOLO_COMMON / "core/volo_edge_detector.vhd"],
+        sources=[SHARED_CORE / "volo_edge_detector.vhd"],
         toplevel="edge_detector",
         test_module="test_edge_detector",
         category="volo_common",
@@ -215,7 +225,7 @@ TESTS_CONFIG = {
 
     "mux": TestConfig(
         name="mux",
-        sources=[VOLO_COMMON / "core/volo_mux.vhd"],
+        sources=[SHARED_CORE / "volo_mux.vhd"],
         toplevel="volo_mux",
         test_module="test_mux",
         category="volo_common",
@@ -223,7 +233,7 @@ TESTS_CONFIG = {
 
     "pulse_generator": TestConfig(
         name="pulse_generator",
-        sources=[VOLO_COMMON / "core/volo_pulse_generator.vhd"],
+        sources=[MODULES / "untested/volo_pulse_generator.vhd"],
         toplevel="pulse_generator",
         test_module="test_pulse_generator",
         category="volo_common",
@@ -231,7 +241,7 @@ TESTS_CONFIG = {
 
     "pwm": TestConfig(
         name="pwm",
-        sources=[VOLO_COMMON / "core/volo_pwm.vhd"],
+        sources=[SHARED_CORE / "volo_pwm.vhd"],
         toplevel="volo_pwm",
         test_module="test_pwm",
         category="volo_common",
@@ -239,7 +249,7 @@ TESTS_CONFIG = {
 
     "synchronizer": TestConfig(
         name="synchronizer",
-        sources=[VOLO_COMMON / "core/volo_synchronizer.vhd"],
+        sources=[SHARED_CORE / "volo_synchronizer.vhd"],
         toplevel="volo_synchronizer",
         test_module="test_synchronizer",
         category="volo_common",
@@ -249,7 +259,7 @@ TESTS_CONFIG = {
     "volo_voltage_pkg": TestConfig(
         name="volo_voltage_pkg",
         sources=[
-            VOLO_COMMON / "common/volo_voltage_pkg.vhd",
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
             TESTS / "moku_voltage_pkg_tb_wrapper.vhd",
         ],
         toplevel="moku_voltage_pkg_tb_wrapper",
@@ -260,8 +270,8 @@ TESTS_CONFIG = {
     "moku_pct_pkg": TestConfig(
         name="moku_pct_pkg",
         sources=[
-            VOLO_COMMON / "common/volo_voltage_pkg.vhd",
-            VOLO_COMMON / "common/Moku_Pct_pkg.vhd",
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
+            SHARED_PACKAGES / "Moku_Pct_pkg.vhd",
             TESTS / "moku_pct_pkg_tb_wrapper.vhd",
         ],
         toplevel="moku_pct_pkg_tb_wrapper",

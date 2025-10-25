@@ -34,11 +34,11 @@ jobs:
       run: |
         uv sync --no-install-project
 
-    - name: Build all modules
+    - name: Build VHDL dependency graph
       run: |
-        echo "Building all VHDL modules..."
-        uv run python scripts/build_vhdl.py
-        echo "Build completed successfully!"
+        echo "Building VHDL dependency graph..."
+        uv run python scripts/build_vhdl_deps.py
+        echo "Dependency graph built successfully!"
 
     - name: List available test modules
       run: |

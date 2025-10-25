@@ -9,15 +9,35 @@ volo_vhdl/
 ├── CLAUDE.md            # Claude Code guidance (Source of Truth)
 ├── AGENTS.md            # Agent guidelines and build commands (Source of Truth)
 ├── README.md            # Project documentation
-├── modules/             # VHDL modules (main development area)
+├── instruments/         # Top-level instruments (MCC-deployable with Top.vhd)
+│   ├── EMFI-Seq/       # EMFI sequencer instrument
+│   ├── PulseStar/      # Pulse generator instrument
+│   └── SimpleWaveGen/  # Waveform generator instrument
+├── experimental/        # Experimental instruments (pre-production)
+│   ├── buffer_waveform_gen/
+│   ├── inspectable_buffer_loader/
+│   └── bram_test_minimal/
+├── modules/             # VHDL module library
+│   ├── shared/         # Shared utilities (FLAT structure)
+│   │   ├── core/       # Digital primitives (13 modules: clk_divider, uart, synchronizer, etc.)
+│   │   ├── packages/   # Type definitions and utilities (5 packages: voltage_pkg, uart_pkg, etc.)
+│   │   └── observer/   # Debug/monitoring utilities (fsm_observer)
+│   ├── oddball/        # Special-case modules (don't fit standard patterns)
+│   │   └── volo_pinata_tx/  # MCC-integrated utility (has top/ layer)
+│   ├── examples/       # Educational examples
+│   │   └── fsm_example/
+│   ├── untested/       # Modules without CocotB tests (5 modules)
 │   ├── Makefile        # Central build system
-│   ├── Makefile.deps   # Module dependency definitions
-│   ├── Makefile.shared # Shared Makefile rules
-│   └── [modules...]    # Individual module directories
-├── tests/               # CocotB testing framework (NEW standard)
+│   └── Makefile.shared # Shared Makefile rules
+├── tests/               # CocotB testing framework (Python-based)
 │   ├── Makefile        # CocotB test build system
-│   ├── conftest.py     # Shared test utilities
+│   ├── conftest.py     # Shared test utilities and primitives
 │   └── test_*.py       # Individual test modules
+├── docs/                # Centralized documentation
+│   └── packages/       # Package documentation (Voltage LUTs, Pct package, etc.)
+├── scripts/             # Python build and deployment scripts
+│   ├── build_mcc_package.py
+│   └── import_mcc_build.py
 ├── mcc_templates/       # MCC (Moku Custom Core) templates
 ├── templates/           # Reusable VHDL templates
 ├── static/              # Static assets (bitstream archives, etc.)
@@ -26,37 +46,69 @@ volo_vhdl/
     └── ghdl_testbenches/               # Legacy GHDL tests (deprecated)
 ```
 
-## Module Directory Structure (Mandatory)
-Every VHDL module follows this standardized structure:
+## Architectural Principles
+
+### **Hierarchy Based on Complexity**
+- **Top-level instruments** (`instruments/`, `experimental/`) - Have `top/Top.vhd` for MCC CustomWrapper integration
+- **Flat utilities** (`modules/shared/core/`, `packages/`) - Simple single-file modules, no MCC integration
+- **Oddball** (`modules/oddball/`) - Special cases that don't fit standard patterns
+
+### **Old tb/ Directories Removed**
+All GHDL testbenches (deprecated) have been deleted. CocotB is now the standard testing framework.
+
+## Instrument Directory Structure (Standard Pattern)
+Instruments at top-level follow this mandatory structure:
 
 ```
-modules/<module_name>/
+instruments/<instrument_name>/
 ├── common/              # Shared utilities and packages (Tier 1: strict RTL)
 ├── datadef/             # Data structures, LUTs, records (Tier 2: relaxed rules)
 ├── core/                # Pure algorithmic logic (Tier 1: strict RTL)
-├── top/                 # Platform integration (Tier 1: strict RTL, optional)
-├── tb/                  # Testbenches (Tier 3: full VHDL-2008, deprecated)
-│   ├── common/         # Tests for common packages (use CocotB instead)
-│   ├── datadef/        # Tests for datadef packages (use CocotB instead)
-│   ├── core/           # Tests for core modules (use CocotB instead)
-│   └── top/            # Integration tests for top-level (use CocotB instead)
-├── Makefile             # Module-specific build rules
-└── README.md            # Module documentation
+├── top/                 # MCC Platform integration (Tier 1: strict RTL)
+│   ├── <Instrument>.vhd         # Main module entity + architecture
+│   └── Top.vhd                  # CustomWrapper architecture only
+├── Makefile             # Module-specific build rules (optional)
+├── mcc_package.yaml     # MCC CloudCompile configuration
+├── instrument.yaml      # Instrument metadata
+└── README.md            # Instrument documentation
 ```
 
-**Note**: The `tb/` directory structure is legacy. All new tests should use CocotB framework in the `tests/` directory.
+## Shared Modules Structure (Flat Pattern)
+Utilities in `modules/shared/` use a flat structure for simplicity:
 
-## Existing Modules
+```
+modules/shared/
+├── core/                # Digital primitives
+│   ├── volo_clk_divider.vhd
+│   ├── volo_synchronizer.vhd
+│   ├── volo_edge_detector.vhd
+│   ├── volo_delay_line.vhd
+│   ├── volo_comparator.vhd
+│   ├── volo_mux.vhd
+│   ├── volo_counter_nbit.vhd
+│   ├── volo_pwm.vhd
+│   ├── volo_debouncer.vhd
+│   ├── volo_uart_tx_core.vhd
+│   ├── volo_uart_baud_gen.vhd
+│   ├── volo_simpleserial_v1_tx.vhd
+│   ├── volo_simpleserial_v2_tx.vhd
+│   ├── volo_barrel_shifter_core.vhd
+│   ├── volo_basic_trigger_box_core.vhd
+│   ├── volo_encoder_core.vhd
+│   ├── volo_parity_checker_core.vhd
+│   ├── volo_sipo_core.vhd
+│   └── volo_voltage_threshold_trigger_core.vhd
+├── packages/            # Type definitions and utilities
+│   ├── volo_voltage_pkg.vhd    # Voltage conversion (Tier 1 - Critical)
+│   ├── volo_uart_pkg.vhd
+│   ├── volo_cobs_pkg.vhd       # COBS encoding for SimpleSerial
+│   ├── Moku_Pct_pkg.vhd        # Percentage/fraction utilities
+│   └── mcc_loader_pkg.vhd
+└── observer/            # Debug/monitoring utilities
+    └── fsm_observer.vhd         # Standardized FSM monitoring pattern
+```
 
-### Shared/Common Modules
-- **volo_common**: Common utilities shared across all modules
-  - `common/Moku_Voltage_pkg.vhd` - Voltage conversion utilities (bidirectional: voltage ↔ digital, clamping, validation)
-  - `common/Moku_Pct_pkg.vhd` - Type-safe percentage-to-voltage conversion (multiple range subtypes)
-  - `core/clk_divider_core.vhd` - Clock divider with generic MAX_DIV, enable control, and linear division mapping (0=÷1, 1=÷2, etc.)
-
-### Application Modules
-- **SimpleWaveGen**: Complete reference implementation (Pattern 2: Platform Interface Package, deployed to hardware)
-- **EMFI-Seq**: EMFI sequencer (Pattern 1: Simple Direct Mapping, voltage conversion pattern, multi-core integration)
+**Key Point**: Files live directly in subdirectories (no nested `module/core/` hierarchy for single files).
 
 ## Layer Responsibilities
 
@@ -79,22 +131,18 @@ modules/<module_name>/
 
 ### Top Layer (`top/*.vhd`) - Tier 1
 - Integration with platform control system (Moku CustomWrapper)
-- Register exposure (control, config, status)
+- Two file pattern:
+  - `<Instrument>.vhd`: Entity + architecture (instantiates cores)
+  - `Top.vhd`: CustomWrapper architecture only (MCC integration)
 - **REQUIRED**: Direct instantiation pattern for all module connections
-- Do NOT include CustomWrapper entity body in module files
+- MCC provides CustomWrapper entity - do NOT create entity files
 
-### Testbench Layer - CocotB (NEW Standard)
+### Testing - CocotB (Standard)
 - **Location**: `tests/` directory (project root level)
 - **Framework**: Python-based with async/await syntax
 - **Test files**: `test_<module_name>.py`
-- **Shared utilities**: `conftest.py`
+- **Shared utilities**: `conftest.py` (setup_clock, reset helpers, MCC primitives)
 - **Examples**: `test_clk_divider_core.py`, `test_moku_pct_pkg.py`
-
-### Legacy Testbench Layer (`tb/*.vhd`) - Tier 3 (Deprecated)
-- **Status**: Being phased out - DO NOT CREATE NEW GHDL TESTBENCHES
-- Full VHDL-2008 features allowed
-- Archived to `archive/ghdl_testbenches/`
-- Use CocotB framework in `tests/` for all new tests
 
 ## Essential Documentation Files (Source of Truth)
 1. **`.cursor/rules.mdc`** - Points to Serena memories (authoritative)
@@ -109,6 +157,21 @@ modules/<module_name>/
 - `cocotb_testing_guide.md` - Testing framework
 - `ghdl_patterns_and_solutions.md` - Build and test patterns
 - `tech_stack.md` - Tools and platform info
+
+## Module Tiers (from SHARED_MODULES_AUDIT.md)
+
+### Tier 1: Critical Infrastructure (Mandatory)
+- `volo_clk_divider.vhd` - Clock division for all instruments
+- `volo_voltage_pkg.vhd` - Type-safe voltage conversion
+
+### Tier 2: General-Purpose Digital Primitives (Recommended)
+- Synchronization: synchronizer, edge_detector, delay_line
+- Logic primitives: comparator, mux
+- Counters/generators: counter_nbit, pwm, debouncer
+
+### Tier 3: Communication Protocols (ChipWhisperer/EMFI)
+- UART: uart_tx_core, uart_baud_gen, uart_pkg
+- SimpleSerial: simpleserial_v1_tx, simpleserial_v2_tx, cobs_pkg
 
 ## Archived Legacy Documentation
 - **`archive/ai-workflow-legacy-2025-10-22/`** - Legacy AI workflow documentation (no longer maintained)

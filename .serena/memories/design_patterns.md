@@ -296,7 +296,7 @@ constant STATE_ERROR : std_logic_vector(5 downto 0) := "000110";  -- Fault state
 - ✅ Tiny resource cost (3 extra flip-flops vs 3-bit FSM)
 - ✅ Massive simplification and consistency
 
-**2. Observer Instantiation** (Manual - takes ~2 minutes!)
+**2. Observer Instantiation** (Manual - takes ~2 minutes!):
 ```vhdl
 -- modules/my_module/top/Top.vhd
 FSM_OBS: entity work.fsm_observer
@@ -449,7 +449,7 @@ def test_fsm_observer_hardware(mcc, osc):
 ### Files
 
 **Implementation**:
-- `modules/volo_common/observer/fsm_observer.vhd` - Single observer entity
+- `modules/shared/observer/fsm_observer.vhd` - Single observer entity
 
 **Documentation**:
 - `docs/INSPECTABLE_FSM_REQUIREMENTS.md` - Complete pattern documentation
@@ -519,7 +519,7 @@ def test_fsm_observer_hardware(mcc, osc):
 - Automatic voltage spreading (compile-time LUT, zero runtime overhead)
 
 **Files Created**:
-- `modules/volo_common/observer/fsm_observer.vhd` - Single reusable observer entity
+- `modules/shared/observer/fsm_observer.vhd` - Single reusable observer entity
 - `docs/INSPECTABLE_FSM_REQUIREMENTS.md` - Complete pattern documentation
 
 **Impact**: Hardware debugging now possible without ILA/Chipscope - just watch OutputB on oscilloscope!
@@ -543,10 +543,10 @@ def test_fsm_observer_hardware(mcc, osc):
 - `oscilloscope_debugging_techniques` - Hardware debugging via oscilloscope (related to FSM observer)
 
 **Example Code**:
-- `modules/volo_common/observer/fsm_observer.vhd` - FSM observer entity (NEW)
-- `modules/volo_common/core/volo_comparator.vhd` - Pure combinational
-- `modules/volo_common/core/volo_mux.vhd` - Pure combinational
-- `modules/volo_common/core/volo_synchronizer.vhd` - Shift register (CDC)
-- `modules/volo_common/core/volo_debouncer.vhd` - Shift register (debounce)
-- `modules/volo_common/core/volo_pwm.vhd` - Fixed-width counter SUCCESS!
+- `modules/shared/observer/fsm_observer.vhd` - FSM observer entity (NEW)
+- `modules/shared/core/volo_comparator.vhd` - Pure combinational
+- `modules/shared/core/volo_mux.vhd` - Pure combinational
+- `modules/shared/core/volo_synchronizer.vhd` - Shift register (CDC)
+- `modules/shared/core/volo_debouncer.vhd` - Shift register (debounce)
+- `modules/shared/core/volo_pwm.vhd` - Fixed-width counter SUCCESS!
 - All tests in `tests/test_*.py` - Comprehensive CocotB patterns
