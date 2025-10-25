@@ -1,0 +1,51 @@
+name: Smoke Test
+
+# Runs on every push for quick feedback
+on:
+  push:
+    branches: [ '**' ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install GHDL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ghdl
+
+    - name: Smoke test - Build shared modules
+      working-directory: modules
+      run: |
+        echo "Quick smoke test: Building shared modules only..."
+        make clean
+
+        # Build just the core dependencies
+        echo "Compiling MCC template..."
+        ghdl -a --std=08 ../mcc_templates/mcc-Top.vhd
+
+        echo "Building volo_common (core dependency)..."
+        if [ -n "$(ls shared/volo_common/common/*.vhd 2>/dev/null)" ]; then
+          ghdl -a --std=08 shared/volo_common/common/*.vhd
+        fi
+        if [ -n "$(ls shared/volo_common/core/*.vhd 2>/dev/null)" ]; then
+          ghdl -a --std=08 shared/volo_common/core/*.vhd
+        fi
+
+        echo "✅ Smoke test passed - core modules compile!"
+
+    - name: Verify GHDL work library
+      working-directory: modules
+      run: |
+        if [ -f work-obj08.cf ]; then
+          echo "✅ GHDL work library created successfully"
+          ls -lh work-obj08.cf
+        else
+          echo "❌ GHDL work library not found"
+          exit 1
+        fi
