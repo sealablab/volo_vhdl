@@ -32,11 +32,11 @@ Bitstream Download → MokuBench Deployment → Real Hardware → Data Collectio
 ## Key Infrastructure
 
 ### Files Created
-- `tests/bench_framework/config.py` - Pydantic configuration models
-- `tests/bench_framework/backend.py` - Abstract backend interface
-- `tests/bench_framework/simulation.py` - CocotB simulation backend
-- `tests/bench_framework/hardware.py` - Moku hardware backend (MokuBench)
-- `tests/bench_framework/simulators/oscilloscope.py` - Oscilloscope simulator
+- `tests/moku_platform_simulator/config.py` - Pydantic configuration models
+- `tests/moku_platform_simulator/backend.py` - Abstract backend interface
+- `tests/moku_platform_simulator/simulation.py` - CocotB simulation backend
+- `tests/moku_platform_simulator/hardware.py` - Moku hardware backend (MokuBench)
+- `tests/moku_platform_simulator/simulators/oscilloscope.py` - Oscilloscope simulator
 - `tests/mokubench_connection_test.py` - Connection validation script
 - `tests/mokubench_deployment_test.py` - End-to-end deployment test
 - `modules/simple_counter/core/simple_counter_core.vhd` - Test module

@@ -19,7 +19,7 @@ Specialized instrument for **laser frequency stabilization** using Pound-Drever-
 ```python
 from bench_framework import BenchConfig, SlotConfig
 
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(

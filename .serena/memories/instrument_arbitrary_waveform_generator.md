@@ -23,7 +23,7 @@ import numpy as np
 # Define custom waveform
 custom_wave = np.sin(2 * np.pi * np.linspace(0, 3, 300))
 
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(

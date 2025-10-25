@@ -76,11 +76,11 @@ cd modules/
 make clean && make compile
 ```
 
-## 🎉 NEW: MokuBench Framework (Phase 3 Complete!)
+## 🎉 NEW: Moku Platform Simulator (Phase 3 Complete!)
 
 **Unified VHDL deployment framework: Design → Test Locally → Push to Hardware ✓**
 
-The **Bench Configuration Framework** provides a seamless abstraction for deploying VHDL modules to both simulation (CocotB) and real Moku hardware. Same configuration, different backends!
+The **Moku Platform Simulator** provides a seamless abstraction for deploying VHDL modules to both simulation (CocotB) and real Moku hardware. Same configuration, different backends!
 
 ### ✅ Successfully Deployed to Real Hardware!
 
@@ -88,23 +88,27 @@ The **Bench Configuration Framework** provides a seamless abstraction for deploy
 **Workflow validated**: VHDL → CloudCompile → Synthesis → MokuBench → Real Hardware
 
 ```python
-# Same BenchConfig works for BOTH simulation and hardware!
-config = BenchConfig(
-    platform=MOKU_GO,
+# Same MokuPlatformConfig works for BOTH simulation and hardware!
+from tests.moku_platform_simulator import MokuPlatformConfig, SlotConfig
+from models.moku.routing import MokuConnection
+from models.moku.platforms.moku_go import MOKU_GO_PLATFORM
+
+config = MokuPlatformConfig(
+    platform=MOKU_GO_PLATFORM,
     slots={
         1: SlotConfig(instrument='CloudCompile', bitstream='simple_counter.tar.gz'),
         2: SlotConfig(instrument='Oscilloscope')
     },
-    connections=[Connection(source='Slot1OutA', destination='Slot2InA')]
+    routing=[MokuConnection(source='Slot1OutA', destination='Slot2InA')]
 )
 
 # SimBench: Test locally with CocotB
-sim_backend = SimulationBackend.from_config(config, dut)
+sim_backend = SimulationBackend(config, dut)
 await sim_backend.setup()
 sim_data = await sim_backend.run(duration_ms=100)
 
-# MokuBench: Deploy to real hardware
-hw_backend = HardwareBackend.from_config(config, ip_address='192.168.13.159')
+# MokuBench: Deploy to real hardware (requires BenchBench for physical setup)
+hw_backend = HardwareBackend(config, bench)
 await hw_backend.setup()
 hw_data = await hw_backend.run(duration_ms=100)
 ```
@@ -122,17 +126,17 @@ uv run python tests/mokubench_deployment_test.py --ip 192.168.13.159
 ```
 
 **Key Features:**
-- ✅ Unified `BenchConfig` abstraction (simulation + hardware)
+- ✅ Validated Pydantic models (`MokuPlatformConfig` + `BenchBench`)
 - ✅ CloudCompile bitstream deployment
 - ✅ Multi-instrument orchestration (Oscilloscope, WaveformGenerator, CloudCompile)
 - ✅ MCC signal routing configuration
 - ✅ Control register management (MCC_READY convention)
 - ✅ Real-time data collection from hardware
-- ✅ Type-safe Pydantic models with validation
+- ✅ Physical wiring validation (prevents hardware mistakes)
 
 **Documentation:**
 - `docs/MOKUBENCH_WORKFLOW.md` - Complete deployment workflow
-- `.serena/memories/mokubench_deployment_success.md` - Full reference
+- `.serena/memories/bench_config_framework.md` - Full reference (updated 2025-10-25)
 
 **Status**: Phase 1 (SimBench) ✓ | Phase 3 (MokuBench) ✓
 
@@ -402,18 +406,28 @@ signal current_state : std_logic_vector(1 downto 0);
 
 ## 📜 Changelog
 
+### 2025-10-25 - Moku Platform Simulator - Pydantic Migration 🎯
+- **Architecture refactor**: Split monolithic `BenchConfig` into validated Pydantic models
+- **New models**: `BenchBench` (physical bench) + `MokuPlatformConfig` (deployment config)
+- **Directory rename**: `tests/bench_framework/` → `tests/moku_platform_simulator/`
+- **Physical wiring validation**: Device catalog prevents hardware mistakes (direction checking)
+- **Type safety**: Full Pydantic validation with clear error messages
+- **Documentation update**: All memories, READMEs, and guides synced to new architecture
+- **Helper scripts**: Verification and bulk update tools for future migrations
+- Tagged as `docs_and_memory_update`
+
 ### 2025-10-23 - MokuBench Framework Complete! 🎉
-- **Phase 3 complete**: Unified Bench Configuration Framework deployed to real hardware
+- **Phase 3 complete**: Unified Moku Platform Simulator deployed to real hardware
 - **First successful deployment**: `simple_counter` module deployed to Moku:Go via CloudCompile
 - **Complete workflow validated**: VHDL → CloudCompile → Synthesis → MokuBench → Real Hardware
 - Implemented `HardwareBackend` with full Moku API integration (MultiInstrument, CloudCompile, Oscilloscope)
 - Created `SimulationBackend` with CocotB integration (6 tests passing)
-- Unified `BenchConfig` abstraction works seamlessly for both simulation and hardware
-- Added Pydantic data models for type-safe configuration validation
+- Unified configuration abstraction works seamlessly for both simulation and hardware
+- Added initial Pydantic data models for type-safe configuration validation
 - CloudCompile package builder with local GHDL verification
 - MCC_READY convention for safe bitstream loading
 - Connection test and deployment test scripts
-- Comprehensive documentation in `.serena/memories/mokubench_deployment_success.md`
+- Comprehensive documentation in `.serena/memories/bench_config_framework.md`
 - Tagged as `mokubench-phase3`
 
 ### 2025-10-22 - Moku Instrument API Library 🎛️

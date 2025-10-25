@@ -19,7 +19,7 @@ Precision **interval timing and frequency stability analysis** for digital signa
 ```python
 from bench_framework import BenchConfig, SlotConfig
 
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(

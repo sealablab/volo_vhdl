@@ -55,7 +55,7 @@ Read these as needed for your task:
 - `design_patterns` - Common patterns and implementations
 - `codebase_structure` - Module organization
 - `tech_stack` - Tools and platform info
-- `bench_config_framework` - Multi-instrument testbench framework (NEW)
+- `bench_config_framework` - Moku Platform Simulator (Pydantic-based multi-instrument framework)
 
 ### 6. Key Documentation Files
 - `CLAUDE.md` - This file (project overview)
@@ -75,7 +75,7 @@ uv sync --no-install-project
 # Run tests (automatically uses .venv environment)
 cd tests/
 uv run make TEST_MODULE=clk_divider_core      # Run specific module tests
-uv run make TEST_MODULE=bench_framework_poc   # Bench framework Phase 1 PoC
+uv run make TEST_MODULE=bench_framework_poc   # Moku Platform Simulator PoC
 uv run make list-tests                        # List available test modules
 make clean                                    # Clean test artifacts
 make waves                                    # View waveforms (if GTKWave installed)

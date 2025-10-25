@@ -19,7 +19,7 @@ Measures transfer function (Bode plot: magnitude and phase vs frequency). Sweeps
 ```python
 from bench_framework import BenchConfig, SlotConfig
 
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(

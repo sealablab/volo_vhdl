@@ -198,13 +198,13 @@ uv run python -c "import moku; print('✓ Moku available')"
 The Bench Framework provides **unified configuration** for both simulation and hardware:
 
 ```python
-from bench_framework import BenchConfig, SlotConfig, Connection
-from bench_framework.config import MOKU_GO
-from bench_framework.hardware import HardwareBackend  # Real hardware
-from bench_framework.simulation import SimulationBackend  # CocotB sim
+from tests.moku_platform_simulator import BenchConfig, SlotConfig, Connection
+from tests.moku_platform_simulator.config import MOKU_GO
+from tests.moku_platform_simulator.hardware import HardwareBackend  # Real hardware
+from tests.moku_platform_simulator.simulation import SimulationBackend  # CocotB sim
 
 # Same config works for BOTH backends!
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(
@@ -298,13 +298,13 @@ def mcc_cr0(divider=0, extra_bits=0):
 - **Dependencies**: `pyproject.toml` (project root)
 - **UV Setup Doc**: `docs/UV_SETUP.md`
 - **Test Directory**: `tests/`
-- **Bench Framework**: `tests/bench_framework/`
+- **Bench Framework**: `tests/moku_platform_simulator/`
 - **Test Utilities**: `tests/conftest.py`
 
 ### Bench Framework Modules
 
 ```
-tests/bench_framework/
+tests/moku_platform_simulator/
 ├── __init__.py
 ├── backend.py          # Abstract Backend class
 ├── config.py           # BenchConfig, SlotConfig, Connection
@@ -354,13 +354,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from bench_framework import BenchConfig, SlotConfig
-from bench_framework.config import MOKU_GO
-from bench_framework.hardware import HardwareBackend
+from tests.moku_platform_simulator import BenchConfig, SlotConfig
+from tests.moku_platform_simulator.config import MOKU_GO
+from tests.moku_platform_simulator.hardware import HardwareBackend
 from conftest import mcc_cr0
 
 async def main():
-    config = BenchConfig(
+    config = MokuPlatformConfig(
         platform=MOKU_GO,
         slots={
             1: SlotConfig(
@@ -390,15 +390,15 @@ uv run python tests/test_my_module_hardware.py
 ```python
 import cocotb
 from conftest import setup_clock, reset_active_low, mcc_cr0
-from bench_framework import BenchConfig, SlotConfig
-from bench_framework.simulation import SimulationBackend
+from tests.moku_platform_simulator import BenchConfig, SlotConfig
+from tests.moku_platform_simulator.simulation import SimulationBackend
 
 @cocotb.test()
 async def test_my_module(dut):
     await setup_clock(dut)
     await reset_active_low(dut)
     
-    config = BenchConfig(
+    config = MokuPlatformConfig(
         platform=MOKU_GO,
         slots={
             1: SlotConfig(

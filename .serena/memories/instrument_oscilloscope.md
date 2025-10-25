@@ -267,7 +267,7 @@ uv run python tests/mokubench_deployment_test.py --ip 192.168.13.159
 ```python
 from bench_framework import BenchConfig, SlotConfig, Connection
 
-config = BenchConfig(
+config = MokuPlatformConfig(
     platform=MOKU_GO,
     slots={
         1: SlotConfig(instrument='Oscilloscope', settings={'timebase': (-5e-3, 5e-3)}),
