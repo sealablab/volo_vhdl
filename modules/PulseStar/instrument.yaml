@@ -1,0 +1,15 @@
+# PulseStar Instrument Manifest
+# Minimal packaging metadata for first-class instrument status
+
+name: pulsestar
+display_name: PulseStar
+description: 4-channel calibration signal generator with I/Q quadrature, UART serial, and trigger outputs
+author: Claude Code
+version: 1.0.0
+
+# CustomWrapper I/O (by definition uses CustomWrapper)
+num_inputs: 0    # No inputs - pure signal generator
+num_outputs: 4   # OutputA (I), OutputB (Q), OutputC (UART), OutputD (Trigger)
+
+# Build artifacts (updated after synthesis)
+bitstream_path: latest/25ff028_mokugo_bitstreams.tar
