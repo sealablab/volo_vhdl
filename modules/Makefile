@@ -29,16 +29,24 @@ else
     BUILD_MODE := single_module
 endif
 
-# Module directories (only include directories that have Makefiles, and only when at modules/ level)
+# Module directories (scan instruments/, shared/, examples/, experimental/ subdirectories)
 ifeq ($(BUILD_MODE),all_modules)
-    # Use dependency-defined build order if available, otherwise auto-detect
+    # Use dependency-defined build order if available, otherwise auto-detect from subdirs
     ifdef MODULE_BUILD_ORDER
         MODULE_DIRS := $(addsuffix /,$(MODULE_BUILD_ORDER))
     else
-        MODULE_DIRS := $(shell for dir in */; do if [ -f "$$dir/Makefile" ] && [ "$$dir" != "tb/" ]; then echo "$$dir"; fi; done)
+        MODULE_DIRS := $(shell for category in instruments shared examples experimental; do \
+            if [ -d "$$category" ]; then \
+                for dir in $$category/*/; do \
+                    if [ -d "$$dir" ]; then \
+                        echo "$$dir"; \
+                    fi; \
+                done; \
+            fi; \
+        done)
     endif
 else
-    MODULE_DIRS := 
+    MODULE_DIRS :=
 endif
 
 # MCC template directory
@@ -338,73 +346,6 @@ endif
 
 # Show module-specific targets
 show-module-targets:
-ifeq ($(MODULE_NAME),probe_driver)
-	@echo "  make compile-basic            - Compile basic packages and modules only"
-	@echo "  make test-probe_driver_interface - Run probe_driver_interface testbench"
-	@echo "  make test-PercentLut_pkg      - Run PercentLut_pkg testbench"
-	@echo "  make test-Moku_Voltage_pkg    - Run Moku_Voltage_pkg testbench"
-	@echo "  make quick-test               - Compile and run main testbench only"
-	@echo "  make list-tests               - Show available testbenches"
-else
 	@echo "  (No module-specific targets defined)"
-endif
-
-# Module-specific targets (only available when in the right module directory)
-ifeq ($(MODULE_NAME),probe_driver)
-# Additional module-specific targets for probe_driver
-compile-basic:
-	@echo "=== Compiling Basic Probe Driver Components ==="
-	@echo "Compiling mcc template..."
-	@$(GHDL_ANALYZE) $(MCC_TEMPLATE_DIR)/mcc-Top.vhd
-	@echo "Compiling common packages..."
-	@if [ -n "$$(ls common/*.vhd 2>/dev/null)" ]; then \
-		$(GHDL_ANALYZE) common/*.vhd; \
-	fi
-	@echo "Compiling datadef packages..."
-	@if [ -n "$$(ls datadef/*.vhd 2>/dev/null)" ]; then \
-		$(GHDL_ANALYZE) datadef/*.vhd; \
-	fi
-	@echo "Compiling core modules..."
-	@if [ -n "$$(ls core/*.vhd 2>/dev/null)" ]; then \
-		$(GHDL_ANALYZE) core/*.vhd; \
-	else \
-		echo "  No core modules found - skipping core compilation"; \
-	fi
-	@echo "=== Basic Compilation Complete ==="
-
-# Individual test targets for specific testbenches
-test-probe_driver_interface: compile
-	@echo "=== Running probe_driver_interface Testbench ==="
-	@$(GHDL_ELABORATE) probe_driver_interface_tb
-	@$(GHDL_RUN) probe_driver_interface_tb
-	@echo "=== Test Completed ==="
-
-test-PercentLut_pkg: compile
-	@echo "=== Running PercentLut_pkg Testbench ==="
-	@$(GHDL_ELABORATE) PercentLut_pkg_tb
-	@$(GHDL_RUN) PercentLut_pkg_tb
-	@echo "=== Test Completed ==="
-
-test-Moku_Voltage_pkg: compile
-	@echo "=== Running Moku_Voltage_pkg Testbench ==="
-	@$(GHDL_ELABORATE) Moku_Voltage_pkg_tb
-	@$(GHDL_RUN) Moku_Voltage_pkg_tb
-	@echo "=== Test Completed ==="
-
-# Quick test (compile and run main testbench only)
-quick-test: compile
-	@echo "=== Running Quick Test (probe_driver_interface) ==="
-	@$(GHDL_ELABORATE) probe_driver_interface_tb
-	@$(GHDL_RUN) probe_driver_interface_tb
-	@echo "=== Quick Test Completed ==="
-
-# Show available testbenches
-list-tests:
-	@echo "Available testbenches:"
-	@echo "  - probe_driver_interface_tb"
-	@echo "  - PercentLut_pkg_tb"
-	@echo "  - Moku_Voltage_pkg_tb"
-endif
 
 .PHONY: all compile compile-local compile-shared compile-with-deps compile-single-module test test-local clean clean-local help list-modules list-sources show-module-targets $(MODULE_DIRS)
-.PHONY: compile-basic test-probe_driver_interface test-PercentLut_pkg test-Moku_Voltage_pkg quick-test list-tests

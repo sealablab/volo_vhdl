@@ -1,6 +1,42 @@
 # Modules Directory Structure
 
-This directory contains all VHDL modules following the standardized project structure.
+This directory contains all VHDL modules organized by category:
+
+```
+modules/
+├── instruments/      # Complete MCC instruments (AlternatingCaps naming)
+├── shared/          # Reusable volo_* utility modules (volo_ prefix)
+├── examples/        # Learning examples and simple demos
+└── experimental/    # Proof-of-concept and test modules
+```
+
+## Module Categories
+
+### Instruments (`instruments/`)
+Complete, deployable Moku Cloud Compile instruments. These are higher-level "apps" that integrate multiple shared modules.
+- **Naming**: AlternatingCaps (e.g., `PulseStar`, `SimpleWaveGen`, `EMFI-Seq`)
+- **Structure**: Full layer hierarchy (common/, datadef/, core/, top/)
+- **Purpose**: Production-ready instruments for Moku devices
+- **MCC Ready**: Include `mcc_package.yaml` and deployment files
+
+### Shared Modules (`shared/`)
+Small, reusable utility modules designed for maximum reliability and testability.
+- **Naming**: `volo_*` prefix (e.g., `volo_common`, `volo_pinata_tx`, `volo_delay_line`)
+- **Structure**: Typically core/ only, some include tb/ for testing
+- **Purpose**: Building blocks for instruments and applications
+- **Dependencies**: Minimal dependencies, self-contained where possible
+
+### Examples (`examples/`)
+Learning examples and demonstration modules.
+- **Purpose**: Educational resources, pattern references
+- **Structure**: Simplified, focuses on clarity
+- **Examples**: `fsm_example` - FSM implementation patterns
+
+### Experimental (`experimental/`)
+Proof-of-concept, test modules, and work-in-progress.
+- **Purpose**: Testing new patterns, MCC synthesis experiments
+- **Status**: Not production-ready, may be incomplete
+- **Examples**: `bram_test_minimal`, `inspectable_buffer_loader`
 
 ## Standard Module Structure
 
