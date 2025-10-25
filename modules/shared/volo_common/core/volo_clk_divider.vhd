@@ -1,4 +1,4 @@
--- clk_divider_core.vhd
+-- volo_clk_divider.vhd
 -- Simple reusable clock divider module with generic division range
 -- Provides configurable clock division with runtime enable control
 --
@@ -16,7 +16,7 @@ library IEEE;
 use IEEE.Std_Logic_1164.all;
 use IEEE.Numeric_Std.all;
 
-entity clk_divider_core is
+entity volo_clk_divider is
     generic (
         MAX_DIV : natural := 256  -- Maximum division ratio (must be power of 2)
     );
@@ -28,9 +28,9 @@ entity clk_divider_core is
         clk_en      : out std_logic;                    -- Clock enable output
         stat_reg    : out std_logic_vector(7 downto 0)  -- Status register
     );
-end entity clk_divider_core;
+end entity volo_clk_divider;
 
-architecture rtl of clk_divider_core is
+architecture rtl of volo_clk_divider is
     -- Calculate counter width based on MAX_DIV generic
     -- Students: This constant is computed at synthesis time!
     constant COUNTER_WIDTH : natural := 8;  -- Support up to 256 division

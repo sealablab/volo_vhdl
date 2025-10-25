@@ -111,7 +111,7 @@ begin
     end process;
     
     -- Clock Divider Instance (Direct Instantiation Required)
-    U_clk_divider: entity WORK.clk_divider_core
+    U_clk_divider: entity WORK.volo_clk_divider
         generic map (
             MAX_DIV => 256
         )

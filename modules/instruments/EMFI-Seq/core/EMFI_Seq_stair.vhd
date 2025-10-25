@@ -26,8 +26,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
--- Use Moku voltage package for accurate voltage-to-digital conversion
-use work.Moku_Voltage_pkg.all;
+-- Use volo voltage package for accurate voltage-to-digital conversion
+use work.volo_voltage_pkg.all;
 
 entity onehot_analog_monitor is
     port (

@@ -1,14 +1,14 @@
 --------------------------------------------------------------------------------
--- Package: Moku_Voltage_pkg
--- Purpose: Moku platform voltage conversion utilities for ADC/DAC interfaces
+-- Package: volo_voltage_pkg
+-- Purpose: Platform-independent voltage conversion utilities for ADC/DAC interfaces
 -- Author: johnnyc
 -- Date: 2025-01-27
 -- 
--- DATADEF PACKAGE: This package provides voltage conversion utilities for the
--- Moku platform's 16-bit signed ADC/DAC interfaces. Designed for maximum
--- Verilog compatibility and testbench convenience.
--- 
--- MOKU VOLTAGE SPECIFICATION:
+-- DATADEF PACKAGE: This package provides voltage conversion utilities for
+-- 16-bit signed ADC/DAC interfaces. Designed for maximum Verilog compatibility
+-- and testbench convenience.
+--
+-- VOLTAGE SPECIFICATION:
 -- - Digital range: -32768 to +32767 (0x8000 to 0x7FFF)
 -- - Voltage range: -5.0V to +5.0V (full-scale analog input/output)
 -- - Resolution: ~305 µV per digital step (10V / 65536)
@@ -24,49 +24,49 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-package Moku_Voltage_pkg is
-    
+package volo_voltage_pkg is
+
     -- =============================================================================
-    -- MOKU VOLTAGE SYSTEM CONSTANTS
+    -- VOLTAGE SYSTEM CONSTANTS (16-bit signed, ±5V full scale)
     -- =============================================================================
-    
+
     -- Digital range constants (16-bit signed)
-    constant MOKU_DIGITAL_MIN : signed(15 downto 0) := to_signed(-32768, 16);  -- 0x8000
-    constant MOKU_DIGITAL_MAX : signed(15 downto 0) := to_signed(32767, 16);   -- 0x7FFF
-    constant MOKU_DIGITAL_ZERO : signed(15 downto 0) := to_signed(0, 16);      -- 0x0000
-    
+    constant VOLO_DIGITAL_MIN : signed(15 downto 0) := to_signed(-32768, 16);  -- 0x8000
+    constant VOLO_DIGITAL_MAX : signed(15 downto 0) := to_signed(32767, 16);   -- 0x7FFF
+    constant VOLO_DIGITAL_ZERO : signed(15 downto 0) := to_signed(0, 16);      -- 0x0000
+
     -- Voltage range constants (real values in volts)
-    constant MOKU_VOLTAGE_MIN : real := -5.0;
-    constant MOKU_VOLTAGE_MAX : real := 5.0;
-    constant MOKU_VOLTAGE_ZERO : real := 0.0;
+    constant VOLO_VOLTAGE_MIN : real := -5.0;
+    constant VOLO_VOLTAGE_MAX : real := 5.0;
+    constant VOLO_VOLTAGE_ZERO : real := 0.0;
     
     -- Resolution and scaling constants
-    constant MOKU_VOLTAGE_RESOLUTION : real := 10.0 / 65536.0;  -- ~305.18 µV per step
-    constant MOKU_DIGITAL_SCALE_FACTOR : real := 32767.0 / 5.0;  -- 6553.4 digital units per volt
+    constant VOLO_VOLTAGE_RESOLUTION : real := 10.0 / 65536.0;  -- ~305.18 µV per step
+    constant VOLO_DIGITAL_SCALE_FACTOR : real := 32767.0 / 5.0;  -- 6553.4 digital units per volt
     
     -- Common voltage reference points (from Moku-Voltage-LUTS.md)
-    constant MOKU_VOLTAGE_1V : real := 1.0;
-    constant MOKU_VOLTAGE_2V4 : real := 2.4;
-    constant MOKU_VOLTAGE_2V5 : real := 2.5;
-    constant MOKU_VOLTAGE_3V : real := 3.0;
-    constant MOKU_VOLTAGE_3V3 : real := 3.3;
-    constant MOKU_VOLTAGE_5V : real := 5.0;
+    constant VOLO_VOLTAGE_1V : real := 1.0;
+    constant VOLO_VOLTAGE_2V4 : real := 2.4;
+    constant VOLO_VOLTAGE_2V5 : real := 2.5;
+    constant VOLO_VOLTAGE_3V : real := 3.0;
+    constant VOLO_VOLTAGE_3V3 : real := 3.3;
+    constant VOLO_VOLTAGE_5V : real := 5.0;
     
     -- Corresponding digital values for common voltages
-    constant MOKU_DIGITAL_1V : signed(15 downto 0) := to_signed(6554, 16);    -- 0x199A
-    constant MOKU_DIGITAL_2V4 : signed(15 downto 0) := to_signed(15729, 16);  -- 0x3DCF
-    constant MOKU_DIGITAL_2V5 : signed(15 downto 0) := to_signed(16384, 16);  -- 0x4000
-    constant MOKU_DIGITAL_3V : signed(15 downto 0) := to_signed(19661, 16);   -- 0x4CCD
-    constant MOKU_DIGITAL_3V3 : signed(15 downto 0) := to_signed(21627, 16);  -- 0x54EB
-    constant MOKU_DIGITAL_5V : signed(15 downto 0) := to_signed(32767, 16);   -- 0x7FFF
+    constant VOLO_DIGITAL_1V : signed(15 downto 0) := to_signed(6554, 16);    -- 0x199A
+    constant VOLO_DIGITAL_2V4 : signed(15 downto 0) := to_signed(15729, 16);  -- 0x3DCF
+    constant VOLO_DIGITAL_2V5 : signed(15 downto 0) := to_signed(16384, 16);  -- 0x4000
+    constant VOLO_DIGITAL_3V : signed(15 downto 0) := to_signed(19661, 16);   -- 0x4CCD
+    constant VOLO_DIGITAL_3V3 : signed(15 downto 0) := to_signed(21627, 16);  -- 0x54EB
+    constant VOLO_DIGITAL_5V : signed(15 downto 0) := to_signed(32767, 16);   -- 0x7FFF
     
     -- Negative voltage digital values
-    constant MOKU_DIGITAL_NEG_1V : signed(15 downto 0) := to_signed(-6554, 16);    -- 0xE666
-    constant MOKU_DIGITAL_NEG_2V4 : signed(15 downto 0) := to_signed(-15729, 16);  -- 0xC231
-    constant MOKU_DIGITAL_NEG_2V5 : signed(15 downto 0) := to_signed(-16384, 16);  -- 0xC000
-    constant MOKU_DIGITAL_NEG_3V : signed(15 downto 0) := to_signed(-19661, 16);   -- 0xB333
-    constant MOKU_DIGITAL_NEG_3V3 : signed(15 downto 0) := to_signed(-21627, 16);  -- 0xAA85
-    constant MOKU_DIGITAL_NEG_5V : signed(15 downto 0) := to_signed(-32768, 16);   -- 0x8000
+    constant VOLO_DIGITAL_NEG_1V : signed(15 downto 0) := to_signed(-6554, 16);    -- 0xE666
+    constant VOLO_DIGITAL_NEG_2V4 : signed(15 downto 0) := to_signed(-15729, 16);  -- 0xC231
+    constant VOLO_DIGITAL_NEG_2V5 : signed(15 downto 0) := to_signed(-16384, 16);  -- 0xC000
+    constant VOLO_DIGITAL_NEG_3V : signed(15 downto 0) := to_signed(-19661, 16);   -- 0xB333
+    constant VOLO_DIGITAL_NEG_3V3 : signed(15 downto 0) := to_signed(-21627, 16);  -- 0xAA85
+    constant VOLO_DIGITAL_NEG_5V : signed(15 downto 0) := to_signed(-32768, 16);   -- 0x8000
     
     -- =============================================================================
     -- VOLTAGE CONVERSION FUNCTIONS
@@ -135,9 +135,9 @@ package Moku_Voltage_pkg is
     -- Calculate the number of digital steps between two voltages
     function get_digital_steps_between(min_voltage : real; max_voltage : real) return natural;
     
-end package Moku_Voltage_pkg;
+end package volo_voltage_pkg;
 
-package body Moku_Voltage_pkg is
+package body volo_voltage_pkg is
     
     -- =============================================================================
     -- VOLTAGE CONVERSION FUNCTIONS
@@ -148,12 +148,12 @@ package body Moku_Voltage_pkg is
         variable digital_int : integer;
     begin
         -- Clamp voltage to valid range
-        if voltage > MOKU_VOLTAGE_MAX then
-            digital_real := MOKU_VOLTAGE_MAX * MOKU_DIGITAL_SCALE_FACTOR;
-        elsif voltage < MOKU_VOLTAGE_MIN then
-            digital_real := MOKU_VOLTAGE_MIN * MOKU_DIGITAL_SCALE_FACTOR;
+        if voltage > VOLO_VOLTAGE_MAX then
+            digital_real := VOLO_VOLTAGE_MAX * VOLO_DIGITAL_SCALE_FACTOR;
+        elsif voltage < VOLO_VOLTAGE_MIN then
+            digital_real := VOLO_VOLTAGE_MIN * VOLO_DIGITAL_SCALE_FACTOR;
         else
-            digital_real := voltage * MOKU_DIGITAL_SCALE_FACTOR;
+            digital_real := voltage * VOLO_DIGITAL_SCALE_FACTOR;
         end if;
         
         -- Convert to integer with proper rounding (round towards zero for negative values)
@@ -174,7 +174,7 @@ package body Moku_Voltage_pkg is
     
     function digital_to_voltage(digital : signed(15 downto 0)) return real is
     begin
-        return real(to_integer(digital)) / MOKU_DIGITAL_SCALE_FACTOR;
+        return real(to_integer(digital)) / VOLO_DIGITAL_SCALE_FACTOR;
     end function;
     
     function digital_to_voltage(digital : std_logic_vector(15 downto 0)) return real is
@@ -235,7 +235,7 @@ package body Moku_Voltage_pkg is
     
     function is_valid_moku_digital(digital : signed(15 downto 0)) return boolean is
     begin
-        return (digital >= MOKU_DIGITAL_MIN) and (digital <= MOKU_DIGITAL_MAX);
+        return (digital >= VOLO_DIGITAL_MIN) and (digital <= VOLO_DIGITAL_MAX);
     end function;
     
     function is_valid_moku_digital(digital : std_logic_vector(15 downto 0)) return boolean is
@@ -245,15 +245,15 @@ package body Moku_Voltage_pkg is
     
     function is_valid_moku_voltage(voltage : real) return boolean is
     begin
-        return (voltage >= MOKU_VOLTAGE_MIN) and (voltage <= MOKU_VOLTAGE_MAX);
+        return (voltage >= VOLO_VOLTAGE_MIN) and (voltage <= VOLO_VOLTAGE_MAX);
     end function;
     
     function clamp_moku_digital(digital : signed(15 downto 0)) return signed is
     begin
-        if digital > MOKU_DIGITAL_MAX then
-            return MOKU_DIGITAL_MAX;
-        elsif digital < MOKU_DIGITAL_MIN then
-            return MOKU_DIGITAL_MIN;
+        if digital > VOLO_DIGITAL_MAX then
+            return VOLO_DIGITAL_MAX;
+        elsif digital < VOLO_DIGITAL_MIN then
+            return VOLO_DIGITAL_MIN;
         else
             return digital;
         end if;
@@ -266,10 +266,10 @@ package body Moku_Voltage_pkg is
     
     function clamp_moku_voltage(voltage : real) return real is
     begin
-        if voltage > MOKU_VOLTAGE_MAX then
-            return MOKU_VOLTAGE_MAX;
-        elsif voltage < MOKU_VOLTAGE_MIN then
-            return MOKU_VOLTAGE_MIN;
+        if voltage > VOLO_VOLTAGE_MAX then
+            return VOLO_VOLTAGE_MAX;
+        elsif voltage < VOLO_VOLTAGE_MIN then
+            return VOLO_VOLTAGE_MIN;
         else
             return voltage;
         end if;
@@ -325,4 +325,4 @@ package body Moku_Voltage_pkg is
         return natural(to_integer(max_digital - min_digital));
     end function;
     
-end package body Moku_Voltage_pkg;
+end package body volo_voltage_pkg;

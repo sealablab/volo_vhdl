@@ -63,7 +63,7 @@ begin
     -- ========================================================================
     -- Provides configurable clock division for the FSM timing
     -- The divider's clk_en output is combined with the external ClkEn
-    CLK_DIVIDER: entity WORK.clk_divider_core
+    CLK_DIVIDER: entity WORK.volo_clk_divider
         generic map (
             MAX_DIV => 256
         )

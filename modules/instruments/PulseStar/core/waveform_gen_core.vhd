@@ -64,7 +64,7 @@ begin
     -- ========================================================================
     -- Frequency Control: Clock Divider from volo_common
     -- ========================================================================
-    U_CLK_DIV: entity WORK.clk_divider_core
+    U_CLK_DIV: entity WORK.volo_clk_divider
         generic map (
             MAX_DIV => 512  -- Support division up to 512
         )

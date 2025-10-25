@@ -1,11 +1,11 @@
 """
-CocotB Test for Moku_Voltage_pkg
+CocotB Test for volo_voltage_pkg
 
-Simple validation test for Moku_Voltage_pkg constants and basic conversion.
+Simple validation test for volo_voltage_pkg constants and basic conversion.
 
-Module Under Test: modules/volo_common/common/Moku_Voltage_pkg.vhd
+Module Under Test: modules/volo_common/common/volo_voltage_pkg.vhd
 
-Note: This is a lightweight test since Moku_Voltage_pkg is thoroughly exercised
+Note: This is a lightweight test since volo_voltage_pkg is thoroughly exercised
       by test_moku_pct_pkg.py. We only validate key constants here.
 
 Test Coverage:
@@ -22,9 +22,9 @@ from cocotb.triggers import Timer
 
 @cocotb.test()
 async def test_voltage_constants(dut):
-    """Test 1: Verify Moku_Voltage_pkg constants"""
+    """Test 1: Verify volo_voltage_pkg constants"""
     dut._log.info("=" * 70)
-    dut._log.info("Test 1: Moku_Voltage_pkg Constants Verification")
+    dut._log.info("Test 1: volo_voltage_pkg Constants Verification")
     dut._log.info("=" * 70)
 
     # Wait for signals to settle
@@ -89,7 +89,7 @@ async def test_conversion_sanity(dut):
 async def test_summary(dut):
     """Test 3: Summary"""
     dut._log.info("=" * 70)
-    dut._log.info("Moku_Voltage_pkg Test Summary")
+    dut._log.info("volo_voltage_pkg Test Summary")
     dut._log.info("=" * 70)
     dut._log.info("✓ Test 1: Constants verification - PASSED")
     dut._log.info("✓ Test 2: Conversion sanity checks - PASSED")
@@ -97,5 +97,5 @@ async def test_summary(dut):
     dut._log.info("MOKU_VOLTAGE_PKG BASIC TESTS PASSED")
     dut._log.info("=" * 70)
     dut._log.info("Note: Comprehensive voltage conversion testing is performed in")
-    dut._log.info("      test_moku_pct_pkg.py, which exercises Moku_Voltage_pkg")
+    dut._log.info("      test_moku_pct_pkg.py, which exercises volo_voltage_pkg")
     dut._log.info("      functions through percentage conversion tests.")

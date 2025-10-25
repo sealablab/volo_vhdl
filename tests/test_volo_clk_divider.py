@@ -1,8 +1,8 @@
 """
-CocotB Testbench for clk_divider_core
+CocotB Testbench for volo_clk_divider
 
-Module Under Test: volo_common/core/clk_divider_core.vhd
-Migration from: volo_common/tb/core/clk_divider_core_tb.vhd
+Module Under Test: volo_common/core/volo_clk_divider.vhd
+Migration from: volo_common/tb/core/volo_clk_divider_tb.vhd
 
 This is the PILOT TEST for the GHDL → CocotB migration.
 
@@ -299,8 +299,8 @@ async def test_counter_status(dut):
 async def test_summary():
     """Print test summary at the end"""
     print("\n" + "=" * 60)
-    print("CocotB Test Suite: clk_divider_core")
+    print("CocotB Test Suite: volo_clk_divider")
     print("=" * 60)
     print("All tests completed successfully!")
-    print("Migrated from: volo_common/tb/core/clk_divider_core_tb.vhd")
+    print("Migrated from: volo_common/tb/core/volo_clk_divider_tb.vhd")
     print("=" * 60)
