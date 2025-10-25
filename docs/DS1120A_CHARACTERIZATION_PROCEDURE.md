@@ -8,6 +8,8 @@ Safe, systematic characterization of the Riscure DS1120A Unidirectional EMFI Pro
 **Date**: 2025-01-24
 **Author**: Volo VHDL Project
 
+
+![[volo_vhdl/docs/DS1120A-characterization-.jpeg]]
 ## Hardware Requirements
 
 ### Essential Equipment

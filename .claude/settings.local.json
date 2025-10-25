@@ -21,7 +21,10 @@
       "mcp__serena__write_memory",
       "Bash(mkdir:*)",
       "Bash(python3:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(python test_probe_catalog.py:*)"
     ],
     "deny": [],
     "ask": []
