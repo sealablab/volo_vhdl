@@ -12,8 +12,11 @@ dependencies = [
     # Testing Framework
     "cocotb>=1.8.0",
 
-    # Data Validation (Bench Framework)
+    # Data Validation (Bench Framework + Moku Models)
     "pydantic>=2.0.0",
+
+    # Moku Models (git submodule - editable install)
+    "moku-models @ file:///${PROJECT_ROOT}/models/moku-models",
 
     # Hardware Backend (MCC API) - Phase 3
     "moku>=3.0.0",

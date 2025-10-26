@@ -20,7 +20,7 @@ This is distinct from BenchConfig (runtime test configuration) which includes:
 
 from datetime import date
 from pydantic import BaseModel, Field
-from models.moku.platforms.moku_go import MokuGoPlatform
+from moku_models.platforms.moku_go import MokuGoPlatform
 from models.bench.wiring import PhysicalWiring, WiredDevice
 from models.bench.pdu import PDU
 from models.bench.dut import DUT

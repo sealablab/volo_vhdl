@@ -15,9 +15,9 @@ Components:
 - Simulators: Behavioral models (oscilloscope, etc.)
 """
 
-from models.moku.platform_config import MokuPlatformConfig, SlotConfig
-from models.moku.platforms.moku_go import MokuGoPlatform, MOKU_GO_PLATFORM
-from models.moku.routing import MokuConnection
+from moku_models.platform_config import MokuPlatformConfig, SlotConfig
+from moku_models.platforms.moku_go import MokuGoPlatform, MOKU_GO_PLATFORM
+from moku_models.routing import MokuConnection
 
 from .backend import Backend
 from .simulation import SimulationBackend

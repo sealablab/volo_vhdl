@@ -41,7 +41,18 @@
       "Bash(ghdl:*)",
       "Bash(git checkout:*)",
       "Bash(for dir in /Users/johnycsh/volo_codes/volo_vhdl/modules/shared/*/)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__serena__write_memory",
+      "mcp__serena__find_file",
+      "Bash(uv pip install:*)",
+      "Bash(PYTHONPATH=/Users/johnycsh/volo_codes/volo_vhdl uv run pytest:*)",
+      "Bash(PYTHONPATH=/Users/johnycsh/volo_codes/volo_vhdl uv run python -m pytest:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Implement VoloApp abstraction (Phase 1 & 2 complete)\n\nImplements complete VoloApp system with 3-layer architecture for\nhuman-friendly FPGA application deployment. Includes PulseStar as\nreference implementation.\n\nPhase 1 - Core Infrastructure:\n- Pydantic models for app definition and validation\n  - RegisterType enum (COUNTER_8BIT, PERCENT, BUTTON)\n  - AppRegister with CR range validation (20-30)\n  - VoloApp with YAML serialization and VHDL generation\n- Static VHDL components\n  - volo_common_pkg: Constants and helpers\n  - volo_bram_loader: FSM for 4KB buffer streaming via CR10-CR14\n  - MCC_TOP_volo_loader: CustomWrapper architecture (Layer 1)\n- Jinja2 templates for code generation\n  - volo_shim_template: Register mapping layer (Layer 2)\n  - volo_main_template: Application skeleton (Layer 3)\n- Code generation tool (tools/generate_volo_app.py)\n  - Rich CLI with colored output\n  - Always regenerates shim, protects hand-written main\n  - Displays register mapping table\n- Comprehensive test suite (pytest + CocotB)\n  - test_volo_app.py: Pydantic model validation\n  - test_vhdl_generation.py: VHDL template rendering\n  - validate_phase1.py: Standalone validator\n\nPhase 2 - PulseStar Example:\n- PulseStar_volo_main.vhd: PWM pulse generation logic\n  - Configurable pulse width (1-255 cycles)\n  - Duty cycle control (0-100%)\n  - Enable/disable with differential outputs\n- Build system integration\n  - Auto-detect volo-apps (*_app.yaml)\n  - Auto-generate manifest from VoloApp YAML\n  - Include volo infrastructure automatically\n  - Correct compilation order (main before shim)\n- CocotB test suite (test_pulsestar_volo.py)\n  - 7 comprehensive tests\n  - VOLO_READY scheme validation\n  - Register mapping verification\n  - Pulse generation timing tests\n\nArchitecture:\n- Layer 1: MCC_TOP_volo_loader.vhd (static, shared)\n- Layer 2: <App>_volo_shim.vhd (generated from YAML)\n- Layer 3: <App>_volo_main.vhd (hand-written, MCC-agnostic)\n\nRegister Map:\n- CR0[31:29]: VOLO_READY control (volo_ready, user_enable, clk_enable)\n- CR10-CR14: BRAM loader protocol (4KB buffer streaming)\n- CR20-CR30: Application registers (max 11, auto-mapped to friendly names)\n\nAll Phase 1 validation passed. PulseStar builds successfully.\nReady for Phase 3 (deployment tooling).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(git merge feature/implements-the-volo-plan --no-ff -m \"$(cat <<''EOF''\nMerge feature/implements-the-volo-plan: VoloApp Phase 1 & 2 complete\n\nMerges complete implementation of VoloApp abstraction system:\n- Phase 1: Core infrastructure (Pydantic models, VHDL components, templates, code generator)\n- Phase 2: PulseStar reference implementation (application logic, build integration, CocotB tests)\n- Phase 3 resume documentation\n\nReady for Phase 3: Deployment tooling (volo_loader.py)\n\nCommits merged:\n- 4c95cf1 feat: Implement VoloApp abstraction (Phase 1 & 2 complete)\n- 771f7da docs: Add Phase 3 resume context for VoloApp continuation\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(cp:*)",
+      "Bash(git push:*)",
+      "Bash(git submodule add https://github.com/sealablab/moku-models models/moku-models)"
     ],
     "deny": [],
     "ask": []

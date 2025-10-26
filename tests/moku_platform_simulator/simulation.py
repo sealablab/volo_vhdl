@@ -8,7 +8,7 @@ from typing import Any
 import cocotb
 from cocotb.triggers import Timer
 from .backend import Backend
-from models.moku.platform_config import MokuPlatformConfig
+from moku_models.platform_config import MokuPlatformConfig
 
 
 class SimulationBackend(Backend):
