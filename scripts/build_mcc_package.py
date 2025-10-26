@@ -46,6 +46,7 @@ class MCCPackageBuilder:
         self.module_dir = module_dir.resolve()
         self.skip_validation = skip_validation
         self.project_root = self._find_project_root()
+        self.is_volo_app = self._detect_volo_app()
         self.manifest = self._load_manifest()
         self.package_dir = self.module_dir / "cloudcompile_package"
         self.collected_files: List[PackageFile] = []
@@ -59,17 +60,113 @@ class MCCPackageBuilder:
             current = current.parent
         raise RuntimeError("Could not find project root (no mcc_templates/ found)")
 
+    def _detect_volo_app(self) -> bool:
+        """Check if module is a volo-app (has *_app.yaml)"""
+        app_yamls = list(self.module_dir.glob("*_app.yaml"))
+        return len(app_yamls) > 0
+
     def _load_manifest(self) -> Dict:
-        """Load mcc_package.yaml from module directory"""
+        """Load mcc_package.yaml or auto-generate from volo-app YAML"""
         manifest_path = self.module_dir / "mcc_package.yaml"
-        if not manifest_path.exists():
+
+        if manifest_path.exists():
+            # Traditional MCC package with explicit manifest
+            with open(manifest_path, 'r') as f:
+                return yaml.safe_load(f)
+
+        elif self.is_volo_app:
+            # VoloApp: Auto-generate manifest from *_app.yaml
+            return self._generate_volo_manifest()
+
+        else:
             raise FileNotFoundError(
-                f"No mcc_package.yaml found in {self.module_dir}\n"
-                f"Create one with: name, description, files, control_registers, outputs"
+                f"No mcc_package.yaml or *_app.yaml found in {self.module_dir}\n"
+                f"Create mcc_package.yaml with: name, description, files, control_registers, outputs\n"
+                f"Or create <AppName>_app.yaml for a volo-app"
             )
 
-        with open(manifest_path, 'r') as f:
-            return yaml.safe_load(f)
+    def _generate_volo_manifest(self) -> Dict:
+        """Auto-generate manifest from VoloApp YAML"""
+        app_yaml_path = list(self.module_dir.glob("*_app.yaml"))[0]
+
+        with open(app_yaml_path, 'r') as f:
+            app_config = yaml.safe_load(f)
+
+        # Extract app name and info
+        app_name = app_config['name']
+
+        # Auto-discover files from volo_main/ directory
+        volo_main_dir = self.module_dir / "volo_main"
+        if not volo_main_dir.exists():
+            raise FileNotFoundError(
+                f"volo_main/ directory not found in {self.module_dir}\n"
+                f"Run: python tools/generate_volo_app.py --config {app_yaml_path.name} --output volo_main/"
+            )
+
+        # Build file lists
+        shim_file = f"{app_name}_volo_shim.vhd"
+        main_file = f"{app_name}_volo_main.vhd"
+
+        files = {
+            'top': [
+                f"volo_main/{shim_file}",
+                f"volo_main/{main_file}"
+            ]
+        }
+
+        # Build control register documentation from VoloApp YAML
+        control_registers = [
+            {
+                'register': 0,
+                'bits': [
+                    {'range': '31', 'name': 'VOLO_READY', 'description': 'Loader ready (set after deployment)'},
+                    {'range': '30', 'name': 'user_enable', 'description': 'User enable/disable'},
+                    {'range': '29', 'name': 'clk_enable', 'description': 'Clock enable'}
+                ]
+            },
+            {
+                'register': '10-14',
+                'bits': [
+                    {'range': 'all', 'name': 'BRAM Loader', 'description': '4KB buffer streaming protocol'}
+                ]
+            }
+        ]
+
+        # Add app-specific registers (CR20-CR30)
+        for reg in app_config.get('registers', []):
+            control_registers.append({
+                'register': reg['cr_number'],
+                'bits': [
+                    {'range': 'all', 'name': reg['name'], 'description': reg['description']}
+                ]
+            })
+
+        # Generate manifest
+        manifest = {
+            'name': app_name,
+            'description': app_config.get('description', 'VoloApp generated package'),
+            'version': app_config.get('version', '1.0.0'),
+            'author': app_config.get('author', 'VoloApp'),
+            'files': files,
+            'dependencies': [
+                {
+                    'module': 'shared/volo',
+                    'files': [
+                        'volo_common_pkg.vhd',
+                        'volo_bram_loader.vhd',
+                        'MCC_TOP_volo_loader.vhd'
+                    ]
+                }
+            ],
+            'control_registers': control_registers,
+            'outputs': [
+                {'port': 'OutputA', 'description': f'{app_name} output A'},
+                {'port': 'OutputB', 'description': f'{app_name} output B'}
+            ],
+            'example_code': '# See VoloApp YAML for usage examples'
+        }
+
+        return manifest
 
     def collect_files(self):
         """Collect all files to include in package"""
@@ -92,7 +189,14 @@ class MCCPackageBuilder:
         # Collect dependencies
         for dep in self.manifest.get('dependencies', []):
             dep_module = dep['module']
-            dep_dir = self.project_root / "modules" / dep_module
+
+            # Handle different dependency path formats
+            if dep_module.startswith('shared/'):
+                # Shared library (e.g., shared/volo)
+                dep_dir = self.project_root / dep_module
+            else:
+                # Module dependency (e.g., volo_common)
+                dep_dir = self.project_root / "modules" / dep_module
 
             if not dep_dir.exists():
                 raise FileNotFoundError(f"Dependency module not found: {dep_dir}")
@@ -142,11 +246,21 @@ class MCCPackageBuilder:
                 text=True
             )
 
-            # Compile collected files in order: datadef → core → top
+            # Compile collected files in order: datadef → dependency → core → top
+            # Special handling for volo-apps: compile *_main.vhd before *_shim.vhd
             categories_order = ['datadef', 'dependency', 'core', 'top']
 
             for category in categories_order:
                 category_files = [f for f in self.collected_files if f.category == category]
+
+                # For 'top' category in volo-apps, sort so *_main.vhd comes before *_shim.vhd
+                if category == 'top' and self.is_volo_app:
+                    # Sort: *_main.vhd first, then *_shim.vhd
+                    category_files.sort(key=lambda f: (
+                        0 if '_volo_main.vhd' in f.dest_name else
+                        1 if '_volo_shim.vhd' in f.dest_name else
+                        2
+                    ))
 
                 for pkg_file in category_files:
                     print(f"  Analyzing {pkg_file.dest_name}...")
