@@ -3,7 +3,7 @@
 **Use this document when starting with a fresh context window to implement VoloApp features.**
 
 ---
-
+NOTE: 
 ## Mission
 
 Implement the **VoloApp abstraction** - a hardware abstraction layer for deploying FPGA applications to Moku platform with human-friendly register interfaces.
