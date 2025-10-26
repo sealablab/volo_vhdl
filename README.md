@@ -1,5 +1,25 @@
 # Volo VHDL Project
 
+  # VoloApp Generation 
+
+  Create a new VoloApp:
+  # 1. Define in YAML
+  vim modules/MyApp/MyApp_app.yaml
+
+  # 2. Generate VHDL
+  python tools/generate_volo_app.py --config modules/MyApp/MyApp_app.yaml --output modules/MyApp/volo_main/
+
+  # 3. Implement logic
+  vim modules/MyApp/volo_main/MyApp_volo_main.vhd
+
+  # 4. Build MCC package
+  uv run python scripts/build_mcc_package.py modules/MyApp
+
+  # 5. Upload MyApp.zip to CloudCompile!
+
+  Test PulseStar:
+  uv run python tests/run.py pulsestar_volo
+
 **VHDL-2008 development for Moku FPGA devices with AI-powered workflow**
 
 This project demonstrates a modern VHDL development approach combining:
@@ -19,6 +39,10 @@ This project demonstrates a modern VHDL development approach combining:
 🎯 Type-safe Pydantic validation prevents configuration errors
 
 **See**: `CLAUDE.md` for quick examples, Serena memory `mokuconfig_core_abstraction` for complete reference
+
+---
+
+
 
 ---
 
