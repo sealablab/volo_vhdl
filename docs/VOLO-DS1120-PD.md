@@ -1,10 +1,7 @@
 
 # VOLO-DS1120-PD
-This document describes a VOLO-APP. Please:
-1) read @VOLO_APP_FRESH_CONTEXT
-2) 
-
-The DS1120A Probe features two analog inputs - 'digital_gitch' and 'pulse_amplitude' and one analog output 'probe_monitor'
+This document is the first draft of the DS1120-PD requirements document. 
+Before continuing further a brief summary of the DS1120A probe is provided below. 
 
 ## DS1120A inputs
 ## 'digital_glitch':
@@ -20,6 +17,8 @@ The probe features a built-in current monitor that we can use to observe how muc
 
 Curiously, the current monitor is wired such that the more power consumed the __more negative__ the monitor port results.  
 
+# VOLO-DS1120A-PD overview
+The 
 ## Implementation
 This app **MUST** make use of the following shared vhdl modules
 - volo_voltage_pkg.vhd
@@ -27,7 +26,7 @@ This app **MUST** make use of the following shared vhdl modules
 - fsm_observer.vhd
 It should utilize fsm_example_core.vhd as an example of how to implement an **observable FSM** 
 
-This is critically important because I think we can actually __use__ the @fsm_observer.vhd module to implement most of the functionality.
+This is critically important because I think we can actually __use__ the @fsm_observer.vhd module to implement most of the functionality. (i.e. we can potentially drive all three outputs with properly configures @fsm_observer modules)
 ## Workflow
 The volo_app should be designed to be a 'one-shot' module. 
 That is to say that it should __only__ fire once per trigger. 
@@ -51,6 +50,8 @@ Our module should be configured to observe feedback from the probe. For now we s
 
 
 ## VOLO Outputs
+The volo module will have three 16-but unsigned outputs. (detailed below) and one status register. 
+
 
 ### TriggerOut
 **TriggerOut** is a 16-bit signed value. When the FSM enters the 'FIRING' state is shall be set to a DC value. This value will be fed in through a VOLO-register. 
@@ -59,6 +60,16 @@ Our module should be configured to observe feedback from the probe. For now we s
 
 ### IntensityOut
 **IntensityOut** Should be 0v0 at all times EXCEPT when firing the probe. Intensity out should **NEVER** exceed`3v0` regardless of user input.
+
+## analog_v_mon_out
+**analog_v_mon_out**: This is a debugging output that we can use to observe the FSM transition through its states. See @modules/fsm_exmaple/top/fsm_example_top for reference.
+
+
+## volo_status_reg
+the module should implement a 16-bit status register that encodes useful information for debugging and observation.
+
+Implementation note: 
+I __suspect__ we can actually use the 
 
 
 ## VOLO-DS1120PD STATES
@@ -142,3 +153,6 @@ For debugging and testing purposes the volo-ds1120-pd module will also expose a 
 ## Spurious `trig_in` counter
 - It would be handy to have a counter in the 'volo-top' that tracks if our module receives and 'spurious' InputTriggers while the state machine is already engaged. These signals are indicative of a mis-behaving DUT or target.
 
+### analog v_mon out
+For debugging purposes I think we should plan on including a third 16-bit unsigned output `analog`
+## Human suggestions:
