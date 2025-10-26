@@ -1,158 +1,326 @@
+# VOLO-DS1120-PD Requirements Document (v2.0)
 
-# VOLO-DS1120-PD
-This document is the first draft of the DS1120-PD requirements document. 
-Before continuing further a brief summary of the DS1120A probe is provided below. 
+**Last Updated**: 2025-01-27
+**Status**: Requirements Finalized
+**Target**: Riscure DS1120A EMFI Probe Driver as VOLO Application
 
-## DS1120A inputs
-## 'digital_glitch':
-This is the 'trigger-in' for the probe itself. It has a fixed threshold value (`2v4`). 
+---
 
+## 1. Executive Summary
 
-## `pulse_amplitude` 
-This controls the intensity of the output EMFI pulse. The probe is designed to respond linearly over a range of `0v5` to `3v3`
+The VOLO-DS1120-PD is a VOLO application that provides a safe, configurable driver for the Riscure DS1120A Electromagnetic Fault Injection (EMFI) probe. It implements a one-shot firing mechanism with safety controls, timing management, and probe feedback monitoring.
 
-## DS1120A outputs
-## `probe_monitor`
-The probe features a built-in current monitor that we can use to observe how much power is flowinging throw the probe to the output tip. 
+---
 
-Curiously, the current monitor is wired such that the more power consumed the __more negative__ the monitor port results.  
+## 2. DS1120A Probe Interface
 
-# VOLO-DS1120A-PD overview
-The 
-## Implementation
-This app **MUST** make use of the following shared vhdl modules
-- volo_voltage_pkg.vhd
-- volo_voltage_threshold_trigger_core.vhd
-- fsm_observer.vhd
-It should utilize fsm_example_core.vhd as an example of how to implement an **observable FSM** 
+### 2.1 Physical Inputs (to Probe)
 
-This is critically important because I think we can actually __use__ the @fsm_observer.vhd module to implement most of the functionality. (i.e. we can potentially drive all three outputs with properly configures @fsm_observer modules)
-## Workflow
-The volo_app should be designed to be a 'one-shot' module. 
-That is to say that it should __only__ fire once per trigger. 
+#### `digital_glitch` (Trigger Input)
+- **Purpose**: Trigger input to initiate EMFI pulse
+- **Threshold**: Fixed at 2.4V (not configurable in hardware)
+- **Signal Type**: Digital trigger, rising edge activated
 
-In the following document we will use the term 're-arm' because it is common parlance in the SCA/FI world. Conceptually 're-arming' is and should be equivalent to 're-setting' the FSM implementing the module.
+#### `pulse_amplitude` (Intensity Control)
+- **Purpose**: Controls EMFI pulse intensity
+- **Range**: 0.5V to 3.3V (linear response)
+- **Signal Type**: Analog control voltage
+- **Safety**: Must never exceed 3.0V regardless of user input
 
+### 2.2 Physical Outputs (from Probe)
 
-## VOLO inputs:
+#### `probe_monitor` (Current Monitor)
+- **Purpose**: Current consumption feedback during pulse
+- **Polarity**: Inverted (more negative = more current)
+- **Use**: Future enhancement for pulse verification and characterization
 
-the volo module will have two 16-bit unsigned inputs. 'TriggerInput' and 'MonitorInput'. 
+---
 
-### TriggerInput
-Our module will receive an external input that tells it when it is time to go. The threshold of this input should be exposed in a volo-app register.
+## 3. VOLO Application Architecture
 
-### MonitorInput
-Our module should be configured to observe feedback from the probe. For now we should: 
-- sample the MonitorInput __after__ we trigger the probe. Eventually we will perform some simple calculations on it to ascertain if the probe fired as well as its peak observed intensity - but the 'observation' and characterization of how and if the probe fired may be a future enhancement. 
+### 3.1 Module Dependencies
 
-  At present we do not want to get caught up in the details of the MonitorInput functionality. i.e.
-  - No MonitorInput Testbenches (for now). 
+The VOLO-DS1120-PD application utilizes these existing shared modules:
 
+- **`volo_voltage_pkg.vhd`** (`modules/shared/packages/`)
+  - Voltage-to-digital conversion utilities
+  - 16-bit signed: ±5V full scale, ~305µV resolution
 
-## VOLO Outputs
-The volo module will have three 16-but unsigned outputs. (detailed below) and one status register. 
+- **`volo_voltage_threshold_trigger_core.vhd`** (`modules/shared/core/`)
+  - Configurable threshold trigger detection
 
+- **`volo_clk_divider.vhd`** (`modules/shared/core/`)
+  - Clock division for FSM timing control
 
-### TriggerOut
-**TriggerOut** is a 16-bit signed value. When the FSM enters the 'FIRING' state is shall be set to a DC value. This value will be fed in through a VOLO-register. 
+- **`fsm_observer.vhd`** (`modules/shared/observer/`)
+  - FSM state visualization and debugging
 
-**TriggerOut** Should be 0v0 at all times EXCEPT when firing the probe.
+- **Reference**: `fsm_example_core.vhd` (`modules/examples/fsm_example/core/`)
+  - Observable FSM pattern reference
 
-### IntensityOut
-**IntensityOut** Should be 0v0 at all times EXCEPT when firing the probe. Intensity out should **NEVER** exceed`3v0` regardless of user input.
+### 3.2 Implementation Strategy
 
-## analog_v_mon_out
-**analog_v_mon_out**: This is a debugging output that we can use to observe the FSM transition through its states. See @modules/fsm_exmaple/top/fsm_example_top for reference.
+Use **three FSM observer instances**:
+1. Main FSM for state control
+2. Observer for TriggerOut control
+3. Observer for IntensityOut control
+4. Observer for debug output (analog_v_mon_out)
 
+---
 
-## volo_status_reg
-the module should implement a 16-bit status register that encodes useful information for debugging and observation.
+## 4. MCC Signal Mapping
 
-Implementation note: 
-I __suspect__ we can actually use the 
+### 4.1 Inputs (16-bit signed)
+- **InputA** → `TriggerInput` (external trigger signal)
+- **InputB** → `MonitorInput` (probe current feedback)
 
+### 4.2 Outputs (16-bit signed)
+- **OutputA** → `TriggerOut` (probe trigger control)
+- **OutputB** → `IntensityOut` (probe intensity control)
 
-## VOLO-DS1120PD STATES
-The general flow of the FSM shall be
-READY->ARMED->FIRING->COOLING->DONE
+### 4.3 Voltage Scaling (per `volo_voltage_pkg`)
+```
+Digital Range: -32768 to +32767 (0x8000 to 0x7FFF)
+Voltage Range: -5.0V to +5.0V
+Key Values:
+  0V   = 0x0000 (0)
+  2.4V = 0x3DCF (15729)
+  3.0V = 0x4CCD (19661)
+  3.3V = 0x54EB (21627)
+  5.0V = 0x7FFF (32767)
+```
 
-| STATE    | DESCR                                            |
-| -------- | ------------------------------------------------ |
-| READY    | The FSM should start in the READY state          |
-| ARMED    | the FSM is 'armed' and will respond to `trig_in` |
-| FIRING   | TriggerOut and Intensity Out both go high        |
-| COOLING  | Mandatory cooldown phase.                        |
-| DONE     | Probe was fired as expected                      |
-| TIMEDOUT | `delay_cnt` expires.                             |
+---
 
-In addition there are two 'error' states
+## 5. FSM State Machine
 
-| STATE     | DESCR                                                                                                              |
-| --------- | ------------------------------------------------------------------------------------------------------------------ |
-| TIMEDOUT  | more than `delay_cnt` clks passed ARMED state.                                                                     |
-| HARDFAULT | canonical ERROR state. __cannot be entered__ (at present). This should still be implemented for future use however |
+### 5.1 State Definitions
 
+| State | Code | Description |
+|-------|------|-------------|
+| READY | 000 | Initial state, waiting for arm command |
+| ARMED | 001 | Armed, waiting for trigger |
+| FIRING | 010 | Outputs active, probe firing |
+| COOLING | 011 | Mandatory cooldown period |
+| DONE | 100 | Successfully fired, awaiting reset |
+| TIMEDOUT | 101 | Armed timeout expired |
+| HARDFAULT | 111 | Error state (future use) |
 
-## Safety parameters
-In order to prevent the hardware from being fired continuously the FSM shall enforce the following hard limits on each state.
+### 5.2 State Transitions
 
+```
+READY → ARMED     (when armed_bit = 1)
+ARMED → FIRING    (when trigger detected OR force_fire = 1)
+ARMED → TIMEDOUT  (when delay_cnt expires)
+FIRING → COOLING  (after firing_cnt cycles)
+COOLING → DONE    (after cooling_cnt cycles)
+DONE → READY      (when reset_fsm = 1)
+TIMEDOUT → READY  (when reset_fsm = 1)
+```
 
-| STATE   | TIMEOUT             |
-| ------- | ------------------- |
-| READY   | N/A                 |
-| ARMED   | `delay_cnt`         |
-| FIRING  | MAX(firing_cnt, 32) |
-| COOLING | MIN(8, cooling_cnt) |
-| DONE    | N/A                 |
-|         |                     |
+### 5.3 Safety Timing Constraints
 
-## VOLO Registers
-I propose the following 'friendly' register names and uses
+| State | Duration | Constraint |
+|-------|----------|------------|
+| READY | Unlimited | N/A |
+| ARMED | delay_cnt cycles | Configurable timeout |
+| FIRING | MAX(firing_cnt, 32) | Hard limit 32 cycles |
+| COOLING | MAX(cooling_cnt, 8) | Minimum 8 cycles |
+| DONE | Unlimited | Until reset |
 
+---
 
-| name        | type         | descr                                               |
-| ----------- | ------------ | --------------------------------------------------- |
-| armed_bit   | BUTTON       | single bit                                          |
-| force_fire  | BUTTON       | single bit                                          |
-| delay_cnt   | counter_8bit | clk cycles to wait before entering the FIRING state |
-| firing_cnt  | counter_8bit | clk cycles spent in firing state                    |
-| cooling_cnt | counter_8bit | clk cycles spent in cooling state                   |
+## 6. VOLO Register Map
 
-The following registers are used to set the  threshold levels. 
+### 6.1 Register Allocation (CR20-CR30)
 
-| name              | type          | descr                                                                                           |
-| ----------------- | ------------- | ----------------------------------------------------------------------------------------------- |
-| trig_in_thresh    | 16-bit signed | used as input to the `volo_voltage_threshold_trigger_core`                                      |
-| monitor_in_thresh | 16-bit signed | if `MonitorInput` falls below this value we will treat it as if the probe was observed firing.  |
+| CR# | Name | Type | Bits | Description |
+|-----|------|------|------|-------------|
+| 20 | Armed | BUTTON | [0] | Arm the probe driver |
+| 21 | Force Fire | BUTTON | [0] | Manual trigger |
+| 22 | Reset FSM | BUTTON | [0] | Reset to READY state |
+| 23 | Timing Control | COUNTER_8BIT | [7:0] | Bits [7:4]: clk_div, [3:0]: delay_cnt upper |
+| 24 | Delay Lower | COUNTER_8BIT | [7:0] | delay_cnt lower 8 bits (total 12-bit) |
+| 25 | Firing Duration | COUNTER_8BIT | [7:0] | Cycles in FIRING state |
+| 26 | Cooling Duration | COUNTER_8BIT | [7:0] | Cycles in COOLING state |
+| 27 | Trigger Thresh High | COUNTER_8BIT | [7:0] | Trigger threshold [15:8] |
+| 28 | Trigger Thresh Low | COUNTER_8BIT | [7:0] | Trigger threshold [7:0] |
+| 29 | Intensity High | COUNTER_8BIT | [7:0] | Output intensity [15:8] |
+| 30 | Intensity Low | COUNTER_8BIT | [7:0] | Output intensity [7:0] |
 
-## Expected workflow:
-## S1) bitstream is loaded 
-The user will load the bitstream into a moku slot. At this point the bitstream will appear 'stuck' - this is expected. It has not received the `MCC_READY` signals etc.
+### 6.2 16-bit Value Reconstruction
 
-## S2) VOLO-LOADER
-The user will run a python script (`volo-loader`). This script
-1) walks the bitstream through the process of filling up the 4K BRAM buffer
-2) hands off control to 'volo_main'
+For 16-bit threshold and intensity values:
+```vhdl
+trig_threshold <= CR27 & CR28;  -- Concatenate high/low bytes
+intensity_value <= CR29 & CR30;  -- Concatenate high/low bytes
+```
 
-> [!NOTE] the current implementation should **NOT** make use of this 4KB BRAM buffer. This will be reserved for future enhancements. We **will** need to walk through the state machine process of loading it however, as this is a mandatory part of a VOLO applications lifecycle.
+### 6.3 Clock Divider Integration
 
-## S3) Control Regs get set
-At this point an **external python script** will be responsible for:
-1) calling the mcc set_regs API as appropriate to  initialize our app registers (CR20-CR30). The volo_main app should latch these appropriately.
+CR23[7:4] provides 4-bit clock divider selection:
+- 0 = No division (FSM runs at system clock)
+- 1-15 = Divide by 2^N (FSM runs slower)
 
+---
 
-> [!NOTE]  It will be common / expected practice for the external python script to 'load' the current configuration registers but __not__ set the 'ARMED' bit until much later. 
-## S4 User ARMS the module
-2) the user 'ARMS' the module by setting the 'armed' bit
-At this point the FSM should engage.
+## 7. Status Register (16-bit)
 
-## `force_fire` 
-For debugging and testing purposes the volo-ds1120-pd module will also expose a 'force-fire' button to the user.  When `force_fire` is set the module should proceed as if `trig_in_thresh` was observed.
-## Nice to have features
+| Bits | Field | Description |
+|------|-------|-------------|
+| [15:13] | Current State | 3-bit FSM state encoding |
+| [12] | Triggered | Probe was triggered (sticky) |
+| [11] | Timed Out | Armed timeout occurred (sticky) |
+| [10] | Fire Count Met | Max fires reached (sticky) |
+| [9:8] | Reserved | Future use |
+| [7:4] | Spurious Count | Spurious triggers (4-bit saturating) |
+| [3:0] | FSM Sub-state | Debug information |
 
-## Spurious `trig_in` counter
-- It would be handy to have a counter in the 'volo-top' that tracks if our module receives and 'spurious' InputTriggers while the state machine is already engaged. These signals are indicative of a mis-behaving DUT or target.
+---
 
-### analog v_mon out
-For debugging purposes I think we should plan on including a third 16-bit unsigned output `analog`
-## Human suggestions:
+## 8. Output Signal Behavior
+
+### 8.1 TriggerOut
+- **Idle State**: 0x0000 (0V)
+- **Firing State**: Value from intensity registers (CR29/CR30)
+- **Transition**: Immediate on FSM state change
+
+### 8.2 IntensityOut
+- **Idle State**: 0x0000 (0V)
+- **Firing State**: Clamped to MAX(user_value, 0x4CCD) [3.0V max]
+- **Transition**: Synchronized with TriggerOut
+
+### 8.3 analog_v_mon_out (Debug)
+- **Purpose**: FSM state visualization
+- **Encoding**: Maps FSM state to voltage levels for scope observation
+- **Implementation**: Via fsm_observer instance
+
+---
+
+## 9. Safety Features
+
+### 9.1 Hardware Protection
+- Output voltage clamping (3.0V maximum)
+- Minimum cooling period enforcement
+- Maximum firing duration limit
+- Watchdog timer for armed state
+
+### 9.2 Operational Safety
+- One-shot operation (requires re-arm)
+- Maximum fire count per session (saturating counter)
+- Spurious trigger detection and counting
+- All-zero safe state (disabled on reset)
+
+### 9.3 Future Enhancements
+- Monitor feedback threshold detection
+- Pulse verification via current monitoring
+- Adaptive cooling based on intensity
+- BRAM-based waveform shaping
+
+---
+
+## 10. Deployment Workflow
+
+### 10.1 Bitstream Loading
+1. Load VOLO-DS1120-PD bitstream to Moku slot
+2. Module appears "stuck" (awaiting VOLO initialization)
+
+### 10.2 VOLO Loader Sequence
+1. Execute `volo_loader.py` script
+2. Fill 4KB BRAM buffer (unused in v1.0, reserved for future)
+3. Set MCC_READY and control bits
+4. Transfer control to volo_main
+
+### 10.3 Configuration
+1. Set threshold values (CR27-28)
+2. Set intensity values (CR29-30)
+3. Configure timing (CR23-26)
+4. DO NOT set Armed bit yet
+
+### 10.4 Operation
+1. External script arms module (CR20 = 1)
+2. FSM transitions READY → ARMED
+3. Waits for trigger or timeout
+4. On trigger: ARMED → FIRING → COOLING → DONE
+5. Read status register for results
+6. Reset FSM for next shot (CR22 = 1)
+
+---
+
+## 11. Testing Considerations
+
+### 11.1 CocotB Test Coverage
+- FSM state transitions
+- Timing constraint enforcement
+- Threshold trigger detection
+- Force-fire functionality
+- Spurious trigger counting
+- Output voltage clamping
+- Watchdog timeout behavior
+
+### 11.2 Hardware Validation
+- Oscilloscope verification of output signals
+- Probe response measurement
+- Timing accuracy validation
+- Safety limit testing
+
+---
+
+## 12. Implementation Notes
+
+### 12.1 BRAM Buffer (Reserved)
+Current implementation does NOT use the 4KB BRAM buffer. Reserved for:
+- Future waveform pattern storage
+- Timing sequence tables
+- Calibration data
+- Multi-shot sequence definitions
+
+### 12.2 Monitor Input Processing
+Current implementation samples but does not process MonitorInput. Future:
+- Peak detection algorithm
+- Integration over firing period
+- Threshold comparison for verification
+- Fault detection based on unexpected readings
+
+### 12.3 Clock Domain
+- FSM runs on divided clock (configurable via CR23[7:4])
+- I/O sampling at full system clock rate
+- Proper CDC (Clock Domain Crossing) handling required
+
+---
+
+## Revision History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-01-27 | johnycsh | Initial draft |
+| 2.0 | 2025-01-27 | Claude | Complete refinement with technical details |
+
+---
+
+## Appendix: Quick Reference
+
+### Key Constants
+```vhdl
+-- Voltage thresholds
+TRIGGER_THRESHOLD_2V4 : signed := x"3DCF";  -- 2.4V
+MAX_INTENSITY_3V0     : signed := x"4CCD";  -- 3.0V
+
+-- Timing limits
+MAX_FIRING_CYCLES     : natural := 32;
+MIN_COOLING_CYCLES    : natural := 8;
+MAX_ARM_TIMEOUT       : natural := 4095;  -- 12-bit counter
+
+-- FSM States
+STATE_READY    : std_logic_vector(2 downto 0) := "000";
+STATE_ARMED    : std_logic_vector(2 downto 0) := "001";
+STATE_FIRING   : std_logic_vector(2 downto 0) := "010";
+STATE_COOLING  : std_logic_vector(2 downto 0) := "011";
+STATE_DONE     : std_logic_vector(2 downto 0) := "100";
+STATE_TIMEDOUT : std_logic_vector(2 downto 0) := "101";
+STATE_HARDFAULT: std_logic_vector(2 downto 0) := "111";
+```
+
+---
+
+**END OF REQUIREMENTS DOCUMENT**

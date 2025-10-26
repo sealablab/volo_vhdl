@@ -20,4 +20,4 @@ Phase two should consist of
 	- a system prompt suitable for the VHDL generation (and CocoTB testbenches)
 
 
-Review @VOLO_APP_FRESH_CONTEXT
+Review @VOLO_APP_FRESH_CONTEXT, and then I will give you the draft requirements document.
