@@ -93,6 +93,24 @@ TESTS_CONFIG = {
         category="instruments",
     ),
 
+    "pulsestar_volo": TestConfig(
+        name="pulsestar_volo",
+        sources=[
+            # Volo infrastructure
+            PROJECT_ROOT / "shared/volo/volo_common_pkg.vhd",
+            PROJECT_ROOT / "shared/volo/volo_bram_loader.vhd",
+            # PulseStar VoloApp implementation
+            MODULES / "PulseStar/volo_main/PulseStar_volo_main.vhd",
+            MODULES / "PulseStar/volo_main/PulseStar_volo_shim.vhd",
+            # MCC infrastructure
+            PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
+            PROJECT_ROOT / "shared/volo/MCC_TOP_volo_loader.vhd",
+        ],
+        toplevel="customwrapper",
+        test_module="test_pulsestar_volo",
+        category="volo_apps",
+    ),
+
     # === MCC Primitives ===
     "mcc_primitives": TestConfig(
         name="mcc_primitives",

@@ -1,0 +1,68 @@
+===============================================================================
+  VOLO-APP IMPLEMENTATION - FRESH CONTEXT START
+===============================================================================
+
+Hi Claude! I need you to implement the VoloApp abstraction for this project.
+
+CURRENT STATUS:
+- Branch: feature/implements-the-volo-plan
+- All design documents are already written and committed
+- Ready to start Phase 1 implementation
+
+FIRST STEPS (do these in order):
+
+1. Read the quick-start guide:
+   @docs/VOLO_APP_FRESH_CONTEXT.md
+
+2. For complete design details, read:
+   @docs/VOLO_APP_DESIGN.md
+
+3. For task checklists, reference:
+   @docs/VOLO_APP_IMPLEMENTATION_PLAN.md
+
+4. See example app definition:
+   @modules/PulseStar/PulseStar_app.yaml
+
+WHAT TO IMPLEMENT:
+
+Phase 1: Core Infrastructure (START HERE)
+- Task 1.1: Pydantic models (models/volo/)
+- Task 1.2: Static VHDL components (shared/volo/)
+- Task 1.3: Code generation script (tools/generate_volo_app.py)
+- Task 1.4: Testing (tests/models/)
+
+QUICK ARCHITECTURE SUMMARY:
+
+VoloApp = 3-layer hardware abstraction:
+1. MCC_TOP_volo_loader.vhd (static, shared)
+2. <AppName>_volo_shim.vhd (generated from Pydantic)
+3. <AppName>_volo_main.vhd (hand-written app logic)
+
+Register Map:
+- CR0[31:29] = VOLO_READY control (3-bit ready scheme)
+- CR10-CR14 = BRAM loader protocol (4KB buffer)
+- CR20-CR30 = App registers (human-friendly interface)
+
+NAMING CONVENTIONS (MANDATORY):
+- Files: <AppName>_volo_{shim|main}.vhd
+- Signals: "Pulse Width" → pulse_width (snake_case)
+- Location: modules/<AppName>/volo_main/
+
+FIRST COMMAND:
+After reading the docs, start with:
+  mkdir -p models/volo
+
+Then implement Task 1.1 from VOLO_APP_IMPLEMENTATION_PLAN.md
+
+KEY PRINCIPLE:
+The shim layer is 100% GENERATED from the Pydantic model.
+Never hand-edit the shim - it's always regenerated from YAML.
+
+DEPENDENCIES TO ADD (when needed):
+  pydantic = "^2.0"
+  jinja2 = "^3.1"
+  pyyaml = "^6.0"
+
+===============================================================================
+Ready to start! Read the FRESH_CONTEXT doc first, then begin Phase 1.
+===============================================================================
