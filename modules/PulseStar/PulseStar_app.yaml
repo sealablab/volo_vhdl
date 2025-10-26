@@ -1,0 +1,70 @@
+# PulseStar VoloApp Definition
+# High-precision pulse generation with configurable timing
+#
+# This file defines the VoloApp interface for PulseStar.
+# Use with: python tools/generate_volo_app.py --config PulseStar_app.yaml
+
+name: PulseStar
+version: 1.0.0
+description: High-precision pulse generation with configurable timing and duty cycle control
+author: Volo Team
+tags:
+  - pulser
+  - timing
+  - glitch
+  - pwm
+
+# Deployment artifacts
+bitstream_path: modules/PulseStar/latest/25ff_bitstreams.tar
+buffer_path: modules/PulseStar/buffers/timing_lut.bin
+
+# Application Registers (CR20-CR30)
+# These are mapped to friendly signal names in the generated shim
+registers:
+  # CR20: Pulse Width (8-bit counter)
+  - name: Pulse Width
+    description: Pulse duration in clock cycles (1-255)
+    reg_type: counter_8bit
+    cr_number: 20
+    default_value: 100
+    min_value: 1
+    max_value: 255
+
+  # CR21: Duty Cycle (percent)
+  - name: Duty Cycle
+    description: PWM duty cycle percentage (0-100%)
+    reg_type: percent
+    cr_number: 21
+    default_value: 50
+    min_value: 0
+    max_value: 100
+
+  # CR22: Enable Output (button/boolean)
+  - name: Enable Output
+    description: Toggle pulse output on/off
+    reg_type: button
+    cr_number: 22
+    default_value: 0
+
+# Generated VHDL Signal Names (automatic conversion):
+#   "Pulse Width"   -> pulse_width   : std_logic_vector(7 downto 0)
+#   "Duty Cycle"    -> duty_cycle    : std_logic_vector(6 downto 0)
+#   "Enable Output" -> enable_output : std_logic
+
+# Usage:
+#   1. Generate VHDL shim and main template:
+#      $ python tools/generate_volo_app.py \
+#          --config modules/PulseStar/PulseStar_app.yaml \
+#          --output modules/PulseStar/volo_main/
+#
+#   2. Implement application logic in:
+#      modules/PulseStar/volo_main/PulseStar_volo_main.vhd
+#
+#   3. Build MCC package:
+#      $ uv run python scripts/build_mcc_package.py modules/PulseStar
+#
+#   4. Deploy to device:
+#      $ python tools/volo_loader.py \
+#          --config modules/PulseStar/PulseStar_app.yaml \
+#          --device MokuB106 \
+#          --ip 192.168.13.159
