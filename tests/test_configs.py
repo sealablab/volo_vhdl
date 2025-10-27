@@ -110,6 +110,26 @@ TESTS_CONFIG = {
         test_module="test_pulsestar_volo",
         category="volo_apps",
     ),
+    "ds1120_pd_volo": TestConfig(
+        name="ds1120_pd_volo",
+        sources=[
+            # Volo infrastructure
+            PROJECT_ROOT / "shared/volo/volo_common_pkg.vhd",
+            PROJECT_ROOT / "shared/volo/volo_bram_loader.vhd",
+            # DS1120-PD specific packages and cores
+            MODULES / "DS1120-PD/common/ds1120_pd_pkg.vhd",
+            MODULES / "DS1120-PD/core/ds1120_pd_fsm.vhd",
+            # DS1120-PD VoloApp implementation
+            MODULES / "DS1120-PD/volo_main/DS1120-PD_volo_main.vhd",
+            MODULES / "DS1120-PD/volo_main/DS1120-PD_volo_shim.vhd",
+            # MCC infrastructure
+            PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
+            PROJECT_ROOT / "shared/volo/MCC_TOP_volo_loader.vhd",
+        ],
+        toplevel="customwrapper",
+        test_module="test_ds1120_pd_volo",
+        category="volo_apps",
+    ),
 
     # === MCC Primitives ===
     "mcc_primitives": TestConfig(
