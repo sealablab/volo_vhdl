@@ -113,6 +113,11 @@ TESTS_CONFIG = {
     "ds1120_pd_volo": TestConfig(
         name="ds1120_pd_volo",
         sources=[
+            # Shared modules used by DS1120-PD
+            SHARED_PACKAGES / "volo_voltage_pkg.vhd",
+            SHARED_CORE / "volo_clk_divider.vhd",
+            SHARED_CORE / "volo_voltage_threshold_trigger_core.vhd",
+            SHARED_OBSERVER / "fsm_observer.vhd",
             # Volo infrastructure
             PROJECT_ROOT / "shared/volo/volo_common_pkg.vhd",
             PROJECT_ROOT / "shared/volo/volo_bram_loader.vhd",
@@ -120,8 +125,8 @@ TESTS_CONFIG = {
             MODULES / "DS1120-PD/common/ds1120_pd_pkg.vhd",
             MODULES / "DS1120-PD/core/ds1120_pd_fsm.vhd",
             # DS1120-PD VoloApp implementation
-            MODULES / "DS1120-PD/volo_main/DS1120-PD_volo_main.vhd",
-            MODULES / "DS1120-PD/volo_main/DS1120-PD_volo_shim.vhd",
+            MODULES / "DS1120-PD/volo_main/DS1120_PD_volo_main.vhd",
+            MODULES / "DS1120-PD/volo_main/DS1120_PD_volo_shim.vhd",
             # MCC infrastructure
             PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
             PROJECT_ROOT / "shared/volo/MCC_TOP_volo_loader.vhd",
