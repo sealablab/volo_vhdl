@@ -79,15 +79,31 @@ class TestRunner:
         # Build configuration
         build_args = config.ghdl_args.copy()
 
+        # Add simulation arguments
+        sim_args = []
+
         # Add waveform support
         if self.waves:
-            sim_args = ["--wave=dump.ghw"]
-        else:
-            sim_args = []
+            sim_args.append("--wave=dump.ghw")
+
+        # Add GHDL output optimization flags
+        # These dramatically reduce metavalue warnings and other noise
+        sim_args.extend([
+            "--ieee-asserts=disable-at-0",  # Suppress initialization warnings
+            "--assert-level=error",          # Only stop on errors, not warnings
+        ])
+
+        # Optional: Add timeout to prevent runaway simulations
+        # sim_args.append("--stop-time=10ms")
 
         # Set CocotB environment variables
         os.environ["COCOTB_REDUCED_LOG_FMT"] = "1"
         os.environ["COCOTB_LOG_LEVEL"] = "DEBUG" if self.verbose else "INFO"
+
+        # Enable GHDL output filtering if requested
+        ghdl_filter = os.environ.get("GHDL_FILTER_LEVEL", "").lower()
+        if ghdl_filter in ["aggressive", "normal", "minimal"]:
+            os.environ["COCOTB_GHDL_FILTER"] = ghdl_filter
 
         try:
             # Build HDL
