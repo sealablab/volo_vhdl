@@ -126,7 +126,7 @@ TESTS_CONFIG = {
             MODULES / "DS1120-PD/core/ds1120_pd_fsm.vhd",
             # DS1120-PD VoloApp implementation
             MODULES / "DS1120-PD/volo_main/DS1120_PD_volo_main.vhd",
-            MODULES / "DS1120-PD/volo_main/DS1120_PD_volo_shim.vhd",
+            MODULES / "DS1120-PD/volo_main/DS1120-PD_volo_shim.vhd",
             # MCC infrastructure
             PROJECT_ROOT / "mcc_templates/CustomWrapper_test_stub.vhd",
             PROJECT_ROOT / "shared/volo/MCC_TOP_volo_loader.vhd",
