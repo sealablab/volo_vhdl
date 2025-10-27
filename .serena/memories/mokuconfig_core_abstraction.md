@@ -1,14 +1,23 @@
 # MokuConfig - Core Deployment Abstraction
 
 **Priority**: 🔴 CRITICAL - Load in EVERY context window
-**Status**: Active - Core abstraction as of 2025-10-25
-**Location**: `models/moku/platform_config.py`
+**Status**: Active - Core abstraction as of 2025-10-26
+**Location**: `models/moku-models/moku_models/moku_config.py` (git submodule)
 
 ## Overview
 
 `MokuConfig` is THE central deployment abstraction for the Volo VHDL project. It is the single source of truth for multi-instrument deployment specifications.
 
 **Key Insight**: Write deployment config ONCE → Use everywhere (simulation, hardware, documentation)
+
+## Important Path Update (2025-10-26)
+
+The MokuConfig model is located in a git submodule:
+- **Submodule**: `models/moku-models` (https://github.com/sealablab/moku-models)
+- **File Path**: `models/moku-models/moku_models/moku_config.py`
+- **Import Path**: `from moku_models.moku_config import MokuConfig`
+- **Previous Name**: `platform_config.py` (renamed to `moku_config.py`)
+- **Backward Compat**: `MokuPlatformConfig` alias exists for transition
 
 ## Core Concept
 
@@ -92,7 +101,8 @@ uv run python tools/moku_go.py deploy --device MokuB106 --config deploy.json
 
 ### Pattern 3: Programmatic Generation
 ```python
-from models.moku import MokuConfig, SlotConfig, MokuConnection, MOKU_GO_PLATFORM
+from moku_models.moku_config import MokuConfig, SlotConfig, MokuConnection
+from moku_models.platforms.moku_go import MOKU_GO_PLATFORM
 
 config = MokuConfig(
     platform=MOKU_GO_PLATFORM,
@@ -122,7 +132,7 @@ with open('configs/pulsestar.json', 'w') as f:
 ### Pattern 4: CocotB Simulation (Future)
 ```python
 # tests/test_pulsestar_mokubench.py
-from models.moku import MokuConfig
+from moku_models.moku_config import MokuConfig
 
 config = MokuConfig.model_validate_json(Path('configs/pulsestar.json').read_text())
 
@@ -302,7 +312,8 @@ git commit -m "Test campaign EMFI-v2 configurations"
 - **Old Name**: `MokuPlatformConfig` (deprecated 2025-10-25)
 - **New Name**: `MokuConfig` (clearer, shorter)
 - **Backward Compatibility**: Alias exists for transition period
-- **Import Path**: `from models.moku import MokuConfig`
+- **Import Path**: `from moku_models.moku_config import MokuConfig`
+- **Git Submodule**: Located in `models/moku-models` submodule
 
 ## Related Serena Memories
 
@@ -330,12 +341,13 @@ git commit -m "Test campaign EMFI-v2 configurations"
 
 ## Key Files
 
-- `models/moku/platform_config.py` - MokuConfig implementation
+- `models/moku-models/moku_models/moku_config.py` - MokuConfig implementation (in submodule)
 - `tools/moku_go.py` - Primary consumer (deployment CLI)
 - `CLAUDE.md` - Project-level documentation
 - `AGENTS.md` - Agent-level quick reference
+- `.gitmodules` - Git submodule configuration
 
 ---
 
 **Load Priority**: 🔴 CRITICAL - Load this memory FIRST in every context window
-**Last Updated**: 2025-10-25
+**Last Updated**: 2025-10-26

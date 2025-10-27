@@ -7,7 +7,7 @@ MCC API-based hardware backend for deploying to real Moku devices.
 from typing import Any
 import time
 from .backend import Backend
-from moku_models.platform_config import MokuPlatformConfig
+from moku_models.moku_config import MokuPlatformConfig
 from models.bench.benchbench import BenchBench
 
 # Import Moku API

@@ -6,7 +6,7 @@ Defines interface for Moku platform simulation and hardware deployment.
 
 from abc import ABC, abstractmethod
 from typing import Any
-from moku_models.platform_config import MokuPlatformConfig
+from moku_models.moku_config import MokuPlatformConfig
 
 
 class Backend(ABC):

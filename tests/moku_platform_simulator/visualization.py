@@ -2,7 +2,7 @@
 Diagram Generation for Moku Platform Configuration
 """
 
-from moku_models.platform_config import MokuPlatformConfig
+from moku_models.moku_config import MokuPlatformConfig
 
 
 def generate_ascii_diagram(config: MokuPlatformConfig) -> str:
