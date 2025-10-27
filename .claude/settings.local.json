@@ -52,7 +52,9 @@
       "Bash(git merge feature/implements-the-volo-plan --no-ff -m \"$(cat <<''EOF''\nMerge feature/implements-the-volo-plan: VoloApp Phase 1 & 2 complete\n\nMerges complete implementation of VoloApp abstraction system:\n- Phase 1: Core infrastructure (Pydantic models, VHDL components, templates, code generator)\n- Phase 2: PulseStar reference implementation (application logic, build integration, CocotB tests)\n- Phase 3 resume documentation\n\nReady for Phase 3: Deployment tooling (volo_loader.py)\n\nCommits merged:\n- 4c95cf1 feat: Implement VoloApp abstraction (Phase 1 & 2 complete)\n- 771f7da docs: Add Phase 3 resume context for VoloApp continuation\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(cp:*)",
       "Bash(git push:*)",
-      "Bash(git submodule add https://github.com/sealablab/moku-models models/moku-models)"
+      "Bash(git submodule add https://github.com/sealablab/moku-models models/moku-models)",
+      "mcp__serena__find_symbol",
+      "mcp__serena__initial_instructions"
     ],
     "deny": [],
     "ask": []

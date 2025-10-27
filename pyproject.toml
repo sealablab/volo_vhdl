@@ -11,23 +11,17 @@ authors = [
 dependencies = [
     # Testing Framework
     "cocotb>=1.8.0",
-
     # Data Validation (Bench Framework + Moku Models)
     "pydantic>=2.0.0",
-
     # Moku Models (git submodule - editable install)
     "moku-models @ file:///${PROJECT_ROOT}/models/moku-models",
-
     # Hardware Backend (MCC API) - Phase 3
     "moku>=3.0.0",
-
     # Build Tools (MCC Package Builder)
     "pyyaml>=6.0.0",
     "jinja2>=3.1.0",
-
     # Data Analysis (Hardware Validation)
     "numpy>=1.24.0",
-
     # CLI Tools (moku-go deployment utility)
     "typer>=0.9.0",
     "rich>=13.0.0",
